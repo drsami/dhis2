@@ -1,0 +1,57 @@
+BZR merge-modified list format 1
+file_id: jacksonperioddeseria-20120418202242-9drm593rrh32978n-2
+hash: 8728b26798238c67638d79f4a5e851f50cb66919
+
+file_id: abstractcrudcontroll-20120527214737-z8lvowdku17fhabz-1
+hash: 87f7459a7bde24d11d087e5b72f161c1ffdd8e1a
+
+file_id: defaultdataintegrity-20090303164601-edynttiof6lqx3ke-4082
+hash: de94e4098c126c4095007f4f8a5d8b532c708103
+
+file_id: dataintegrityservice-20090303164601-edynttiof6lqx3ke-4094
+hash: feb02611726b7630a6f0305c1d96eb19acc4f459
+
+file_id: period.java-20090303164601-edynttiof6lqx3ke-3580
+hash: bd5bc4ebceb42e7bb99768e1a93b4abae0fcb3d0
+
+file_id: contextutils.java-20120124151726-8d5bixrk1g8bikjy-1
+hash: 182836b2e475484287216c3d4279b77827daed3c
+
+file_id: jacksonperiodseriali-20120418202242-9drm593rrh32978n-3
+hash: 9e0040aff975c93ef6699e6f75ebc33f73e91331
+
+file_id: dateutils.java-20090303164601-edynttiof6lqx3ke-5036
+hash: aec486d3c2d096296d7ac7c04b2908679860686e
+
+file_id: chartcontroller.java-20111124144443-gmvhrls9jano6oc4-2
+hash: 680d4a2cc1b250fe25292e6967af38c083fd44a6
+
+file_id: dashboard.css-20090303164601-edynttiof6lqx3ke-2676
+hash: 0bb9a91241ffa6ea0849d39b59d3c67dfec6cca1
+
+file_id: getdataintegrityacti-20090303164601-edynttiof6lqx3ke-6167
+hash: 7d0645dc8ae8135b0d1a14a431c913417600a676
+
+file_id: hide.png-20100223185728-cqyjfa6ukxmp9k31-1
+hash: 2c209164e6493a07f0381475d01b710b8da32e6f
+
+file_id: dataintegrityservice-20090303164601-edynttiof6lqx3ke-3493
+hash: 6dce1999c7face630a3eae7a43e66fa4f04dce51
+
+file_id: dataintegrityform.vm-20090303164601-edynttiof6lqx3ke-2736
+hash: 56256ae2a048437df8309760194941241742dd18
+
+file_id: webutils.java-20120529171951-e5awuswb375qv0za-1
+hash: b4d8d7300a436c1b05754d5ebbcce9f4989c12f6
+
+file_id: close.png-20090303164601-edynttiof6lqx3ke-1781
+hash: 99ad4073cd2c260e24c8b3636376e5cd4cb778ba
+
+file_id: dataintegrity.js-20100126142605-su4v5gccc6yiz5o3-6
+hash: 123cf8b284c7f39bb2a0ce556f71789d611ff765
+
+file_id: widgets.css-20090303164601-edynttiof6lqx3ke-2625
+hash: 98b4557455b9feddecabaad2ae2c427f0a070c9a
+
+file_id: responsedataintegrit-20100126142605-su4v5gccc6yiz5o3-5
+hash: 673026ede2ea80cbb2a859328c5871fcfc0b086f
