@@ -409,13 +409,14 @@ Ext.onReady( function() {
             },
             filterAvailable: function(a, s) {
                 a.store.filterBy( function(r) {
-                    var filter = true;
+                    var keep = true;
                     s.store.each( function(r2) {
-                        if (r.data.id === r2.data.id) {
-                            filter = false;
+                        if (r.data.id == r2.data.id) {
+                            keep = false;
                         }
+                        
                     });
-                    return filter;
+                    return keep;
                 });
                 a.store.sortStore();
             },
@@ -1602,8 +1603,7 @@ Ext.onReady( function() {
 						
 						if (f.periods) {
 							for (var i = 0; i < f.periods.length; i++) {
-								//DV.c.fixedperiod.records.push({id: f.periods[i].id, name: DV.conf.util.jsonEncodeString(f.periods[i].name)});
-								DV.c.fixedperiod.records.push({id: f.periods[i], name: f.periods[i]});
+								DV.c.fixedperiod.records.push({id: f.periods[i].id, name: DV.conf.util.jsonEncodeString(f.periods[i].name)});
 							}
 						}							
 						
@@ -1696,6 +1696,7 @@ Ext.onReady( function() {
             }
         },
         setOptions: function() {
+			DV.c.relativeperiod.rewind = DV.cmp.dimension.relativeperiod.rewind.getValue();
             DV.c.hidesubtitle = DV.cmp.favorite.hidesubtitle.getValue();
             DV.c.hidelegend = DV.cmp.favorite.hidelegend.getValue();
             DV.c.trendline = DV.cmp.favorite.trendline.getValue();
@@ -2032,7 +2033,8 @@ Ext.onReady( function() {
             params = {
 				periodIsFilter: (DV.c.dimension.filter === DV.conf.finals.dimension.period.value),
 				userOrganisationUnit: DV.c.userorganisationunit,
-				userOrganisationUnitChildren: DV.c.userorganisationunitchildren
+				userOrganisationUnitChildren: DV.c.userorganisationunitchildren,
+				rewind: DV.c.relativeperiod.rewind
 			};
 			if (DV.c.organisationunit.groupsetid) {
 				params.organisationUnitGroupSetId = DV.c.organisationunit.groupsetid;
@@ -2087,6 +2089,7 @@ Ext.onReady( function() {
 			dataelement: {},
 			dataset: {},
 			relativeperiod: {},
+			rewind: false,
 			fixedperiod: {},
 			organisationunit: {},
 			hidesubtitle: false,
@@ -3284,6 +3287,32 @@ Ext.onReady( function() {
 																boxLabel: DV.i18n.last_5_years
 															}
 														]
+													},
+													{
+														xtype: 'panel',
+														layout: 'anchor',
+														bodyStyle: 'border-style:none; padding:5px 0 0 46px',
+														defaults: {
+															labelSeparator: ''
+														},
+														items: [
+															{
+																xtype: 'label',
+																text: 'Options',
+																cls: 'dv-label-period-heading',
+																style: 'color:#666'
+															},
+															{
+																xtype: 'checkbox',
+																paramName: 'rewind',
+																boxLabel: 'Rewind one period',
+																listeners: {
+																	added: function() {
+																		DV.cmp.dimension.relativeperiod.rewind = this;
+																	}
+																}
+															}
+														]
 													}
 												]
 											}
@@ -3302,29 +3331,64 @@ Ext.onReady( function() {
 										hideCollapseTool: true,
 										items: [
 											{
-												xtype: 'combobox',
-												cls: 'dv-combo',
-												style: 'margin-bottom:8px',
-												width: DV.conf.layout.west_fieldset_width - DV.conf.layout.west_width_subtractor,
-												valueField: 'id',
-												displayField: 'name',
-												fieldLabel: DV.i18n.select_type,
-												labelStyle: 'padding-left:7px;',
-												labelWidth: 90,
-												editable: false,
-												queryMode: 'remote',
-												store: DV.store.periodtype,
-												listeners: {
-													select: function(cb) {														
-														var pt = new PeriodType();
-														var periods = pt.reverse( pt.filterFuturePeriods( pt.get(cb.getValue()).generatePeriods(0) ) );
-														DV.store.fixedperiod.available.setIndex(periods);
-														DV.store.fixedperiod.available.loadData(periods);
-														DV.util.multiselect.filterAvailable(DV.cmp.dimension.fixedperiod.available, DV.cmp.dimension.fixedperiod.selected);
+												xtype: 'panel',
+												layout: 'column',
+												bodyStyle: 'border-style:none',
+												items: [
+													{
+														xtype: 'combobox',
+														cls: 'dv-combo',
+														style: 'margin-bottom:8px',
+														width: 253,
+														valueField: 'id',
+														displayField: 'name',
+														fieldLabel: DV.i18n.select_type,
+														labelStyle: 'padding-left:7px;',
+														labelWidth: 90,
+														editable: false,
+														queryMode: 'remote',
+														store: DV.store.periodtype,
+														periodOffset: 0,
+														listeners: {
+															select: function() {
+																var pt = new PeriodType();
+																var periods = pt.reverse( pt.filterFuturePeriods( pt.get(this.getValue()).generatePeriods(this.periodOffset) ) );
+																DV.store.fixedperiod.available.setIndex(periods);
+																DV.store.fixedperiod.available.loadData(periods);
+																DV.util.multiselect.filterAvailable(DV.cmp.dimension.fixedperiod.available, DV.cmp.dimension.fixedperiod.selected);
+															}
+														}
+													},
+													{
+														xtype: 'button',
+														text: 'Prev year',
+														style: 'margin-left:4px',
+														height: 24,
+														handler: function() {
+															var cb = this.up('panel').down('combobox');
+															if (cb.getValue()) {
+																cb.periodOffset--;
+																cb.fireEvent('select');
+															}
+														}
+													},
+													{
+														xtype: 'button',
+														text: 'Next year',
+														style: 'margin-left:3px',
+														height: 24,
+														handler: function() {
+															var cb = this.up('panel').down('combobox');
+															if (cb.getValue() && cb.periodOffset < 0) {
+																cb.periodOffset++;
+																cb.fireEvent('select');
+															}
+														}
 													}
-												}
+												]
 											},
 											{
+															
 												xtype: 'panel',
 												layout: 'column',
 												bodyStyle: 'border-style:none',
