@@ -748,7 +748,7 @@ Ext.onReady( function() {
 						var json = Ext.JSON.decode(r.responseText);
 						TR.state.total = json.total;
 						TR.value.columns = json.columns;
-						TR.value.values=json.items;
+						TR.value.values = json.items;
 						
 						// Get fields
 						var fields = [];
@@ -800,7 +800,14 @@ Ext.onReady( function() {
 				params: this.getParams(),
 				success: function(r) {
 					var json = Ext.JSON.decode(r.responseText);
-					TR.store.datatable.loadData(json.items,false);
+					TR.value.values = json.items;
+					var record = new Array();
+					for( var index=1; index < TR.value.columns.length; index++ ){
+						record.push('');
+					}
+					TR.value.values.unshift(record);
+					
+					TR.store.datatable.loadData(TR.value.values,false);
 					if ( json.items.length > 1 )
 					{
 						Ext.getCmp('btnClean').enable();
@@ -904,8 +911,8 @@ Ext.onReady( function() {
             p += "&endDate=" + TR.cmp.settings.endDate.rawValue;
 			p += "&facilityLB=" + TR.cmp.settings.facilityLB.getValue();
 			p += "&level=" + TR.cmp.settings.level.getValue();
-			p += "&orderByOrgunitAsc=" + 'true';
-			p += "&orderByExecutionDateByAsc=" +'true';
+			p += "&orderByOrgunitAsc=" + this.orderByOrgunitAsc;
+			p += "&orderByExecutionDateByAsc=" + this.orderByExecutionDateByAsc;
 			p += "&programStageId=" + TR.cmp.params.programStage.getValue();
 			p += "&type=" + type;
 			
@@ -1044,20 +1051,9 @@ Ext.onReady( function() {
 					TR.util.notification.error( message, message);
 					return false;
 				}
-				
-				if( TR.cmp.settings.startDate.getValue() > TR.cmp.settings.endDate.getValue() )
-				{
-					TR.util.notification.error(TR.i18n.start_date_must_be_less_then_or_equals_to_end_date, TR.i18n.start_date_must_be_less_then_or_equals_to_end_date);
-					return false;
-				}
 			
 				if (TR.state.orgunitId == '') {
 					TR.util.notification.error(TR.i18n.et_no_orgunits, TR.i18n.em_no_orgunits);
-					return false;
-				}
-				
-				if (!TR.cmp.params.dataelement.selected.store.data.length) {
-					TR.util.notification.error(TR.i18n.et_no_dataelement, TR.i18n.et_no_dataelement);
 					return false;
 				}
 				
@@ -1167,7 +1163,7 @@ Ext.onReady( function() {
 			Ext.Msg.confirm( TR.i18n.confirmation, TR.i18n.are_you_sure, function(btn){
 				if (btn == 'yes')
 				{
-					var params = 'programStageInstanceId=' + psiId; 
+					var params = 'id=' + psiId; 
 					Ext.Ajax.request({
 						url: TR.conf.finals.ajax.path_commons + TR.conf.finals.ajax.datavalue_delete,
 						method: 'GET',
