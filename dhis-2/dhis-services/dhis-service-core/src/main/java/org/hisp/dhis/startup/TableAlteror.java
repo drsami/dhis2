@@ -156,7 +156,7 @@ public class TableAlteror
         
         executeSql( "ALTER TABLE organisationunit DROP COLUMN hasPatients" );
         
-        executeSql( "update dataelement set texttype='text' where valuetype='string'" );
+        executeSql( "update dataelement set texttype='text' where valuetype='string' and texttype is null" );
         
         // ---------------------------------------------------------------------
         // Update tables for dimensional model
@@ -268,6 +268,7 @@ public class TableAlteror
         executeSql( "UPDATE chart SET type='LINE' where type='line3d'" );
         executeSql( "UPDATE chart SET type='PIE' where type='pie'" );
         executeSql( "UPDATE chart SET type='PIE' where type='pie3d'" );
+        executeSql( "UPDATE chart SET rewindRelativePeriods = false WHERE rewindRelativePeriods is null" );
 
         executeSql( "ALTER TABLE chart ALTER COLUMN dimension DROP NOT NULL" );
         executeSql( "ALTER TABLE chart RENAME COLUMN title TO name" );
@@ -295,7 +296,6 @@ public class TableAlteror
         
         // remove outdated relative periods
         
-        executeSql( "ALTER TABLE reporttable DROP COLUMN last3months" );
         executeSql( "ALTER TABLE reporttable DROP COLUMN last6months" );
         executeSql( "ALTER TABLE reporttable DROP COLUMN last9months" );
         executeSql( "ALTER TABLE reporttable DROP COLUMN sofarthisyear" );
@@ -307,7 +307,6 @@ public class TableAlteror
         executeSql( "ALTER TABLE reporttable DROP COLUMN individualmonthsthisyear" );
         executeSql( "ALTER TABLE reporttable DROP COLUMN individualquartersthisyear" );
 
-        executeSql( "ALTER TABLE chart DROP COLUMN last3months" );
         executeSql( "ALTER TABLE chart DROP COLUMN last6months" );
         executeSql( "ALTER TABLE chart DROP COLUMN last9months" );
         executeSql( "ALTER TABLE chart DROP COLUMN sofarthisyear" );
@@ -388,6 +387,7 @@ public class TableAlteror
         executeSql( "update dataelement set zeroissignificant = false where zeroissignificant is null" );
         executeSql( "update organisationunit set haspatients = false where haspatients is null" );
         executeSql( "update dataset set expirydays = 0 where expirydays is null" );
+        executeSql( "update expression set nullifblank = true where nullifblank is null" );
 
         executeSql( "update reporttable set reportingmonth = false where reportingmonth is null" );
         executeSql( "update reporttable set reportingbimonth = false where reportingbimonth is null" );
@@ -402,6 +402,7 @@ public class TableAlteror
         executeSql( "update reporttable set lastsixmonth = false where lastsixmonth is null" );
         executeSql( "update reporttable set last4quarters = false where last4quarters is null" );
         executeSql( "update reporttable set last12months = false where last12months is null" );
+	executeSql( "update reporttable set last3months = false where last3months is null" );
         executeSql( "update reporttable set last6bimonths = false where last6bimonths is null" );
         executeSql( "update reporttable set last4quarters = false where last4quarters is null" );
         executeSql( "update reporttable set last2sixmonths = false where last2sixmonths is null" );
@@ -421,9 +422,9 @@ public class TableAlteror
         executeSql( "update chart set lastyear = false where lastyear is null" );
         executeSql( "update chart set lastsixmonth = false where lastsixmonth is null" );
         executeSql( "update chart set last12months = false where last12months is null" );
+        executeSql( "update chart set last3months = false where last3months is null" );
         executeSql( "update chart set last5years = false where last5years is null" );
         executeSql( "update chart set last4quarters = false where last4quarters is null" );
-        executeSql( "update chart set last12months = false where last12months is null" );
         executeSql( "update chart set last6bimonths = false where last6bimonths is null" );
         executeSql( "update chart set last4quarters = false where last4quarters is null" );
         executeSql( "update chart set last2sixmonths = false where last2sixmonths is null" );

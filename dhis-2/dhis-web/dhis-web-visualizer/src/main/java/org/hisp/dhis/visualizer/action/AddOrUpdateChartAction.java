@@ -201,6 +201,13 @@ public class AddOrUpdateChartAction
     {
         this.last12Months = last12Months;
     }
+    
+    private boolean last3Months;
+
+    public void setLast3Months( boolean last3Months )
+    {
+        this.last3Months = last3Months;
+    }
 
     private boolean lastQuarter;
 
@@ -249,6 +256,13 @@ public class AddOrUpdateChartAction
     public void setLast5Years( boolean last5Years )
     {
         this.last5Years = last5Years;
+    }
+    
+    private boolean rewind;
+    
+    public void setRewind( boolean rewind )
+    {
+        this.rewind = rewind;
     }
     
     private List<String> periodIds;
@@ -429,12 +443,13 @@ public class AddOrUpdateChartAction
             }
         }
 
-        if ( lastMonth || last12Months || lastQuarter || last4Quarters || lastSixMonth || last2SixMonths || thisYear
+        if ( lastMonth || last12Months|| last3Months || lastQuarter || last4Quarters || lastSixMonth || last2SixMonths || thisYear
             || lastYear || last5Years )
         {
             RelativePeriods rp = new RelativePeriods();
             rp.setReportingMonth( lastMonth );
             rp.setLast12Months( last12Months );
+            rp.setLast3Months( last3Months );
             rp.setReportingQuarter( lastQuarter );
             rp.setLast4Quarters( last4Quarters );
             rp.setLastSixMonth( lastSixMonth );
@@ -445,6 +460,8 @@ public class AddOrUpdateChartAction
 
             chart.setRelatives( rp );
         }
+        
+        chart.setRewindRelativePeriods( rewind );
         
         if ( periodIds != null )
         {

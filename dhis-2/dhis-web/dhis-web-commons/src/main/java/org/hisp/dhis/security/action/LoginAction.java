@@ -79,7 +79,6 @@ public class LoginAction
         {
             return "mobile";
         }
-
         return "standard";
     }
 }

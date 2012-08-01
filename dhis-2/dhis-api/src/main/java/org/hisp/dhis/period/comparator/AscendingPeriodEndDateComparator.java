@@ -1,4 +1,4 @@
-package org.hisp.dhis.patientdatavalue.aggregation;
+package org.hisp.dhis.period.comparator;
 
 /*
  * Copyright (c) 2004-2012, University of Oslo
@@ -27,13 +27,46 @@ package org.hisp.dhis.patientdatavalue.aggregation;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.Date;
+import java.util.Comparator;
 
-import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.period.Period;
 
-public interface PatientDataValueAggregationEngine
+/**
+ * Sorts periods ascending based on the end date, then the periodtype frequency order.
+ * 
+ * @author Jan Henrik Overland
+ * @version $Id$
+ */
+public class AscendingPeriodEndDateComparator
+    implements Comparator<Period>
 {
-    String ID = PatientDataValueAggregationEngine.class.getName();
+    public int compare( Period period1, Period period2 )
+    {
+        if ( period1.getEndDate() == null )
+        {
+            return -1;
+        }
 
-    public void aggregate( Date startDate, Date endDate, OrganisationUnit organisationUnit );
+        if ( period2.getEndDate() == null )
+        {
+            return 1;
+        }
+
+        if ( period1.getEndDate().compareTo( period2.getEndDate() ) != 0 )
+        {
+            return period1.getEndDate().compareTo( period2.getEndDate() );
+        }
+        
+        if ( period1.getPeriodType() == null )
+        {
+            return -1;
+        }
+        
+        if ( period2.getPeriodType() == null )
+        {
+            return 1;
+        }
+        
+        return new Integer( period1.getPeriodType().getFrequencyOrder() ).compareTo( new Integer( period2.getPeriodType().getFrequencyOrder() ) );
+    }
 }

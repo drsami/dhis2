@@ -1,7 +1,7 @@
-package org.hisp.dhis.dataanalysis;
+package org.hisp.dhis.jdbc.batchhandler;
 
 /*
- * Copyright (c) 2004-${year}, University of Oslo
+ * Copyright (c) 2004-2012, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,35 +27,18 @@ package org.hisp.dhis.dataanalysis;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.HashMap;
+import org.amplecode.quick.JdbcConfiguration;
 
-import org.hisp.dhis.dataelement.DataElement;
-import org.hisp.dhis.dataelement.DataElementCategoryOptionCombo;
-import org.hisp.dhis.minmax.MinMaxDataElement;
-import org.hisp.dhis.organisationunit.OrganisationUnit;
-
-/**
- * @author Lars Helge Overland
- */
-public class MinMaxValueMap
-    extends HashMap<String, MinMaxDataElement>
+public class AggregatedOrgUnitIndicatorValueTempBatchHandler
+    extends AggregatedOrgUnitIndicatorValueBatchHandler
 {
-    /**
-     * Determines if a de-serialized file is compatible with this class.
-     */
-    private static final long serialVersionUID = -6046170950071436264L;
-
-    private static final String SEP = "-";
-    
-    public void put( MinMaxDataElement element )
+    public AggregatedOrgUnitIndicatorValueTempBatchHandler( JdbcConfiguration config )
     {
-        final String key = element.getSource().getId() + SEP + element.getDataElement().getId() + SEP + element.getOptionCombo().getId();
-        
-        super.put( key, element );
+        super( config );
     }
-    
-    public MinMaxDataElement get( OrganisationUnit source, DataElement dataElement, DataElementCategoryOptionCombo categoryOptionCombo )
+
+    protected void setTableName()
     {
-        return super.get( source.getId() + SEP + dataElement.getId() + SEP + categoryOptionCombo.getId() );
+        statementBuilder.setTableName( "aggregatedorgunitindicatorvalue_temp" );
     }
 }

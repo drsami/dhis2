@@ -1,7 +1,7 @@
-package org.hisp.dhis.minmax.validation;
+package org.hisp.dhis.jdbc.batchhandler;
 
 /*
- * Copyright (c) 2004-2009, University of Oslo
+ * Copyright (c) 2004-2012, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,25 +27,18 @@ package org.hisp.dhis.minmax.validation;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.Collection;
+import org.amplecode.quick.JdbcConfiguration;
 
-import org.hisp.dhis.dataelement.DataElement;
-import org.hisp.dhis.datavalue.DeflatedDataValue;
-import org.hisp.dhis.minmax.MinMaxDataElement;
-import org.hisp.dhis.organisationunit.OrganisationUnit;
-import org.hisp.dhis.period.Period;
-
-/**
- * @author Chau Thu Tran
- * @version $Id$
- */
-public interface MinMaxValuesGenerationService
+public class AggregatedOrgUnitDataValueTempBatchHandler
+    extends AggregatedOrgUnitDataValueBatchHandler
 {
-    String ID = MinMaxValuesGenerationService.class.getName();
+    public AggregatedOrgUnitDataValueTempBatchHandler( JdbcConfiguration config )
+    {
+        super( config );
+    }
 
-    Collection<MinMaxDataElement> getMinMaxValues( OrganisationUnit organisationUnit,
-        Collection<DataElement> dataElements, Double stdDevFactor );
-
-    Collection<DeflatedDataValue> findOutliers( OrganisationUnit organisationUnit, Collection<Period> periods,
-        Collection<MinMaxDataElement> minMaxDataElements );
+    protected void setTableName()
+    {
+        statementBuilder.setTableName( "aggregatedorgunitdatavalue_temp" );
+    }    
 }

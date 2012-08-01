@@ -10,6 +10,8 @@ function organisationUnitSelected( orgUnits, orgUnitNames )
 	hideById('addRelationshipDiv');
 	hideById('migrationPatientDiv');
 	enable('listPatientBtn');
+	enable('addPatientBtn');
+	enable('advancedSearchBtn');
 	setFieldValue("orgunitName", orgUnitNames[0]);
 }
 
@@ -221,14 +223,23 @@ function toggleUnderAge(this_)
 	if( jQuery(this_).is(":checked"))
 	{
 		jQuery('#representativeDiv').dialog('destroy').remove();
-		jQuery('<div id="representativeDiv">' ).load( 'showAddRepresentative.action' ).dialog({
+		jQuery('<div id="representativeDiv">' ).load( 'showAddRepresentative.action',{},
+			function(){
+				$('#patientForm [id=birthDate]').attr('id','birthDate_id');
+				$('#patientForm [id=birthDate_id]').attr('name','birthDate_id');
+			}).dialog({
 			title: i18n_child_representative,
 			maximize: true, 
 			closable: true,
 			modal:true,
 			overlay:{background:'#000000', opacity:0.1},
 			width: 800,
-			height: 450
+			height: 450,
+			close:function()
+			{
+				$('#patientForm [id=birthDate_id]').attr('id','birthDate');
+				$('#patientForm [id=birthDate]').attr('name','birthDate');
+			}
 		});
 	}else
 	{

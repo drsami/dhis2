@@ -15,7 +15,10 @@
           					 $programInstance.getProgram().getName()
           				</a>
           			</li>
+
+                    #set($nextStage = false)
           			#set($nextStage = $util.getNextStage( $programInstance.getProgramStageInstances()))
+
           			#if($nextStage)
           				<li>
           					<a href="showProgramStageForm.action?programId=$programInstance.getProgram().getId()&programStageId=$nextStage.getProgramStage().getId()&programStageInstanceId=$nextStage.getId()&patientId=$patient.getId()&programInstanceId=$programInstance.getId()&orgUnitId=0"> - Next: $nextStage.getProgramStage().getName()</a>
@@ -39,6 +42,7 @@
 		#if($patient.getPhoneNumber())
 			<li><strong>$i18n.getString("phone_number"):</strong>  $patient.getPhoneNumber()</li>
 		#end
+		<li><strong>$i18n.getString("orgunit"):</strong>  $patient.getOrganisationUnit().getName() <a href="showPatientLocationForm.action?patientId=$patient.id">[$i18n.getString("change")]</a></li>
 		#foreach($patientIdentifier in $patientIdentifiers)
 			#if($patientIdentifier.getIdentifierType())
 				<li><strong>$patientIdentifier.getIdentifierType().getName():</strong>  $patientIdentifier.getIdentifier()</li>

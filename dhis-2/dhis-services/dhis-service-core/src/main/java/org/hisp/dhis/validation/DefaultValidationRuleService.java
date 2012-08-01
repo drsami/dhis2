@@ -27,7 +27,11 @@ package org.hisp.dhis.validation;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static org.hisp.dhis.i18n.I18nUtils.*;
+import static org.hisp.dhis.i18n.I18nUtils.getCountByName;
+import static org.hisp.dhis.i18n.I18nUtils.getObjectsBetween;
+import static org.hisp.dhis.i18n.I18nUtils.getObjectsBetweenByName;
+import static org.hisp.dhis.i18n.I18nUtils.getObjectsByName;
+import static org.hisp.dhis.i18n.I18nUtils.i18n;
 import static org.hisp.dhis.system.util.MathUtils.expressionIsTrue;
 import static org.hisp.dhis.system.util.MathUtils.getRounded;
 
@@ -142,7 +146,7 @@ public class DefaultValidationRuleService
     // -------------------------------------------------------------------------
 
     // -------------------------------------------------------------------------
-    // Aggregate
+    // Aggregate TODO remove
     // -------------------------------------------------------------------------
 
     public Grid getAggregateValidationResult( Collection<ValidationResult> results, List<Period> periods,
@@ -373,11 +377,11 @@ public class DefaultValidationRuleService
                 if ( validationRule.getPeriodType() != null
                     && validationRule.getPeriodType().equals( period.getPeriodType() ) )
                 {
-                    leftSide = expressionService.getExpressionValue( validationRule.getLeftSide(), valueMap, constantMap, null, true );
+                    leftSide = expressionService.getExpressionValue( validationRule.getLeftSide(), valueMap, constantMap, null );
 
                     if ( leftSide != null )
                     {
-                        rightSide = expressionService.getExpressionValue( validationRule.getRightSide(), valueMap, constantMap, null, true );
+                        rightSide = expressionService.getExpressionValue( validationRule.getRightSide(), valueMap, constantMap, null );
 
                         if ( rightSide != null )
                         {

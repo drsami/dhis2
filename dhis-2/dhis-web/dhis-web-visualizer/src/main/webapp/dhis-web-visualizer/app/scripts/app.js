@@ -190,15 +190,16 @@ DV.conf = {
     },
     period: {
 		relativeperiodunits: {
+			reportingMonth: 1,
+			last3Months: 3,
+			last12Months: 12,
+			reportingQuarter: 1,
+			last4Quarters: 4,
 			lastSixMonth: 1,
+			last2SixMonths: 2,
 			thisYear: 1,
 			lastYear: 1,
-			last5Years: 5,
-			last12Months: 12,
-			last4Quarters: 4,
-			last2SixMonths: 2,
-			reportingMonth: 1,
-			reportingQuarter: 1
+			last5Years: 5
 		},
 		periodtypes: [
 			{id: 'Daily', name: 'Daily'},
@@ -242,7 +243,7 @@ DV.conf = {
         west_maxheight_accordion_indicator: 478,
         west_maxheight_accordion_dataelement: 478,
         west_maxheight_accordion_dataset: 478,
-        west_maxheight_accordion_relativeperiod: 396,
+        west_maxheight_accordion_relativeperiod: 423,
         west_maxheight_accordion_fixedperiod: 478,
         west_maxheight_accordion_organisationunit: 756,
         west_maxheight_accordion_organisationunitgroup: 298,
@@ -1053,7 +1054,7 @@ Ext.onReady( function() {
                     return [
                         {
                             type: 'text',
-                            text: DV.c.filter.names[0],
+                            text: DV.c.currentFavorite ? DV.c.currentFavorite.name + ' (' + DV.c.filter.names[0] + ')' : DV.c.filter.names[0],
                             font: 'bold 15px ' + DV.conf.chart.style.font,
                             fill: '#222',
                             width: 300,
@@ -1165,13 +1166,33 @@ Ext.onReady( function() {
         },
         checkbox: {
             setRelativePeriods: function(rp) {
-                for (var r in rp) {
-                    var cmp = DV.util.getCmp('checkbox[paramName="' + r + '"]');
-                    if (cmp) {
-                        cmp.setValue(rp[r]);
-                    }
-                }
-            }
+				if (rp) {
+					for (var r in rp) {
+						var cmp = DV.util.getCmp('checkbox[paramName="' + r + '"]');
+						if (cmp) {
+							cmp.setValue(rp[r]);
+						}
+					}
+				}
+				else {
+					DV.util.checkbox.setAllFalse();
+				}
+            },
+            setAllFalse: function() {
+				var a = DV.cmp.dimension.relativeperiod.checkbox;				
+				for (var i = 0; i < a.length; i++) {
+					a[i].setValue(false);
+				}
+			},
+			isAllFalse: function() {
+				var a = DV.cmp.dimension.relativeperiod.checkbox;				
+				for (var i = 0; i < a.length; i++) {
+					if (a[i].getValue()) {
+						return false;
+					}
+				}
+				return true;
+			}				
         },
         toolbar: {
 			separator: {
@@ -1554,6 +1575,7 @@ Ext.onReady( function() {
 		setChart: function(exe, id) {
 			DV.chart.reset();
 			
+			
 			if (id) {
                 Ext.Ajax.request({
                     url: DV.conf.finals.ajax.path_api + DV.conf.finals.ajax.favorite_get + id + '.json?links=false&paging=false',
@@ -1563,7 +1585,8 @@ Ext.onReady( function() {
 							return;
 						}
 						
-						var f = Ext.JSON.decode(r.responseText);
+						var f = Ext.JSON.decode(r.responseText),
+							expand = true;
 						
 						if (!this.validation.favorite(f)) {
 							return;
@@ -1584,28 +1607,41 @@ Ext.onReady( function() {
                         if (f.indicators) {
 							for (var i = 0; i < f.indicators.length; i++) {
 								DV.c.indicator.records.push({id: f.indicators[i].id, name: DV.conf.util.jsonEncodeString(f.indicators[i].name)});
+							}							
+							if (DV.init.cmd && expand) {
+								DV.cmp.dimension.indicator.panel.expand();
+								expand = false;
 							}
 						}
 						
 						if (f.dataElements) {
 							for (var i = 0; i < f.dataElements.length; i++) {
 								DV.c.dataelement.records.push({id: f.dataElements[i].id, name: DV.conf.util.jsonEncodeString(f.dataElements[i].name)});
+							}						
+							if (DV.init.cmd && expand) {
+								DV.cmp.dimension.dataelement.panel.expand();
+								expand = false;
 							}
 						}
 						
 						if (f.dataSets) {
 							for (var i = 0; i < f.dataSets.length; i++) {
 								DV.c.dataset.records.push({id: f.dataSets[i].id, name: DV.conf.util.jsonEncodeString(f.dataSets[i].name)});
+							}						
+							if (DV.init.cmd && expand) {
+								DV.cmp.dimension.dataset.panel.expand();
+								expand = false;
 							}
 						}
 						
 						DV.c.relativeperiod.rp = f.relativePeriods;
+						DV.c.relativeperiod.rewind = f.rewindRelativePeriods;
 						
 						if (f.periods) {
 							for (var i = 0; i < f.periods.length; i++) {
 								DV.c.fixedperiod.records.push({id: f.periods[i].id, name: DV.conf.util.jsonEncodeString(f.periods[i].name)});
 							}
-						}							
+						}
 						
 						for (var i = 0; i < f.organisationUnits.length; i++) {
 							DV.c.organisationunit.records.push({id: f.organisationUnits[i].id, name: DV.conf.util.jsonEncodeString(f.organisationUnits[i].name)});
@@ -1640,6 +1676,8 @@ Ext.onReady( function() {
 				DV.c.dataelement.records = DV.util.dimension.dataelement.getRecords();
 				DV.c.dataset.records = DV.util.dimension.dataset.getRecords();
 				DV.c.relativeperiod.rp = DV.util.dimension.relativeperiod.getRelativePeriodObject();
+				DV.c.relativeperiod.rewind = DV.cmp.dimension.relativeperiod.rewind.isDisabled() ?
+					false : DV.cmp.dimension.relativeperiod.rewind.getValue();
 				DV.c.fixedperiod.records = DV.util.dimension.fixedperiod.getRecords();
 				DV.c.organisationunit.records = DV.util.dimension.organisationunit.getRecords();
 				DV.c.organisationunit.groupsetid = DV.util.dimension.organisationunit.getGroupSetId();
@@ -1696,7 +1734,6 @@ Ext.onReady( function() {
             }
         },
         setOptions: function() {
-			DV.c.relativeperiod.rewind = DV.cmp.dimension.relativeperiod.rewind.getValue();
             DV.c.hidesubtitle = DV.cmp.favorite.hidesubtitle.getValue();
             DV.c.hidelegend = DV.cmp.favorite.hidelegend.getValue();
             DV.c.trendline = DV.cmp.favorite.trendline.getValue();
@@ -1744,6 +1781,9 @@ Ext.onReady( function() {
             p.dataElementIds = DV.c.dataelement.ids;
             p.dataSetIds = DV.c.dataset.ids;
             p = Ext.Object.merge(p, DV.c.relativeperiod.rp);
+            if (DV.c.relativeperiod.rewind) {
+				p.rewind = true;
+			}
             p.periodIds = DV.c.fixedperiod.ids;
             p.organisationUnitIds = DV.c.organisationunit.ids;
             if (DV.c.organisationunit.groupsetid) {
@@ -1797,7 +1837,9 @@ Ext.onReady( function() {
 				DV.util.multiselect.filterAvailable(DV.cmp.dimension.dataset.available, DV.cmp.dimension.dataset.selected);
 			}
 			
-			DV.util.checkbox.setRelativePeriods(DV.c.period.rp);
+			DV.util.checkbox.setRelativePeriods(DV.c.relativeperiod.rp);
+			DV.cmp.dimension.relativeperiod.rewind.setValue(DV.c.relativeperiod.rewind);
+			DV.cmp.dimension.relativeperiod.rewind.xable();
 			
 			DV.store.fixedperiod.selected.removeAll();
 			if (DV.c.fixedperiod.records) {
@@ -1985,7 +2027,7 @@ Ext.onReady( function() {
 			render: function() {
 				if (!DV.c.rendered) {
 					DV.cmp.toolbar.datatable.enable();
-					DV.cmp.toolbar.datatable.setTooltip('');
+					DV.cmp.toolbar.datatable.disabledTooltip.destroy();
 					DV.c.rendered = true;
 				}
 			},
@@ -2089,8 +2131,8 @@ Ext.onReady( function() {
 			dataelement: {},
 			dataset: {},
 			relativeperiod: {},
-			rewind: false,
 			fixedperiod: {},
+			period: {},
 			organisationunit: {},
 			hidesubtitle: false,
 			hidelegend: false,
@@ -2493,6 +2535,12 @@ Ext.onReady( function() {
                                 afterrender: function(b) {
                                     if (b.xtype === 'button') {
                                         DV.cmp.charttype.push(b);
+                                        
+										Ext.create('Ext.tip.ToolTip', {
+											target: b.getEl(),
+											html: b.tooltiptext,
+											'anchor': 'bottom'
+										});
                                     }
                                 }
                             }
@@ -2507,51 +2555,44 @@ Ext.onReady( function() {
 								xtype: 'button',
                                 icon: 'images/column.png',
                                 name: DV.conf.finals.chart.column,
-                                tooltip: DV.i18n.column_chart,
-								width: 40,
+                                tooltiptext: DV.i18n.column_chart,
                                 pressed: true
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/column-stacked.png',
                                 name: DV.conf.finals.chart.stackedcolumn,
-                                tooltip: DV.i18n.stacked_column_chart,
-								width: 40
+                                tooltiptext: DV.i18n.stacked_column_chart
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/bar.png',
                                 name: DV.conf.finals.chart.bar,
-                                tooltip: DV.i18n.bar_chart,
-								width: 40
+                                tooltiptext: DV.i18n.bar_chart
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/bar-stacked.png',
                                 name: DV.conf.finals.chart.stackedbar,
-                                tooltip: DV.i18n.stacked_bar_chart,
-								width: 40
+                                tooltiptext: DV.i18n.stacked_bar_chart
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/line.png',
                                 name: DV.conf.finals.chart.line,
-                                tooltip: DV.i18n.line_chart,
-								width: 40
+                                tooltiptext: DV.i18n.line_chart
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/area.png',
                                 name: DV.conf.finals.chart.area,
-                                tooltip: DV.i18n.area_chart,
-								width: 40
+                                tooltiptext: DV.i18n.area_chart
                             },
                             {
 								xtype: 'button',
                                 icon: 'images/pie.png',
                                 name: DV.conf.finals.chart.pie,
-                                tooltip: DV.i18n.pie_chart,
-								width: 40
+                                tooltiptext: DV.i18n.pie_chart
                             }
                         ]
                     },
@@ -3158,6 +3199,9 @@ Ext.onReady( function() {
 																	if (chb.xtype === 'checkbox') {
 																		DV.cmp.dimension.relativeperiod.checkbox.push(chb);
 																	}
+																},
+																change: function() {
+																	DV.cmp.dimension.relativeperiod.rewind.xable();
 																}
 															}
 														},
@@ -3171,6 +3215,11 @@ Ext.onReady( function() {
 																xtype: 'checkbox',
 																paramName: 'reportingMonth',
 																boxLabel: DV.i18n.last_month
+															},
+															{
+																xtype: 'checkbox',
+																paramName: 'last3Months',
+																boxLabel: DV.i18n.last_3_months
 															},
 															{
 																xtype: 'checkbox',
@@ -3191,6 +3240,9 @@ Ext.onReady( function() {
 																	if (chb.xtype === 'checkbox') {
 																		DV.cmp.dimension.relativeperiod.checkbox.push(chb);
 																	}
+																},
+																change: function() {
+																	DV.cmp.dimension.relativeperiod.rewind.xable();
 																}
 															}
 														},
@@ -3223,6 +3275,9 @@ Ext.onReady( function() {
 																	if (chb.xtype === 'checkbox') {
 																		DV.cmp.dimension.relativeperiod.checkbox.push(chb);
 																	}
+																},
+																change: function() {
+																	DV.cmp.dimension.relativeperiod.rewind.xable();
 																}
 															}
 														},
@@ -3262,6 +3317,9 @@ Ext.onReady( function() {
 																	if (chb.xtype === 'checkbox') {
 																		DV.cmp.dimension.relativeperiod.checkbox.push(chb);
 																	}
+																},
+																change: function() {
+																	DV.cmp.dimension.relativeperiod.rewind.xable();
 																}
 															}
 														},
@@ -3299,13 +3357,15 @@ Ext.onReady( function() {
 															{
 																xtype: 'label',
 																text: 'Options',
-																cls: 'dv-label-period-heading',
-																style: 'color:#666'
+																cls: 'dv-label-period-heading-options'
 															},
 															{
 																xtype: 'checkbox',
 																paramName: 'rewind',
 																boxLabel: 'Rewind one period',
+																xable: function() {
+																	this.setDisabled(DV.util.checkbox.isAllFalse());
+																},
 																listeners: {
 																	added: function() {
 																		DV.cmp.dimension.relativeperiod.rewind = this;
@@ -3444,7 +3504,7 @@ Ext.onReady( function() {
 														width: (DV.conf.layout.west_fieldset_width - DV.conf.layout.west_width_subtractor) / 2,
 														displayField: 'name',
 														valueField: 'id',
-														ddReorder: true,
+														ddReorder: false,
 														queryMode: 'local',
 														store: DV.store.fixedperiod.selected,
 														tbar: [
@@ -4692,17 +4752,27 @@ Ext.onReady( function() {
 							xable: function() {
 								if (DV.c.currentFavorite) {
 									this.enable();
-									this.setTooltip('');
+									this.disabledTooltip.destroy();
 								}
 								else {
-									this.disable();
-									this.setTooltip(DV.i18n.save_load_favorite_before_sharing);
+									if (DV.c.rendered) {
+										this.disable();
+										this.createTooltip();
+									}
 								}
 							},
 							getTitle: function() {
 								return DV.i18n.share + ' ' + DV.i18n.interpretation +
 										': <span style="font-weight:normal; font-size:10px">' + DV.c.currentFavorite.name + '</span>';
 							},
+							disabledTooltip: null,
+							createTooltip: function() {
+								this.disabledTooltip = Ext.create('Ext.tip.ToolTip', {
+									target: this.getEl(),
+									html: DV.i18n.save_load_favorite_before_sharing,
+									'anchor': 'bottom'
+								});
+							},								
 							handler: function() {
 								if (DV.cmp.share.window) {
 									DV.cmp.share.window.setTitle(this.getTitle());
@@ -4784,7 +4854,10 @@ Ext.onReady( function() {
                             listeners: {
                                 added: function() {
                                     DV.cmp.toolbar.share = this;
-                                }
+                                },
+                                afterrender: function() {
+									this.createTooltip();
+								}
                             }
 						},
                         {
@@ -4846,7 +4919,6 @@ Ext.onReady( function() {
 							cls: 'dv-toolbar-btn-2',
                             text: DV.i18n.data_table,
                             disabled: true,
-                            tooltip: DV.i18n.create_chart_before_datatable,
                             handler: function() {
                                 var p = DV.cmp.region.east;
                                 if (p.collapsed && p.items.length) {
@@ -4862,7 +4934,14 @@ Ext.onReady( function() {
                             listeners: {
                                 added: function() {
                                     DV.cmp.toolbar.datatable = this;
-                                }
+                                },
+                                afterrender: function() {
+									this.disabledTooltip = Ext.create('Ext.tip.ToolTip', {
+										target: this.getEl(),
+										html: DV.i18n.create_chart_before_datatable,
+										'anchor': 'bottom'
+									});
+								}
                             }
                         },
                         '->',

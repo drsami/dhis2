@@ -1,4 +1,4 @@
-package org.hisp.dhis.dialect;
+package org.hisp.dhis.jdbc.batchhandler;
 
 /*
  * Copyright (c) 2004-2012, University of Oslo
@@ -27,24 +27,19 @@ package org.hisp.dhis.dialect;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.hibernate.dialect.DerbyDialect;
-import org.hibernate.id.IdentityGenerator;
+import org.amplecode.quick.JdbcConfiguration;
 
-/**
- * @author Lars Helge Overland
- * @version $Id$
- */
-public class IdentityDerbyDialect
-    extends DerbyDialect
+public class AggregatedIndicatorValueTempBatchHandler
+    extends AggregatedIndicatorValueBatchHandler
 {
-    public IdentityDerbyDialect()
+    public AggregatedIndicatorValueTempBatchHandler( JdbcConfiguration config )
     {
-        super();
+        super( config );
     }
-    
+
     @Override
-    public Class<?> getNativeIdentifierGeneratorClass() 
+    protected void setTableName()
     {
-        return IdentityGenerator.class;
+        statementBuilder.setTableName( "aggregatedindicatorvalue_temp" );
     }
 }

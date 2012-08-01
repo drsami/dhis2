@@ -1,21 +1,30 @@
+#set($noIden = $identifierTypes.size() )
+#set($noOtherGroup = $noGroupAttributes.size() )
+#set($noGroup = $attributeGroups.size() )
 #if( $programInstance || $hasDataEntry=='true')
 <input type='hidden' id='programInstanceId' name='programInstanceId' value='$programInstance.id' />
 <div id="tabs">
 	<ul>
-		<li><a href="#tab-1">$i18n.getString("identifier_and_attribute")</a></li>
-		<li><a href="#tab-2">$i18n.getString("modify_due_date_or_visit_date")</a></li>
-		<li><a href="#tab-3">$i18n.getString("data_entry_screen")</a></li>
+		<li><a href="#tab-1">$i18n.getString("data_entry_screen")</a></li>
+		<li><a href="#tab-2">$i18n.getString("identifier_and_attribute")</a></li>
+		<li><a href="#tab-3">$i18n.getString("modify_due_date_or_visit_date")</a></li>
 	</ul>
 	
-	<!-- Enroll program TAB -->
+	
 	<div id="tab-1">
+		<div id='dataRecordingSelectDiv' class='hidden'></div>
+		<div id='dataEntryFormDiv' class='hidden'></div>
+	</div>
+	
+	<!-- Enroll program TAB -->
+	<div id="tab-2">
 		<form id='programEnrollmentInforForm' name='programEnrollmentInforForm' action='#' method="POST" >
-			#if( $identifierTypes.size() > 0 || $noGroupAttributes.size() > 0 || $attributeGroups.size() > 0 )
+			#if( $noIden > 0 || $noOtherGroup > 0 || $noGroup > 0 )
 				<input type='hidden' id='programId' name='programId' value='$programInstance.program.id'>
 				<input type='hidden' id='patientId' name='patientId' value='$programInstance.patient.id'>
 				<!-- IDENTIFIERS -->
 				<table id='enrollmentInforDiv' name='enrollmentInforDiv' class='mainPageTable' >
-					#if( $identifierTypes.size() > 0 )
+					#if( $noIden > 0 )
 					<tr>
 						<th colspan='2'>$i18n.getString( "identifier" )</th> 
 					</tr>
@@ -77,7 +86,7 @@
 
 				<!-- ATTRIBUTES NOT IN GROUPS -->
 
-				#if ( $noGroupAttributes && $noGroupAttributes.size() > 0) 	
+				#if ( $noGroupAttributes && $noOtherGroup > 0) 	
 					<tr><th colspan="2" class="heading-column">$i18n.getString( "Other details" )</th></tr>
 					#set( $mark = false )
 					#foreach($attribute in $noGroupAttributes )
@@ -125,7 +134,7 @@
 	</div>
 
 	<!-- Program-stage-instance TAB -->
-	<div id="tab-2">
+	<div id="tab-3">
 		#if( $programStageInstances.size() > 0 )
 			<table class='mainPageTable' id='progarmStageListDiv' name='progarmStageListDiv' >
 				<col id="noCol">
@@ -166,11 +175,6 @@
 		#end
 	</div>
 
-	<div id="tab-3">
-		<div id='dataRecordingSelectDiv' class='hidden'></div>
-		<div id='dataEntryFormDiv' class='hidden'></div>
-	</div>
-	
 </div>	
 
 #end
@@ -190,21 +194,22 @@
 	#if( $programInstance || $hasDataEntry == 'true')
 		$('#tabs').tabs();
 		
-		#if( $hasDataEntry == 'true' )
-			showSelectedDataRecoding( getFieldValue('patientId') );
-		#else
-			$( "#tabs" ).tabs( "option", "disabled", [2] );
+		#if( $programInstance.program.type!='1' )
 			$("#tabs").tabs("remove", 2);
 		#end
 		
-		#if( $programInstance.program.type!='1' )
+		#if( $noIden > 0 || $noOtherGroup > 0 || $noGroup > 0 )
+			$( "#tabs" ).tabs( "option", "selected", 1 );
+		#else
+			$( "#tabs" ).tabs( "option", "selected", 2 );
 			$("#tabs").tabs("remove", 1);
 		#end
 		
-		#if( $identifierTypes.size() > 0 || $noGroupAttributes.size() > 0 || $attributeGroups.size() > 0 )
+		#if( $hasDataEntry == 'true' )
+			showSelectedDataRecoding( getFieldValue('patientId') );
 			$( "#tabs" ).tabs( "option", "selected", 0 );
 		#else
-			$( "#tabs" ).tabs( "option", "selected", 1 );
+			$( "#tabs" ).tabs( "option", "disabled", [0] );
 			$("#tabs").tabs("remove", 0);
 		#end
 	#end

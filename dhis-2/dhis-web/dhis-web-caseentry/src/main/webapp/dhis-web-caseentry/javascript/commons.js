@@ -156,6 +156,13 @@ function getAgeTextBox( container )
 	return ageField;
 }
 
+function getDateField( container )
+{
+	var dateField = '<select id="dateOperator" name="dateOperator" style="width:30px"><option value=">"> > </option><option value=">="> >= </option><option value="="> = </option><option value="<"> < </option><option value="<="> <= </option></select>';
+	dateField += '<input type="text" id="searchText_' + container + '" name="searchText" maxlength="30" style="width:18em" onkeyup="searchPatientsOnKeyUp( event );">';
+	return dateField;
+}
+
 //-----------------------------------------------------------------------------
 // Search Patient
 //-----------------------------------------------------------------------------
@@ -198,7 +205,7 @@ function validateAdvancedSearch()
 			var dateOperator = "";
 			jQuery( this ).find(':input').each( function( idx, item ){
 				if( idx == 0){
-					params += "searchTexts=" + item.value;
+					params += "&searchTexts=" + item.value;
 				}
 				else if( item.name == 'dateOperator'){
 					dateOperator = item.value;
@@ -401,4 +408,25 @@ function checkDuplicateCompleted( messageElement, divname )
     {
     	showListPatientDuplicate( messageElement, true );
     }
+}
+
+function enableBtn(){
+	var programIdAddPatient = getFieldValue('programIdAddPatient');
+	if( programIdAddPatient!='' ){
+		enable('listPatientBtn');
+		enable('addPatientBtn');
+		enable('advancedSearchBtn');
+	}
+}
+
+function showColorHelp()
+{
+	jQuery('#colorHelpDiv').dialog({
+		title: i18n_color_quick_help,
+		maximize: true, 
+		closable: true,
+		modal:false,
+		width: 500,
+		height: 180
+	}).show('fast');
 }

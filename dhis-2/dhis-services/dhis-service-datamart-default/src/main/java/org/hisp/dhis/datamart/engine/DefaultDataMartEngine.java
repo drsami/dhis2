@@ -27,9 +27,9 @@ package org.hisp.dhis.datamart.engine;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import static org.hisp.dhis.scheduling.TaskCategory.DATAMART;
 import static org.hisp.dhis.setting.SystemSettingManager.DEFAULT_ORGUNITGROUPSET_AGG_LEVEL;
 import static org.hisp.dhis.setting.SystemSettingManager.KEY_ORGUNITGROUPSET_AGG_LEVEL;
-import static org.hisp.dhis.scheduling.TaskCategory.DATAMART;
 import static org.hisp.dhis.system.notification.NotificationLevel.INFO;
 
 import java.util.ArrayList;
@@ -40,24 +40,23 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import org.hisp.dhis.aggregation.AggregatedDataValueService;
-import org.hisp.dhis.aggregation.AggregatedOrgUnitDataValueService;
 import org.hisp.dhis.dataelement.DataElement;
 import org.hisp.dhis.dataelement.DataElementCategoryService;
 import org.hisp.dhis.dataelement.DataElementOperand;
 import org.hisp.dhis.dataelement.DataElementService;
 import org.hisp.dhis.datamart.DataElementOperandList;
 import org.hisp.dhis.datamart.DataMartEngine;
+import org.hisp.dhis.datamart.DataMartManager;
 import org.hisp.dhis.datamart.crosstab.CrossTabService;
 import org.hisp.dhis.datamart.dataelement.DataElementDataMart;
 import org.hisp.dhis.datamart.indicator.IndicatorDataMart;
 import org.hisp.dhis.expression.ExpressionService;
 import org.hisp.dhis.indicator.Indicator;
 import org.hisp.dhis.indicator.IndicatorService;
-import org.hisp.dhis.jdbc.batchhandler.AggregatedDataValueBatchHandler;
-import org.hisp.dhis.jdbc.batchhandler.AggregatedIndicatorValueBatchHandler;
-import org.hisp.dhis.jdbc.batchhandler.AggregatedOrgUnitDataValueBatchHandler;
-import org.hisp.dhis.jdbc.batchhandler.AggregatedOrgUnitIndicatorValueBatchHandler;
+import org.hisp.dhis.jdbc.batchhandler.AggregatedDataValueTempBatchHandler;
+import org.hisp.dhis.jdbc.batchhandler.AggregatedIndicatorValueTempBatchHandler;
+import org.hisp.dhis.jdbc.batchhandler.AggregatedOrgUnitDataValueTempBatchHandler;
+import org.hisp.dhis.jdbc.batchhandler.AggregatedOrgUnitIndicatorValueTempBatchHandler;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroup;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupService;
@@ -90,18 +89,11 @@ public class DefaultDataMartEngine
     // Dependencies
     // -------------------------------------------------------------------------
 
-    private AggregatedDataValueService aggregatedDataValueService;
+    private DataMartManager dataMartManager;
 
-    public void setAggregatedDataValueService( AggregatedDataValueService aggregatedDataValueService )
+    public void setDataMartManager( DataMartManager dataMartManager )
     {
-        this.aggregatedDataValueService = aggregatedDataValueService;
-    }
-    
-    private AggregatedOrgUnitDataValueService aggregatedOrgUnitDataValueService;
-
-    public void setAggregatedOrgUnitDataValueService( AggregatedOrgUnitDataValueService aggregatedOrgUnitDataValueService )
-    {
-        this.aggregatedOrgUnitDataValueService = aggregatedOrgUnitDataValueService;
+        this.dataMartManager = dataMartManager;
     }
 
     private CrossTabService crossTabService;
@@ -209,6 +201,15 @@ public class DefaultDataMartEngine
         notifier.clear( id, DATAMART ).notify( id, DATAMART, "Data mart export process started" );
 
         // ---------------------------------------------------------------------
+        // Recreate temporary tables
+        // ---------------------------------------------------------------------
+
+        dataMartManager.dropTempAggregatedTables();
+        dataMartManager.createTempAggregatedTables();
+        
+        clock.logTime( "Recreated temporary tables" );
+        
+        // ---------------------------------------------------------------------
         // Replace null with empty collection
         // ---------------------------------------------------------------------
 
@@ -286,7 +287,7 @@ public class DefaultDataMartEngine
         // Remove operands without data
         // ---------------------------------------------------------------------
 
-        allOperands = crossTabService.getOperandsWithData( allOperands );
+        allOperands = dataMartManager.getOperandsWithData( allOperands );
 
         indicatorOperands.retainAll( allOperands );
         
@@ -315,37 +316,19 @@ public class DefaultDataMartEngine
         
         clock.logTime( "Populated crosstab table, " + SystemUtils.getMemoryString() );
 
+        final boolean isIndicators = indicators != null && indicators.size() > 0;
+        
         // ---------------------------------------------------------------------
         // 1. Create aggregated data cache
         // ---------------------------------------------------------------------
 
-        final boolean isIndicators = indicators != null && indicators.size() > 0;
-        
         crossTabService.createAggregatedDataCache( indicatorOperands, key );
         
         clock.logTime( "Created aggregated data cache, number of indicator operands: " + indicatorOperands.size() + ", operands with data: " + allOperands.size() );
-        notifier.notify( id, DATAMART, "Dropping database indexes" );
+        notifier.notify( id, DATAMART, "Exporting data for data element data" );
         
         // ---------------------------------------------------------------------
-        // 2. Drop potential indexes
-        // ---------------------------------------------------------------------
-
-        aggregatedDataValueService.dropIndex( true, isIndicators );
-        
-        clock.logTime( "Dropped potential indexes" );
-        notifier.notify( id, DATAMART, "Deleting existing data element data" );
-        
-        // ---------------------------------------------------------------------
-        // 3. Delete existing aggregated datavalues
-        // ---------------------------------------------------------------------
-
-        aggregatedDataValueService.deleteAggregatedDataValues( periodIds );
-        
-        clock.logTime( "Deleted existing aggregated datavalues" );
-        notifier.notify( id, DATAMART, "Exporting data for data elements" );
-        
-        // ---------------------------------------------------------------------
-        // 4. Export data element values
+        // 2. Export data element values
         // ---------------------------------------------------------------------
 
         List<List<OrganisationUnit>> organisationUnitPages = new PaginatedList<OrganisationUnit>( organisationUnits ).setNumberOfPages( cpuCores ).getPages();
@@ -359,26 +342,53 @@ public class DefaultDataMartEngine
             for ( List<OrganisationUnit> organisationUnitPage : organisationUnitPages )
             {
                 futures.add( dataElementDataMart.exportDataValues( allOperands, periods, organisationUnitPage, 
-                    null, new DataElementOperandList( indicatorOperands ), hierarchy, AggregatedDataValueBatchHandler.class, key ) );
+                    null, new DataElementOperandList( indicatorOperands ), hierarchy, AggregatedDataValueTempBatchHandler.class, key ) );
             }
 
             ConcurrentUtils.waitForCompletion( futures );
         }
         
         clock.logTime( "Exported values for data element operands (" + allOperands.size() + "), pages: " + organisationUnitPages.size() + ", " + SystemUtils.getMemoryString() );
-        notifier.notify( id, DATAMART, "Deleting existing indicator data" );
-        
+        notifier.notify( id, DATAMART, "Dropping data element index" );
+
         // ---------------------------------------------------------------------
-        // 5. Delete existing aggregated indicatorvalues
+        // 3. Drop data element index
         // ---------------------------------------------------------------------
 
-        aggregatedDataValueService.deleteAggregatedIndicatorValues( periodIds );
+        dataMartManager.dropDataValueIndex();
         
-        clock.logTime( "Deleted existing aggregated indicatorvalues" );
-        notifier.notify( id, DATAMART, "Exporting data for indicators" );
+        clock.logTime( "Dropped data element index" );
+        notifier.notify( id, DATAMART, "Deleting existing data element data" );
         
         // ---------------------------------------------------------------------
-        // 6. Export indicator values
+        // 4. Delete existing aggregated data values
+        // ---------------------------------------------------------------------
+
+        dataMartManager.deleteAggregatedDataValues( periodIds );
+        
+        clock.logTime( "Deleted existing data element data" );
+        notifier.notify( id, DATAMART, "Copying data element data from temporary table" );
+
+        // ---------------------------------------------------------------------
+        // 5. Copy aggregated data values from temporary table
+        // ---------------------------------------------------------------------
+
+        dataMartManager.copyAggregatedDataValuesFromTemp();
+        
+        clock.logTime( "Copied data element data from temporary table" );
+        notifier.notify( id, DATAMART, "Exporting data for indicator data" );
+
+        // ---------------------------------------------------------------------
+        // 6. Create data element index
+        // ---------------------------------------------------------------------
+
+        dataMartManager.createDataValueIndex();
+
+        clock.logTime( "Created data element index" );
+        notifier.notify( id, DATAMART, "Exporting data for indicator data" );
+        
+        // ---------------------------------------------------------------------
+        // 7. Export indicator values
         // ---------------------------------------------------------------------
 
         if ( isIndicators )
@@ -388,30 +398,50 @@ public class DefaultDataMartEngine
             for ( List<OrganisationUnit> organisationUnitPage : organisationUnitPages )
             {
                 futures.add( indicatorDataMart.exportIndicatorValues( indicators, periods, organisationUnitPage,
-                    null, indicatorOperands, AggregatedIndicatorValueBatchHandler.class, key ) );
+                    null, indicatorOperands, AggregatedIndicatorValueTempBatchHandler.class, key ) );
             }
 
             ConcurrentUtils.waitForCompletion( futures );
         }
         
         clock.logTime( "Exported values for indicators (" + indicators.size() + "), pages: " + organisationUnitPages.size() + ", " + SystemUtils.getMemoryString() );
-        notifier.notify( id, DATAMART, "Creating database indexes" );
-
+        notifier.notify( id, DATAMART, "Dropping indicator index" );
+        
         // ---------------------------------------------------------------------
-        // 7. Drop aggregated data cache
+        // 8. Drop aggregated data cache and indicator index
         // ---------------------------------------------------------------------
 
         crossTabService.dropAggregatedDataCache( key );
-        
-        clock.logTime( "Dropped aggregated data cache, " + SystemUtils.getMemoryString() );
+        dataMartManager.dropIndicatorValueIndex();
+
+        clock.logTime( "Dropped indicator index, " + SystemUtils.getMemoryString() );
+        notifier.notify( id, DATAMART, "Deleting existing indicator data" );
 
         // ---------------------------------------------------------------------
-        // 8. Create potential indexes
+        // 9. Delete existing aggregated indicator values
+        // ---------------------------------------------------------------------
+
+        dataMartManager.deleteAggregatedIndicatorValues( periodIds );
+        
+        clock.logTime( "Deleted existing indicator data" );
+        notifier.notify( id, DATAMART, "Copying indicator data from temporary table" );
+
+        // ---------------------------------------------------------------------
+        // 10. Copy aggregated data values from temporary table
+        // ---------------------------------------------------------------------
+
+        dataMartManager.copyAggregatedIndicatorValuesFromTemp();
+        
+        clock.logTime( "Copied aggregated indicator data from temporary table" );
+        notifier.notify( id, DATAMART, "Creating indexes" );
+        
+        // ---------------------------------------------------------------------
+        // 11. Create indicator index
         // ---------------------------------------------------------------------
         
-        aggregatedDataValueService.createIndex( true, isIndicators );
+        dataMartManager.createIndicatorValueIndex();
         
-        clock.logTime( "Created indexes" );        
+        clock.logTime( "Created indicator index" );        
         clock.logTime( "Aggregated data export done" );
         
         final boolean isGroups = organisationUnitGroups != null && organisationUnitGroups.size() > 0;
@@ -427,28 +457,10 @@ public class DefaultDataMartEngine
             crossTabService.createAggregatedOrgUnitDataCache( indicatorOperands, key );
             
             clock.logTime( "Created aggregated org unit data cache" );
-            notifier.notify( id, DATAMART, "Dropping database indexes" );
+            notifier.notify( id, DATAMART, "Exporting org unit data element data" );
             
-            // -----------------------------------------------------------------
-            // 2. Drop potential indexes
-            // -----------------------------------------------------------------
-
-            aggregatedOrgUnitDataValueService.dropIndex( true, isIndicators );
-
-            clock.logTime( "Dropped potential org unit indexes" );
-            notifier.notify( id, DATAMART, "Deleting existing data element data" );
-
             // ---------------------------------------------------------------------
-            // 3. Delete existing aggregated datavalues
-            // ---------------------------------------------------------------------
-
-            aggregatedOrgUnitDataValueService.deleteAggregatedDataValues( periodIds );
-            
-            clock.logTime( "Deleted existing aggregated org unit datavalues" );
-            notifier.notify( id, DATAMART, "Exporting data for data elements" );
-
-            // ---------------------------------------------------------------------
-            // 4. Export data element values
+            // 2. Export data element values
             // ---------------------------------------------------------------------
 
             Collection<OrganisationUnit> groupOrganisationUnits = new HashSet<OrganisationUnit>( organisationUnits );
@@ -466,24 +478,51 @@ public class DefaultDataMartEngine
                 for ( List<OrganisationUnit> organisationUnitPage : organisationUnitPages )
                 {
                     futures.add( dataElementDataMart.exportDataValues( allOperands, periods, organisationUnitPage, 
-                        organisationUnitGroups, new DataElementOperandList( indicatorOperands ), hierarchy, AggregatedOrgUnitDataValueBatchHandler.class, key ) );
+                        organisationUnitGroups, new DataElementOperandList( indicatorOperands ), hierarchy, AggregatedOrgUnitDataValueTempBatchHandler.class, key ) );
                 }
 
                 ConcurrentUtils.waitForCompletion( futures );
             }
             
             clock.logTime( "Exported values for data element operands (" + allOperands.size() + "), pages: " + organisationUnitPages.size()  + ", " + SystemUtils.getMemoryString() );
-            notifier.notify( id, DATAMART, "Deleting existing indicator data" );
-            
+            notifier.notify( id, DATAMART, "Dropping data element data indexes" );
+
+            // -----------------------------------------------------------------
+            // 3. Drop potential indexes
+            // -----------------------------------------------------------------
+
+            dataMartManager.dropOrgUnitDataValueIndex();
+
+            clock.logTime( "Dropped org unit data element index" );
+            notifier.notify( id, DATAMART, "Deleting existing data element data" );
+
             // ---------------------------------------------------------------------
-            // 5. Delete existing aggregated indicatorvalues
+            // 4. Delete existing aggregated data values
             // ---------------------------------------------------------------------
 
-            aggregatedOrgUnitDataValueService.deleteAggregatedIndicatorValues( periodIds );
+            dataMartManager.deleteAggregatedOrgUnitDataValues( periodIds );
             
-            clock.logTime( "Deleted existing aggregated org unit indicatorvalues" );
-            notifier.notify( id, DATAMART, "Exporting data for indicators" );
+            clock.logTime( "Deleted existing aggregated org unit datavalues" );
+            notifier.notify( id, DATAMART, "Copying org unit data element data" );
 
+            // ---------------------------------------------------------------------
+            // 5. Copy aggregated org unit data values from temporary table
+            // ---------------------------------------------------------------------
+
+            dataMartManager.copyAggregatedOrgUnitDataValuesFromTemp();
+            
+            clock.logTime( "Copied aggregated org unit data element data from temporary table" );
+            notifier.notify( id, DATAMART, "Exporting org unit indicator data" );
+
+            // ---------------------------------------------------------------------
+            // 6. Create org unit data element index
+            // ---------------------------------------------------------------------
+
+            dataMartManager.createOrgUnitDataValueIndex();
+
+            clock.logTime( "Created org unit data element index" );
+            notifier.notify( id, DATAMART, "Exporting data for indicator data" );
+            
             // ---------------------------------------------------------------------
             // 6. Export indicator values
             // ---------------------------------------------------------------------
@@ -495,38 +534,58 @@ public class DefaultDataMartEngine
                 for ( List<OrganisationUnit> organisationUnitPage : organisationUnitPages )
                 {
                     futures.add( indicatorDataMart.exportIndicatorValues( indicators, periods, organisationUnitPage,
-                        organisationUnitGroups, indicatorOperands, AggregatedOrgUnitIndicatorValueBatchHandler.class, key ) );
+                        organisationUnitGroups, indicatorOperands, AggregatedOrgUnitIndicatorValueTempBatchHandler.class, key ) );
                 }
 
                 ConcurrentUtils.waitForCompletion( futures );
             }
             
             clock.logTime( "Exported values for indicators (" + indicators.size() + "), pages: " + organisationUnitPages.size() + ", " + SystemUtils.getMemoryString() );
-            notifier.notify( id, DATAMART, "Creating database indexes" );
 
             // ---------------------------------------------------------------------
-            // 7. Drop aggregated data cache
+            // 7. Drop aggregated data cache and indicator index
             // ---------------------------------------------------------------------
 
             crossTabService.dropAggregatedOrgUnitDataCache( key );
+            dataMartManager.dropOrgUnitIndicatorValueIndex();
+                        
+            clock.logTime( "Dropped org unit indicator index, " + SystemUtils.getMemoryString() );
+            notifier.notify( id, DATAMART, "Deleting existing indicator data" );
+
+            // ---------------------------------------------------------------------
+            // 8. Delete existing aggregated indicatorvalues
+            // ---------------------------------------------------------------------
+
+            dataMartManager.deleteAggregatedOrgUnitIndicatorValues( periodIds );
             
-            clock.logTime( "Dropped aggregated org unit data cache, " + SystemUtils.getMemoryString() );
+            clock.logTime( "Deleted existing aggregated org unit indicatorvalues" );
+            notifier.notify( id, DATAMART, "Copying indicator data from temporary table" );
 
             // ---------------------------------------------------------------------
-            // 8. Create potential indexes
+            // 9. Copy aggregated org unit indicator values from temporary table
             // ---------------------------------------------------------------------
 
-            aggregatedOrgUnitDataValueService.createIndex( true, isIndicators );
+            dataMartManager.copyAggregatedOrgUnitIndicatorValuesFromTemp();
+            
+            clock.logTime( "Copied aggregated org unit indicator data from temporary table" );
+            notifier.notify( id, DATAMART, "Creating data element indexes" );
+            
+            // ---------------------------------------------------------------------
+            // 10. Create org unit indicator index
+            // ---------------------------------------------------------------------
+
+            dataMartManager.createOrgUnitIndicatorValueIndex();
             
             clock.logTime( "Created org unit indexes" );
             clock.logTime( "Aggregated organisation unit data export done" );            
         }
 
         // ---------------------------------------------------------------------
-        // Drop crosstab table
+        // Drop crosstab and temporary tables
         // ---------------------------------------------------------------------
 
         crossTabService.dropCrossTabTable( key );
+        dataMartManager.dropTempAggregatedTables();
         
         clock.logTime( "Dropped crosstab table" );
         clock.logTime( "Data mart export process completed" );

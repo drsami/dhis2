@@ -48,6 +48,7 @@ import org.hisp.dhis.organisationunit.OrganisationUnitGroup;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupService;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupSet;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
+import org.hisp.dhis.period.comparator.AscendingPeriodEndDateComparator;
 import org.hisp.dhis.period.Period;
 import org.hisp.dhis.period.PeriodService;
 import org.hisp.dhis.period.PeriodType;
@@ -64,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -133,8 +135,9 @@ public class ChartPluginController
         // Periods
         // ---------------------------------------------------------------------
         
-        List<Period> periods = relativePeriods.getRelativePeriods( null, false, rewind ? 1 : 0 );
-
+        List<Period> periods = rewind ? relativePeriods.getRewindedRelativePeriods() :
+            relativePeriods.getRelativePeriods();
+        
         if ( p != null && p.size() > 0 )
         {
             for ( String iso : p )
@@ -160,6 +163,8 @@ public class ChartPluginController
             ContextUtils.conflictResponse( response, "No valid periods specified" );
             return null;
         }
+        
+        Collections.sort( periods, new AscendingPeriodEndDateComparator() );
 
         for ( Period period : periods )
         {

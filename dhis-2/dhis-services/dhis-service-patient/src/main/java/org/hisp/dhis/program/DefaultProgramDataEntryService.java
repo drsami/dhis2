@@ -276,7 +276,7 @@ public class DefaultProgramDataEntryService
                     {
                         inputHTML += jQueryCalendar;
                     }
-                    
+
                     if ( !programStageInstance.isCompleted() && allowProvidedElsewhere )
                     {
                         // Add ProvidedByOtherFacility checkbox
@@ -289,7 +289,7 @@ public class DefaultProgramDataEntryService
                 // -----------------------------------------------------------
 
                 inputHTML = inputHTML.replace( "$DATAELEMENTID", String.valueOf( dataElementId ) );
-                inputHTML = inputHTML.replace( "$VALUE",dataElementValue );
+                inputHTML = inputHTML.replace( "$VALUE", dataElementValue );
                 inputHTML = inputHTML.replace( "$PROGRAMSTAGEID", String.valueOf( programStageId ) );
                 inputHTML = inputHTML.replace( "$PROGRAMSTAGENAME", programStageName );
                 inputHTML = inputHTML.replace( "$DATAELEMENTNAME", dataElement.getName() );
@@ -532,9 +532,12 @@ public class DefaultProgramDataEntryService
         {
             inputHTML += jsCodeForOnchange;
         }
-
-        if( DataElement.VALUE_TYPE_LONG_TEXT.equals( dataElement.getDetailedTextType() ))
-            inputHTML += " >$VALUE";
+        
+        if ( DataElement.VALUE_TYPE_LONG_TEXT.equals( dataElement.getDetailedTextType() ) )
+        {
+            inputHTML = inputHTML.replaceFirst( "input", "textarea" );
+            inputHTML += " >$VALUE</textarea>";
+        }
         
         return inputHTML;
     }

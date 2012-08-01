@@ -172,6 +172,8 @@ public class RelativePeriods
     private boolean last5Years = false;
 
     private boolean last12Months = false;
+    
+    private boolean last3Months = false;
 
     private boolean last6BiMonths = false;
 
@@ -207,6 +209,7 @@ public class RelativePeriods
      * @param lastYear         last year
      * @param last5Years       last 5 years
      * @param last12Months     last 12 months
+     * @param last3Months      last 3 months
      * @param last6BiMonths    last 6 bi-months
      * @param last4Quarters    last 4 quarters
      * @param last2SixMonths   last 2 six-months
@@ -214,7 +217,7 @@ public class RelativePeriods
     public RelativePeriods( boolean reportingMonth, boolean reportingBimonth, boolean reportingQuarter, boolean lastSixMonth,
                             boolean monthsThisYear, boolean quartersThisYear, boolean thisYear,
                             boolean monthsLastYear, boolean quartersLastYear, boolean lastYear, boolean last5Years,
-                            boolean last12Months, boolean last6BiMonths, boolean last4Quarters, boolean last2SixMonths,
+                            boolean last12Months, boolean last3Months, boolean last6BiMonths, boolean last4Quarters, boolean last2SixMonths,
                             boolean thisFinancialYear, boolean lastFinancialYear, boolean last5FinancialYears, boolean last52Weeks )
     {
         this.reportingMonth = reportingMonth;
@@ -229,6 +232,7 @@ public class RelativePeriods
         this.lastYear = lastYear;
         this.last5Years = last5Years;
         this.last12Months = last12Months;
+        this.last3Months = last3Months;
         this.last6BiMonths = last6BiMonths;
         this.last4Quarters = last4Quarters;
         this.last2SixMonths = last2SixMonths;
@@ -259,6 +263,7 @@ public class RelativePeriods
         this.lastYear = false;
         this.last5Years = false;
         this.last12Months = false;
+        this.last3Months = false;
         this.last6BiMonths = false;
         this.last4Quarters = false;
         this.last2SixMonths = false;
@@ -282,7 +287,7 @@ public class RelativePeriods
             return PeriodType.getPeriodTypeByName( WeeklyPeriodType.NAME );
         }
         
-        if ( isReportingMonth() || isLast12Months() )
+        if ( isReportingMonth() || isLast12Months() || isLast3Months() )
         {
             return PeriodType.getPeriodTypeByName( MonthlyPeriodType.NAME );
         }
@@ -337,6 +342,53 @@ public class RelativePeriods
     }
 
     /**
+     * Gets the PeriodType with the highest frequency from a list of Periods.
+     */
+    public PeriodType getHighestFrequencyPeriodType( List<Period> periods )
+    {
+        PeriodType periodType = null;
+        
+        if ( periods != null && !periods.isEmpty() )
+        {            
+            PeriodType lowestFrequencyOrder = periods.get( 0 ).getPeriodType();
+            
+            for ( Period period : periods )
+            {
+                if ( period.getPeriodType().getFrequencyOrder() < lowestFrequencyOrder.getFrequencyOrder() )
+                {
+                    lowestFrequencyOrder = period.getPeriodType();
+                }
+            }
+            
+            return lowestFrequencyOrder;
+        }
+        
+        return periodType;
+    }
+
+    /**
+     * Gets a list of Periods rewinded from current date.
+     */
+    public List<Period> getRewindedRelativePeriods()
+    {
+        return getRewindedRelativePeriods( null, null, null, false );
+    }
+
+    /**
+     * Gets a list of Periods rewinded from current date.
+     */
+    public List<Period> getRewindedRelativePeriods( Integer rewindedPeriods, Date date, I18nFormat format, boolean dynamicNames )
+    {
+        List<Period> periods = getRelativePeriods();        
+        PeriodType periodType = getHighestFrequencyPeriodType( periods );
+        
+        Date rewindedDate = periodType.getRewindedDate( date, rewindedPeriods );        
+        rewindedDate = subtractMonth( 1, rewindedDate );
+        
+        return getRelativePeriods( rewindedDate, format, dynamicNames );
+    }
+
+    /**
      * Gets a list of Periods relative to current date.
      */
     public List<Period> getRelativePeriods()
@@ -367,7 +419,7 @@ public class RelativePeriods
      * @return a list of relative Periods.
      */
     public List<Period> getRelativePeriods( Date date, I18nFormat format, boolean dynamicNames )
-    {
+    {        
         date = date == null ? subtractMonth( 1, new Date() ) : date;
         
         List<Period> periods = new ArrayList<Period>();
@@ -417,6 +469,11 @@ public class RelativePeriods
             periods.addAll( getRollingRelativePeriodList( new MonthlyPeriodType(), MONTHS_LAST_12, date, dynamicNames, format ) );
         }
 
+        if ( isLast3Months() )
+        {
+            periods.addAll( getRollingRelativePeriodList( new MonthlyPeriodType(), MONTHS_LAST_12, date, dynamicNames, format ).subList( 9, 12 ) );
+        }
+        
         if ( isLast6BiMonths() )
         {
             periods.addAll( getRollingRelativePeriodList( new BiMonthlyPeriodType(), BIMONTHS_LAST_6, date, dynamicNames, format ) );
@@ -462,144 +519,6 @@ public class RelativePeriods
         if ( isLastYear() )
         {
             periods.add( getRelativePeriod( new YearlyPeriodType(), LAST_YEAR, date, dynamicNames, format ) );
-        }
-        
-        if ( isLastFinancialYear() )
-        {
-            periods.add( getRelativePeriod( new FinancialJulyPeriodType(), LAST_FINANCIAL_YEAR, date, dynamicNames, format ) );
-        }
-        
-        return periods;
-    }
-
-    /**
-     * Gets a list of Periods based on the given input and the state of this
-     * RelativePeriods.
-     *
-     * @param date the date representing now. If null the current date will be
-     *        used and an interval based on the period type will be subtracted 
-     *        from the date.
-     * @param format the i18n format.
-     * @return a list of relative Periods.
-     */
-    public List<Period> getRelativePeriods( I18nFormat format, boolean dynamicNames, Integer rewindedPeriods )
-    {
-        rewindedPeriods = rewindedPeriods == null ? 0 : rewindedPeriods;
-    
-        Date date = subtractMonth( 1, new Date() );
-        
-        List<Period> periods = new ArrayList<Period>();
-        
-        boolean rewind = true;
-
-        if ( isReportingMonth() )
-        {
-            periods.add( getRelativePeriod( new MonthlyPeriodType(), REPORTING_MONTH, rewind ? subtractMonth( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isReportingBimonth() )
-        {
-            periods.add( getRelativePeriod( new BiMonthlyPeriodType(), REPORTING_BIMONTH, date, dynamicNames, format ) );
-        }
-
-        if ( isReportingQuarter() )
-        {
-            periods.add( getRelativePeriod( new QuarterlyPeriodType(), REPORTING_QUARTER, rewind ? subtractQuarters( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isLastSixMonth() )
-        {
-            periods.add( getRelativePeriod( new SixMonthlyPeriodType(), LAST_SIXMONTH, rewind ? subtractSixmonths( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isMonthsThisYear() )
-        {
-            periods.addAll( getRelativePeriodList( new MonthlyPeriodType(), MONTHS_THIS_YEAR, date, dynamicNames, format ) );
-        }
-
-        if ( isQuartersThisYear() )
-        {
-            periods.addAll( getRelativePeriodList( new QuarterlyPeriodType(), QUARTERS_THIS_YEAR, date, dynamicNames, format ) );
-        }
-
-        if ( isThisYear() )
-        {
-            periods.add( getRelativePeriod( new YearlyPeriodType(), THIS_YEAR, rewind ? subtractYears( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isLast5Years() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new YearlyPeriodType(), LAST_5_YEARS, rewind ? subtractYears( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isLast12Months() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new MonthlyPeriodType(), MONTHS_LAST_12, rewind ? subtractMonth( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isLast6BiMonths() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new BiMonthlyPeriodType(), BIMONTHS_LAST_6, date, dynamicNames, format ) );
-        }
-
-        if ( isLast4Quarters() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new QuarterlyPeriodType(), QUARTERS_THIS_YEAR, rewind ? subtractQuarters( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isLast2SixMonths() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new SixMonthlyPeriodType(), SIXMONHTS_LAST_2, rewind ? subtractSixmonths( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
-        }
-
-        if ( isThisFinancialYear() )
-        {
-            periods.add( getRelativePeriod( new FinancialJulyPeriodType(), THIS_FINANCIAL_YEAR, date, dynamicNames, format ) );
-        }
-
-        if ( isLast5FinancialYears() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new FinancialJulyPeriodType(), LAST_5_FINANCIAL_YEARS, date, dynamicNames, format ) );
-        }
-
-        if ( isLast52Weeks() )
-        {
-            periods.addAll( getRollingRelativePeriodList( new WeeklyPeriodType(), WEEKS_LAST_52, date, dynamicNames, format ) );
-        }
-        
-        date = subtractMonth( MONTHS_IN_YEAR, date );
-
-        if ( isMonthsLastYear() )
-        {
-            periods.addAll( getRelativePeriodList( new MonthlyPeriodType(), MONTHS_LAST_YEAR, date, dynamicNames, format ) );
-        }
-
-        if ( isQuartersLastYear() )
-        {
-            periods.addAll( getRelativePeriodList( new QuarterlyPeriodType(), QUARTERS_LAST_YEAR, date, dynamicNames, format ) );
-        }
-
-        if ( isLastYear() )
-        {
-            periods.add( getRelativePeriod( new YearlyPeriodType(), LAST_YEAR, rewind ? subtractYears( rewindedPeriods, date ) : date, dynamicNames, format ) );
-            
-            rewind = false;
         }
         
         if ( isLastFinancialYear() )
@@ -705,7 +624,7 @@ public class RelativePeriods
         List<Period> periods = new ArrayList<Period>();
 
         int c = 0;
-
+        
         for ( Period period : relatives )
         {
             periods.add( setName( period, periodNames[c++], dynamicNames, format ) );
@@ -772,51 +691,6 @@ public class RelativePeriods
     {
         Calendar cal = PeriodType.createCalendarInstance( date );
         cal.add( Calendar.DAY_OF_YEAR, (weeks * -7) );
-
-        return cal.getTime();
-    }
-
-    /**
-     * Returns a date.
-     *
-     * @param months the number of months to subtract from the current date.
-     * @param date the date representing now, ignored if null.
-     * @return a date.
-     */
-    private Date subtractQuarters( int quarters, Date date )
-    {
-        Calendar cal = PeriodType.createCalendarInstance( date );
-        cal.add( Calendar.MONTH, (quarters * 3 * -1) );
-
-        return cal.getTime();
-    }
-
-    /**
-     * Returns a date.
-     *
-     * @param months the number of months to subtract from the current date.
-     * @param date the date representing now, ignored if null.
-     * @return a date.
-     */
-    private Date subtractSixmonths( int sixmonths, Date date )
-    {
-        Calendar cal = PeriodType.createCalendarInstance( date );
-        cal.add( Calendar.MONTH, (sixmonths * 6 * -1) );
-
-        return cal.getTime();
-    }
-
-    /**
-     * Returns a date.
-     *
-     * @param months the number of months to subtract from the current date.
-     * @param date the date representing now, ignored if null.
-     * @return a date.
-     */
-    private Date subtractYears( int years, Date date )
-    {
-        Calendar cal = PeriodType.createCalendarInstance( date );
-        cal.add( Calendar.YEAR, (years * -1) );
 
         return cal.getTime();
     }
@@ -979,6 +853,19 @@ public class RelativePeriods
         this.last12Months = last12Months;
         return this;
     }
+    
+    @JsonProperty
+    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    public boolean isLast3Months()
+    {
+        return last3Months;
+    }
+
+    public RelativePeriods setLast3Months( boolean last3Months )
+    {
+        this.last3Months = last3Months;
+        return this;
+    }
 
     @JsonProperty
     @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
@@ -1094,6 +981,7 @@ public class RelativePeriods
         result = prime * result + (lastYear ? 1 : 0);
         result = prime * result + (last5Years ? 1 : 0);
         result = prime * result + (last12Months ? 1 : 0);
+        result = prime * result + (last3Months ? 1 : 0);
         result = prime * result + (last6BiMonths ? 1 : 0);
         result = prime * result + (last4Quarters ? 1 : 0);
         result = prime * result + (last2SixMonths ? 1 : 0);
@@ -1181,6 +1069,11 @@ public class RelativePeriods
         }
 
         if ( !last12Months == other.last12Months )
+        {
+            return false;
+        }
+        
+        if ( !last3Months == other.last3Months )
         {
             return false;
         }

@@ -33,6 +33,7 @@ import org.hisp.dhis.aggregation.AggregatedDataValueService;
 import org.hisp.dhis.aggregation.AggregatedOrgUnitDataValueService;
 import org.hisp.dhis.common.DeleteNotAllowedException;
 import org.hisp.dhis.completeness.DataSetCompletenessService;
+import org.hisp.dhis.datamart.DataMartManager;
 import org.hisp.dhis.maintenance.MaintenanceService;
 import org.hisp.dhis.period.Period;
 import org.hisp.dhis.period.PeriodService;
@@ -78,6 +79,13 @@ public class PerformMaintenanceAction
     public void setAggregatedOrgUnitDataValueService( AggregatedOrgUnitDataValueService aggregatedOrgUnitDataValueService )
     {
         this.aggregatedOrgUnitDataValueService = aggregatedOrgUnitDataValueService;
+    }
+    
+    private DataMartManager dataMartManager;
+
+    public void setDataMartManager( DataMartManager dataMartManager )
+    {
+        this.dataMartManager = dataMartManager;
     }
 
     private PeriodService periodService;
@@ -146,11 +154,15 @@ public class PerformMaintenanceAction
         
         if ( dataMartIndex )
         {
-            aggregatedDataValueService.dropIndex( true, true );
-            aggregatedDataValueService.createIndex( true, true );
+            dataMartManager.dropDataValueIndex();
+            dataMartManager.dropIndicatorValueIndex();
+            dataMartManager.dropOrgUnitDataValueIndex();
+            dataMartManager.dropOrgUnitIndicatorValueIndex();
             
-            aggregatedOrgUnitDataValueService.dropIndex( true, true );
-            aggregatedOrgUnitDataValueService.createIndex( true, true );
+            dataMartManager.createDataValueIndex();
+            dataMartManager.createIndicatorValueIndex();
+            dataMartManager.createOrgUnitDataValueIndex();
+            dataMartManager.createOrgUnitIndicatorValueIndex();
             
             completenessService.dropIndex();
             completenessService.createIndex();
