@@ -110,13 +110,13 @@ TR.conf = {
 		west_multiselect: 100,
         west_width_subtractor: 18,
         west_fill: 117,
-        west_fill_accordion_organisationunit: 50,
+        west_fill_accordion_organisationunit: 43,
         west_maxheight_accordion_organisationunit: 225,
         center_tbar_height: 31,
         east_gridcolumn_height: 30,
         form_label_width: 90,
-		grid_favorite_width: 420,
-		grid_favorite_height: 250,
+		grid_favorite_width: 450,
+		grid_favorite_height: 500,
         window_favorite_ypos: 100,
         window_confirm_width: 250,
 		window_record_width: 450,
@@ -963,7 +963,10 @@ Ext.onReady( function() {
 				var col = cols[i];
 				if( col.name && col.name == colname )
 				{
-					var value = editor.data[col.dataIndex].toLowerCase();
+					var value = '';
+					if(editor.data[col.dataIndex]!=undefined){
+						value = editor.data[col.dataIndex].toLowerCase();
+					}
 					var hidden = (col.hidden==undefined)? false : col.hidden;
 					if( value!=null && value!= '')
 					{
@@ -1819,7 +1822,7 @@ Ext.onReady( function() {
 												cls: 'tr-tree',
 												id: 'treeOrg',
 												width: TR.conf.layout.west_fieldset_width - TR.conf.layout.west_width_subtractor,
-												height: 273,
+												height: 305,
 												autoScroll: true,
 												multiSelect: true,
 												isrendered: false,
@@ -1883,6 +1886,7 @@ Ext.onReady( function() {
 												TR.cmp.params.organisationunit.panel = this;
 											},
 											expand: function() {
+												alert(TR.cmp.params.organisationunit.panel.getHeight() - TR.conf.layout.west_fill_accordion_organisationunit);
 												TR.cmp.params.organisationunit.treepanel.setHeight(TR.cmp.params.organisationunit.panel.getHeight() - TR.conf.layout.west_fill_accordion_organisationunit);
 											}
 										}
@@ -2453,7 +2457,6 @@ Ext.onReady( function() {
 						listeners: {
 							afterrender: function(b) {
 								this.menu = Ext.create('Ext.menu.Menu', {
-									margin: '2 0 0 0',
 									shadow: false,
 									showSeparator: false,
 									items: [
@@ -2486,7 +2489,7 @@ Ext.onReady( function() {
 																	{
 																		xtype: 'textfield',
 																		cls: 'tr-textfield',
-																		fieldLabel: 'Name',
+																		fieldLabel: TR.i18n.name,
 																		maxLength: 160,
 																		enforceMaxLength: true,
 																		labelWidth: TR.conf.layout.form_label_width,
@@ -2520,39 +2523,38 @@ Ext.onReady( function() {
 																	}
 																],
 																setHeightInWindow: function(store) {
-																	var h = (store.getCount() * 23) + 30,
-																		sh = TR.util.viewport.getSize().y * 0.6;
-																	this.setHeight(h > sh ? sh : h);
+																	var window = this.up('window');																	
+																	this.setHeight(window.getHeight() - 105);																	
 																	this.doLayout();
 																	this.up('window').doLayout();
 																},
 																store: TR.store.favorite,
 																tbar: {
 																	id: 'favorite_t',
-																	cls: 'dv-toolbar',
-																	height: 30,
+																	cls: 'tr-toolbar-tbar',
 																	defaults: {
 																		height: 24
 																	},
 																	items: [
 																		{
 																			text: TR.i18n.sort_by + '..',
-																			cls: 'dv-toolbar-btn-2',
+																			cls: 'tr-toolbar-btn-2',
 																			listeners: {
 																				added: function() {
 																					TR.cmp.favorite.sortby = this;
 																				},
 																				afterrender: function(b) {
-																					this.addCls('dv-menu-togglegroup');
+																					this.addCls('tr-menu-togglegroup');
 																					this.menu = Ext.create('Ext.menu.Menu', {
-																						shadowOffset: 1,
-																						showSeparator: false,
+																						margin: '-1 0 0 -1',
+																						shadow: false,
+                                                                                        showSeparator: false,
 																						width: 109,
-																						height: 70,
+																						height: 67,
 																						items: [
 																							{
 																								xtype: 'radiogroup',
-																								cls: 'dv-radiogroup',
+																								cls: 'tr-radiogroup',
 																								columns: 1,
 																								vertical: true,
 																								items: [
@@ -2593,7 +2595,7 @@ Ext.onReady( function() {
 																		'->',
 																		{
 																			text: TR.i18n.rename,
-																			cls: 'dv-toolbar-btn-2',
+																			cls: 'tr-toolbar-btn-2',
 																			disabled: true,
 																			xable: function() {
 																				if (TR.cmp.favorite.grid.getSelectionModel().getSelection().length == 1) {
@@ -2615,7 +2617,7 @@ Ext.onReady( function() {
 																					items: [
 																						{
 																							xtype: 'textfield',
-																							cls: 'dv-textfield',
+																							cls: 'tr-textfield',
 																							maxLength: 160,
 																							enforceMaxLength: true,
 																							value: selected.data.name,
@@ -2693,7 +2695,7 @@ Ext.onReady( function() {
 																		},
 																		{
 																			text: TR.i18n.delete_object,
-																			cls: 'dv-toolbar-btn-2',
+																			cls: 'tr-toolbar-btn-2',
 																			disabled: true,
 																			xable: function() {
 																				if (TR.cmp.favorite.grid.getSelectionModel().getSelection().length) {
@@ -2723,7 +2725,7 @@ Ext.onReady( function() {
 																							},
 																							{
 																								html: str,
-																								cls: 'dv-window-confirm-list'
+																								cls: 'tr-window-confirm-list'
 																							}                                                                                                    
 																						],
 																						bbar: [
@@ -2775,99 +2777,105 @@ Ext.onReady( function() {
 																}
 															}
 														],
-														bbar: [
-															{
-																xtype: 'label',
-																style: 'padding-left:2px; line-height:22px; font-size:10px; color:#666; width:70%',
-																listeners: {
-																	added: function() {
-																		TR.cmp.favorite.label = this;
+														bbar: {
+															cls: 'tr-toolbar-bbar',
+															defaults: {
+																height: 24
+															},
+															items: [
+																{
+																	xtype: 'label',
+																	style: 'padding-left:2px; line-height:22px; font-size:10px; color:#666; width:70%',
+																	listeners: {
+																		added: function() {
+																			TR.cmp.favorite.label = this;
+																		}
 																	}
-																}
-															},																
-															'->',
-															{
-																text: TR.i18n.save,
-																disabled: true,
-																xable: function() {
-																	if (TR.cmp.favorite.name.getValue()) {
-																		var index = TR.store.favorite.findExact('name', TR.cmp.favorite.name.getValue());
-																		if (index != -1) {
-																			this.enable();
-																			TR.cmp.favorite.label.setText('');
-																			return true;
+																},																
+																'->',
+																{
+																	text: TR.i18n.save,
+																	disabled: true,
+																	xable: function() {
+																		if (TR.cmp.favorite.name.getValue()) {
+																			var index = TR.store.favorite.findExact('name', TR.cmp.favorite.name.getValue());
+																			if (index != -1) {
+																				this.enable();
+																				TR.cmp.favorite.label.setText('');
+																				return true;
+																			}
+																			else {
+																				this.enable();
+																				TR.cmp.favorite.label.setText('');
+																				return true;
+																			}
 																		}
 																		else {
-																			this.enable();
 																			TR.cmp.favorite.label.setText('');
-																			return true;
 																		}
-																	}
-																	else {
-																		TR.cmp.favorite.label.setText('');
-																	}
-																	
-																	this.disable();
-																	return false;
-																},
-																handler: function() {
-																	if (this.xable()) {
-																		var value = TR.cmp.favorite.name.getValue();
-																		if (TR.store.favorite.findExact('name', value) != -1) {
-																			var item = value.length > 40 ? (value.substr(0,40) + '...') : value;
-																			var w = Ext.create('Ext.window.Window', {
-																				title: TR.i18n.save_favorite,
-																				width: TR.conf.layout.window_confirm_width,
-																				bodyStyle: 'padding:10px 5px; background-color:#fff; text-align:center',
-																				modal: true,
-																				items: [
-																					{
-																						html: TR.i18n.are_you_sure,
-																						bodyStyle: 'border-style:none'
-																					},
-																					{
-																						html: '<br/>' + item,
-																						cls: 'dv-window-confirm-list'
-																					}
-																				],
-																				bbar: [
-																					{
-																						text: TR.i18n.cancel,
-																						handler: function() {
-																							this.up('window').close();
+																		
+																		this.disable();
+																		return false;
+																	},
+																	handler: function() {
+																		if (this.xable()) {
+																			var value = TR.cmp.favorite.name.getValue();
+																			if (TR.store.favorite.findExact('name', value) != -1) {
+																				var item = value.length > 40 ? (value.substr(0,40) + '...') : value;
+																				var w = Ext.create('Ext.window.Window', {
+																					title: TR.i18n.save_favorite,
+																					width: TR.conf.layout.window_confirm_width,
+																					bodyStyle: 'padding:10px 5px; background-color:#fff; text-align:center',
+																					modal: true,
+																					items: [
+																						{
+																							html: TR.i18n.are_you_sure,
+																							bodyStyle: 'border-style:none'
+																						},
+																						{
+																							html: '<br/>' + item,
+																							cls: 'dv-window-confirm-list'
 																						}
-																					},
-																					'->',
-																					{
-																						text: TR.i18n.overwrite,
-																						handler: function() {
-																							this.up('window').close();
-																							TR.util.crud.favorite.update(function() {
-																								TR.cmp.favorite.window.resetForm();
-																							});
-																							
+																					],
+																					bbar: [
+																						{
+																							text: TR.i18n.cancel,
+																							handler: function() {
+																								this.up('window').close();
+																							}
+																						},
+																						'->',
+																						{
+																							text: TR.i18n.overwrite,
+																							handler: function() {
+																								this.up('window').close();
+																								TR.util.crud.favorite.update(function() {
+																									TR.cmp.favorite.window.resetForm();
+																								});
+																								
+																							}
 																						}
-																					}
-																				]
-																			});
-																			w.setPosition((screen.width/2)-(TR.conf.layout.window_confirm_width/2), TR.conf.layout.window_favorite_ypos + 100, true);
-																			w.show();
+																					]
+																				});
+																				w.setPosition((screen.width/2)-(TR.conf.layout.window_confirm_width/2), TR.conf.layout.window_favorite_ypos + 100, true);
+																				w.show();
+																			}
+																			else {
+																				TR.util.crud.favorite.create(function() {
+																					TR.cmp.favorite.window.resetForm();
+																					TR.cmp.favorite.window.down('grid').setHeightInWindow(TR.store.favorite);
+																				});
+																			}                                                                                    
 																		}
-																		else {
-																			TR.util.crud.favorite.create(function() {
-																				TR.cmp.favorite.window.resetForm();
-																				TR.cmp.favorite.window.down('grid').setHeightInWindow(TR.store.favorite);
-																			});
-																		}                                                                                    
-																	}
-																},
-																listeners: {
-																	added: function() {
-																		TR.cmp.favorite.save = this;
+																	},
+																	listeners: {
+																		added: function() {
+																			TR.cmp.favorite.save = this;
+																		}
 																	}
 																}
-															}
-														],
+															]
+														},
 														listeners: {
 															show: function() {                                               
 																TR.cmp.favorite.save.xable();
@@ -2889,7 +2897,7 @@ Ext.onReady( function() {
 										'-',
 										{
 											xtype: 'grid',
-											cls: 'dv-menugrid',
+											cls: 'tr-menugrid',
 											width: 420,
 											scroll: 'vertical',
 											columns: [

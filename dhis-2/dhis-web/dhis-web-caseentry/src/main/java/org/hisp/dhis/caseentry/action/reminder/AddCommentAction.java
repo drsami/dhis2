@@ -1,7 +1,5 @@
-package org.hisp.dhis.phieusanh.action;
-
 /*
- * Copyright (c) 2004-2012, University of Oslo
+ * Copyright (c) 2004-2009, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,54 +25,61 @@ package org.hisp.dhis.phieusanh.action;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.hisp.dhis.organisationunit.OrganisationUnit;
-import org.hisp.dhis.organisationunit.OrganisationUnitService;
-import org.hisp.dhis.patient.Patient;
-import org.hisp.dhis.patient.PatientService;
+package org.hisp.dhis.caseentry.action.reminder;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.hisp.dhis.patient.comment.Comment;
+import org.hisp.dhis.program.ProgramStageInstance;
+import org.hisp.dhis.program.ProgramStageInstanceService;
+import org.hisp.dhis.user.CurrentUserService;
 
 import com.opensymphony.xwork2.Action;
 
 /**
- * @author Dang Duy Hieu
- * @version $Id$
+ * @author Chau Thu Tran
+ * 
+ * @version AddCommentAction.java 9:55:04 AM Aug 17, 2012 $
  */
-public class ReregisterPatientLocationAction
+public class AddCommentAction
     implements Action
 {
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
 
-    private PatientService patientService;
+    private ProgramStageInstanceService programStageInstanceService;
 
-    public void setPatientService( PatientService patientService )
+    public void setProgramStageInstanceService( ProgramStageInstanceService programStageInstanceService )
     {
-        this.patientService = patientService;
+        this.programStageInstanceService = programStageInstanceService;
     }
 
-    private OrganisationUnitService organisationUnitService;
+    private CurrentUserService currentUserService;
 
-    public void setOrganisationUnitService( OrganisationUnitService organisationUnitService )
+    public void setCurrentUserService( CurrentUserService currentUserService )
     {
-        this.organisationUnitService = organisationUnitService;
+        this.currentUserService = currentUserService;
     }
 
     // -------------------------------------------------------------------------
-    // Action implementation
+    // Input
     // -------------------------------------------------------------------------
 
-    private Integer patientId;
+    private Integer programStageInstanceId;
 
-    public void setPatientId( Integer patientId )
+    public void setProgramStageInstanceId( Integer programStageInstanceId )
     {
-        this.patientId = patientId;
+        this.programStageInstanceId = programStageInstanceId;
     }
 
-    private Integer newUnitId;
+    private String commentText;
 
-    public void setNewUnitId( Integer newUnitId )
+    public void setCommentText( String commentText )
     {
-        this.newUnitId = newUnitId;
+        this.commentText = commentText;
     }
 
     // -------------------------------------------------------------------------
@@ -82,16 +87,23 @@ public class ReregisterPatientLocationAction
     // -------------------------------------------------------------------------
 
     public String execute()
-        throws Exception
     {
-        OrganisationUnit newUnit = organisationUnitService.getOrganisationUnit( newUnitId );
-        
-        Patient patient = patientService.getPatient( patientId );
+        ProgramStageInstance programStageInstance = programStageInstanceService
+            .getProgramStageInstance( programStageInstanceId );
 
-        patient.setOrganisationUnit( newUnit );
+        Set<Comment> comments = programStageInstance.getComments();
 
-        patientService.savePatient( patient );
+        if ( comments == null )
+        {
+            comments = new HashSet<Comment>();
+        }
+
+        Comment comment = new Comment( commentText, currentUserService.getCurrentUsername(), new Date() );
+        comments.add( comment );
+
+        programStageInstanceService.updateProgramStageInstance( programStageInstance );
 
         return SUCCESS;
     }
+
 }

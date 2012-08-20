@@ -1,4 +1,4 @@
-package org.hisp.dhis.mobile.action.incoming;
+package org.hisp.dhis.reportsheet.orgunitprototype.action;
 
 /*
  * Copyright (c) 2004-2012, University of Oslo
@@ -27,40 +27,65 @@ package org.hisp.dhis.mobile.action.incoming;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.hisp.dhis.sms.incoming.IncomingSms;
-import org.hisp.dhis.sms.incoming.IncomingSmsService;
+import org.hisp.dhis.organisationunitprototype.OrganisationUnitPrototype;
+import org.hisp.dhis.organisationunitprototype.OrganisationUnitPrototypeService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.opensymphony.xwork2.Action;
 
 /**
-* @author Nguyen Kim Lai
-* @version $Id$
-*/
-
-public class ImportReceiveSMSAction
+ * @author Dang Duy Hieu
+ * @version $Id$
+ */
+public class UpdateOrgUnitPrototypeAction
     implements Action
 {
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
-    
-    private IncomingSmsService incomingSmsService;
 
-    public void setIncomingSmsService( IncomingSmsService incomingSmsService )
+    @Autowired
+    private OrganisationUnitPrototypeService organisationUnitPrototypeService;
+
+    // -------------------------------------------------------------------------
+    // Input
+    // -------------------------------------------------------------------------
+
+    private Integer id;
+
+    public void setId( Integer id )
     {
-        this.incomingSmsService = incomingSmsService;
+        this.id = id;
     }
-    
-    
+
+    private String name;
+
+    public void setName( String name )
+    {
+        this.name = name;
+    }
+
+    private String shortName;
+
+    public void setShortName( String shortName )
+    {
+        this.shortName = shortName;
+    }
+
     // -------------------------------------------------------------------------
-    // Action Implementation
+    // Action implementation
     // -------------------------------------------------------------------------
-    
-    @Override
+
     public String execute()
-        throws Exception
-    {   
-        //////////////
+    {
+        OrganisationUnitPrototype organisationUnitPrototype = organisationUnitPrototypeService.getOrganisationUnitPrototype( id );
+
+        organisationUnitPrototype.setName( name );
+        organisationUnitPrototype.setShortName( shortName );
+
+        organisationUnitPrototypeService.updateOrganisationUnitPrototype( organisationUnitPrototype );
+
         return SUCCESS;
     }
+
 }

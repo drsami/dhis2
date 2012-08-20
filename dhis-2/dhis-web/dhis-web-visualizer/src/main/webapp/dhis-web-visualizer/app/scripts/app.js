@@ -1266,7 +1266,7 @@ Ext.onReady( function() {
 								DV.c.currentFavorite = {
 									id: id,
 									name: name
-								};								
+								};
 								DV.cmp.toolbar.share.xable();
                                 DV.util.mask.hideMask();
                                 if (fn) {
@@ -1575,7 +1575,6 @@ Ext.onReady( function() {
 		setChart: function(exe, id) {
 			DV.chart.reset();
 			
-			
 			if (id) {
                 Ext.Ajax.request({
                     url: DV.conf.finals.ajax.path_api + DV.conf.finals.ajax.favorite_get + id + '.json?links=false&paging=false',
@@ -1661,6 +1660,11 @@ Ext.onReady( function() {
                         DV.c.baselinevalue = f.baseLineValue ? parseFloat(f.baseLineValue) : null;
                         DV.c.baselinelabel = f.baseLineLabel ? f.baseLineLabel : null;
                         
+						DV.c.currentFavorite = {
+							id: f.id,
+							name: f.name
+						};
+						
                         if (exe) {
 							this.extendChart(exe, id);
 						}
@@ -4204,7 +4208,7 @@ Ext.onReady( function() {
                                                                         {
                                                                             xtype: 'textfield',
                                                                             cls: 'dv-textfield',
-                                                                            fieldLabel: 'Name',
+                                                                            fieldLabel: DV.i18n.name,
                                                                             maxLength: 160,
                                                                             enforceMaxLength: true,
                                                                             labelWidth: DV.conf.layout.form_label_width,
@@ -4719,10 +4723,6 @@ Ext.onReady( function() {
                                                     itemclick: function(g, r) {
                                                         g.getSelectionModel().select([], false);
                                                         this.up('menu').hide();
-                                                        DV.c.currentFavorite = {
-															id: r.data.id,
-															name: r.data.name
-														};
                                                         DV.exe.execute(r.data.id);
                                                     }
                                                 }

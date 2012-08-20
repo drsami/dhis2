@@ -28,8 +28,12 @@ package org.hisp.dhis.program;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.patient.comment.Comment;
+import org.hisp.dhis.sms.outbound.OutboundSms;
 
 /**
  * @author Abyot Asalefew
@@ -54,8 +58,6 @@ public class ProgramStageInstance
 
     private ProgramStage programStage;
 
-    private int stageInProgram;
-
     private Date dueDate;
 
     private Date executionDate;
@@ -63,6 +65,10 @@ public class ProgramStageInstance
     private OrganisationUnit organisationUnit;
 
     private boolean completed = false;
+    
+    private List<OutboundSms> outboundSms;
+    
+    private Set<Comment> comments;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -116,8 +122,7 @@ public class ProgramStageInstance
         result = result * prime + programStage.hashCode();
         result = result * prime + dueDate.hashCode();
         result = result * prime + ((executionDate == null) ? 0 : executionDate.hashCode());
-        result = result * prime + stageInProgram;
-
+        
         return result;
     }
 
@@ -206,22 +211,6 @@ public class ProgramStageInstance
     }
 
     /**
-     * @param stageInProgram the stageInProgram to set
-     */
-    public void setStageInProgram( int stageInProgram )
-    {
-        this.stageInProgram = stageInProgram;
-    }
-
-    /**
-     * @return the stageInProgram
-     */
-    public int getStageInProgram()
-    {
-        return stageInProgram;
-    }
-
-    /**
      * @return the completed
      */
     public boolean isCompleted()
@@ -245,5 +234,25 @@ public class ProgramStageInstance
     public void setOrganisationUnit( OrganisationUnit organisationUnit )
     {
         this.organisationUnit = organisationUnit;
+    }
+
+    public List<OutboundSms> getOutboundSms()
+    {
+        return outboundSms;
+    }
+
+    public void setOutboundSms( List<OutboundSms> outboundSms )
+    {
+        this.outboundSms = outboundSms;
+    }
+
+    public Set<Comment> getComments()
+    {
+        return comments;
+    }
+
+    public void setComments( Set<Comment> comments )
+    {
+        this.comments = comments;
     }
 }
