@@ -9,6 +9,7 @@ function organisationUnitSelected( orgUnits, orgUnitNames )
 	hideById('listRelationshipDiv');
 	hideById('addRelationshipDiv');
 	hideById('migrationPatientDiv');
+	hideById('patientDashboard');
 	enable('listPatientBtn');
 	enable('addPatientBtn');
 	enable('advancedSearchBtn');
@@ -287,7 +288,7 @@ function addPatient()
 		jQuery('#advSearchBox0 [id="searchText"]').val( systemIdentifierId );
 		statusSearching = 1;
 		
-		showProgramEnrollmentSelectForm( patientId );
+		showPatientDashboardForm( patientId );
 		jQuery('#resultSearchDiv').dialog('close');
       }
      });
@@ -328,7 +329,7 @@ function updatePatient()
       url: 'updatePatient.action',
       data: getParamsForDiv('editPatientDiv'),
       success: function( json ) {
-		showProgramEnrollmentSelectForm( getFieldValue('id') );
+		showPatientDashboardForm( getFieldValue('id') );
       }
      });
 }
@@ -337,69 +338,122 @@ function updatePatient()
 // Enrollment program
 // ----------------------------------------------------------------
 
-function showProgramEnrollmentSelectForm( patientId )
+function showProgramEnrollmentForm( patientId )
 {
-	hideById('listPatientDiv');
-	hideById('editPatientDiv');
-	hideById('selectDiv');
-	hideById('searchDiv');
-	hideById('migrationPatientDiv');
-	setInnerHTML('patientDashboard','');
-				
-	jQuery('#loaderDiv').show();
 	jQuery('#enrollmentDiv').load('showProgramEnrollmentForm.action',
 		{
 			id:patientId
-		}, function()
-		{	
-			showById('enrollmentDiv');
-			jQuery('#loaderDiv').hide();
+		}).dialog({
+			title: i18n_enroll_program,
+			maximize: true, 
+			closable: true,
+			modal:true,
+			overlay:{background:'#000000', opacity:0.1},
+			width: 500,
+			height: 200
 		});
 }
 
-function showProgramEnrollmentForm( patientId, programId )
-{				
-	if( programId == 0 )
-	{
-		jQuery('#enrollBtn').attr('value',i18n_enroll);
-		hideEnrolmentField();
-		hideById('programEnrollmentDiv');
-		return;
+function programOnchange( programId )
+{
+	if( programId==0){
+		hideById('enrollmentDateTR');
+		hideById('dateOfIncidentTR');
 	}
-		
+	else{
+		var type = jQuery('#enrollmentDiv [name=programId] option:selected').attr('programType')
+		if(type=='2'){
+			hideById('enrollmentDateTR');
+			hideById('dateOfIncidentTR');
+			disable('enrollmentDate');
+			disable('dateOfIncident');
+		}
+		else{
+			showById( 'enrollmentDateTR');
+			enable('enrollmentDate');
+			
+			var dateOfEnrollmentDescription = jQuery('#enrollmentDiv [name=programId] option:selected').attr('dateOfEnrollmentDescription');
+			var dateOfIncidentDescription = jQuery('#enrollmentDiv [name=programId] option:selected').attr('dateOfIncidentDescription');
+			setInnerHTML('enrollmentDateDescription', dateOfEnrollmentDescription);
+			setInnerHTML('dateOfIncidentDescription', dateOfIncidentDescription);
+			
+			var displayIncidentDate = jQuery('#enrollmentDiv [name=programId] option:selected').attr('displayIncidentDate');
+			if( displayIncidentDate=='true'){
+				showById( 'dateOfIncidentTR');
+				enable('dateOfIncident');
+			}
+			else{
+				hideById( 'dateOfIncidentTR');
+				disable('dateOfIncident');
+			}
+		}
+	}
+}
+
+function saveEnrollment( patientId, programId )
+{
+	var programId = jQuery('#enrollmentDiv [id=programId] option:selected').val();
+	var programName = jQuery('#enrollmentDiv [id=programId] option:selected').text();
+	var dateOfIncident = jQuery('#enrollmentDiv [id=dateOfIncident]').val();
+	var enrollmentDate = jQuery('#enrollmentDiv [id=enrollmentDate]').val();
+	
+	jQuery.postJSON( "saveProgramEnrollment.action",
+		{
+			patientId: jQuery('#enrollmentDiv [id=patientId]').val(),
+			programId: programId,
+			dateOfIncident: dateOfIncident,
+			enrollmentDate: enrollmentDate
+		}, 
+		function( json ) 
+		{    
+			var programInstanceId = json.programInstanceId;
+			var programStageInstanceId = json.activeProgramStageInstanceId;
+			var programStageName = json.activeProgramStageName;
+			var dueDate = json.dueDate;
+			var type = jQuery('#enrollmentDiv [id=programId] option:selected').attr('programType');
+			
+			var activedRow = "<tr id='tr1_" + programInstanceId 
+							+ "' type='" + type +"'"
+							+ " programStageInstanceId='" + programStageInstanceId + "'>"
+							+ " <td id='td_" + programInstanceId + "'>"
+							+ " <a href='javascript:loadActiveProgramStageRecords(" + programInstanceId + "," + programStageInstanceId + "')'>"
+							+ programName + "(" + enrollmentDate + ")</a></td>"
+							+ "</tr>";
+			
+			activedRow += "<tr id='tr2_" + programInstanceId +"'"+
+						+ " onclick='javascript:loadActiveProgramStageRecords(" + programInstanceId + "," + programStageInstanceId + ")' style='cursor:pointer;'>"
+						+ "<td colspan='2'><a>&#8226; " + programStageName + "(" + dueDate + ")</a></td></tr>";
+
+			jQuery('#activeTB' ).prepend(activedRow);
+			jQuery('#enrollmentDiv').dialog("close");
+			
+			loadProgramInstance( programInstanceId, false );
+			showSuccessMessage(i18n_enrol_success);
+		});
+}
+
+function loadProgramInstance( programInstanceId, completed )
+{				
 	jQuery('#loaderDiv').show();
 	jQuery('#programEnrollmentDiv').load('enrollmentform.action',
 		{
-			patientId:patientId,
-			programId:programId
+			programInstanceId:programInstanceId
 		}, function()
 		{
 			showById('programEnrollmentDiv');
-			showEnrolmentField();
-			
-			var type = jQuery('#enrollmentDiv [name=programId] option:selected').attr('type');
+			var type = jQuery('#tr_'+programInstanceId).attr('programType');
 			if(type=='2'){
-				hideEnrolmentField();
+				hideById('programInstanceDiv');
+				var programStageInstanceId = jQuery('#tr_'+programInstanceId).attr('programStageInstanceId');
+				loadDataEntry( programStageInstanceId );
 			}
 			else{
-				showEnrolmentField();
-				var type = jQuery('#programEnrollmentSelectDiv [name=programId] option:selected').attr('type');
-					
-				if( type=='2'){
-					hideById( 'dateOfIncidentTR');
-				}
-				else{
-					showById( 'dateOfIncidentTR');
-				}
+				showById('programInstanceDiv');
 			}
-			
-			var displayIncidentDate = jQuery('#enrollmentDiv [name=programId] option:selected').attr('displayIncidentDate');
-			if(displayIncidentDate=='true'){
-				showIncidentDateField();
-			}else{
-				hideIncidentDateField();
+			activeProgramInstanceDiv( programInstanceId );
+			if( completed ){
+				hideById('newEncounterBtn_' + programInstanceId);
 			}
-			
 			jQuery('#loaderDiv').hide();
 		});
 }
@@ -486,20 +540,24 @@ function showUnenrollmentForm( programInstanceId )
 		});
 }
 
-function unenrollmentForm()
+function unenrollmentForm( programInstanceId )
 {	
 	$.ajax({
 		type: "POST",
 		url: 'removeEnrollment.action',
-		data: "programInstanceId=" + getFieldValue('programInstanceId'),
+		data: "programInstanceId=" + programInstanceId,
 		success: function( json ) 
 		{
+			var completedRow = jQuery('#td_' + programInstanceId).html();
+			jQuery('#completedTB' ).prepend("<tr><td>" + completedRow + "</td></tr>");
+			hideById('tr1_' + programInstanceId );
+			hideById('tr2_' + programInstanceId );
+			hideById('programEnrollmentDiv');
 			showSuccessMessage( i18n_unenrol_success );
-			hideEnrolmentField( 'enrollmentDateTR' );
-			jQuery('#enrollmentDiv [name=programId]').val('0');
-			hideById( 'programEnrollmentDiv' );
 		}
     });
+	
+	
 }
 
 //-----------------------------------------------------------------------------
@@ -725,7 +783,7 @@ function hideEnrolmentField()
 	setFieldValue( 'dateOfIncident', '' );
 	hideById('enrollmentDateTR');
 	hideById('dateOfIncidentTR');
-	hideById('enrollBtn');
+	//hideById('enrollBtn');
 	hideById('unenrollBtn');
 }
   
@@ -734,7 +792,7 @@ function showEnrolmentField()
 	showById('enrollmentDateTR');
 	showById('dateOfIncidentTR');
 	enable('dateOfIncident');
-	showById('enrollBtn');
+	//showById('enrollBtn');
 }
 
 function hideIncidentDateField()
@@ -772,6 +830,7 @@ function showSelectedDataRecoding( patientId )
 	hideById('searchDiv');
 	hideById('dataEntryFormDiv');
 	hideById('migrationPatientDiv');
+	hideById('dataRecordingSelectDiv');
 	
 	jQuery('#dataRecordingSelectDiv').load( 'selectDataRecording.action', 
 		{
@@ -779,14 +838,13 @@ function showSelectedDataRecoding( patientId )
 		},
 		function()
 		{
-			jQuery('#dataRecordingSelectDiv [id=patientInfoDiv]').hide();
 			jQuery('#dataRecordingSelectDiv [id=backBtnFromEntry]').hide();
 			showById('dataRecordingSelectDiv');
 			
 			var programId = jQuery('#programEnrollmentSelectDiv [id=programId] option:selected').val();
 			$('#dataRecordingSelectDiv [id=programId]').val( programId );
 			$('#dataRecordingSelectDiv [id=inputCriteria]').hide();
-			
+			showById('dataRecordingSelectDiv');
 			hideLoader();
 			hideById('contentDiv');
 		});
@@ -846,16 +904,14 @@ function registerPatientLocation( patientId )
 
 function activeProgramInstanceDiv( programInstanceId )
 {
-	jQuery("[name=eventDiv]").each(function(){
-		jQuery(this).removeClass("link-area-active");
+	jQuery(".selected").each(function(){
+		jQuery(this).removeClass();
 	});
 	
-	jQuery("[name=imgActive]").each(function(){
-		jQuery(this).attr('src','');
+	jQuery("#infor_" + programInstanceId).each(function(){
+		jQuery(this).addClass('selected bold');
 	});
 	
-	jQuery('#pi_' + programInstanceId ).addClass("link-area-active");
-	jQuery("#img_" + programInstanceId ).attr('src','images/flag-blue.png');
 	showById('pi_' + programInstanceId);
 }
 
@@ -885,28 +941,73 @@ function showPatientDashboardForm( patientId )
 		});
 }
 
+function loadActiveProgramStageRecords(programInstanceId, activeProgramStageInstanceId)
+{
+	jQuery('#loaderDiv').show();
+	jQuery('#programEnrollmentDiv').load('enrollmentform.action',
+		{
+			programInstanceId:programInstanceId
+		}, function()
+		{
+			showById('programEnrollmentDiv');
+			var type = jQuery('#tr_'+programInstanceId).attr('programType');
+			if(type=='2'){
+				hideById('programInstanceDiv');
+				var programStageInstanceId = jQuery('#tr_'+programInstanceId).attr('programStageInstanceId');
+				loadDataEntry( programStageInstanceId );
+			}
+			else{
+				showById('programInstanceDiv');
+			}
+			activeProgramInstanceDiv( programInstanceId );
+			loadDataEntry( activeProgramStageInstanceId );
+			jQuery('#loaderDiv').hide();
+		});
+}
+
 function loadProgramStageRecords( programStageInstanceId, completed ) 
 {
 	showLoader();
-    jQuery('#dataEntryFromDashboard').load( "viewProgramStageRecords.action",
+    jQuery('#dataEntryFormDiv').load( "viewProgramStageRecords.action",
 		{
 			programStageInstanceId: programStageInstanceId
 		}, function() {
 			if(completed){
-				jQuery( "#dataEntryFromDashboard :input").each(function(){
+				jQuery( "#dataEntryFormDiv :input").each(function(){
 					disable(this.id);
 				});
 			}
-			showById('dataEntryFormDashboardDiv');
+			showById('dataEntryFormDiv');
 			hideLoader();
-		}).dialog(
+		});
+}
+
+function programReports( programInstanceId )
+{
+	$('#programReportDiv').load("getProgramReportHistory.action", {programInstanceId:programInstanceId});
+}
+
+function getEventMessages( programInstanceId )
+{
+	$('#eventMessagesDiv').load("getEventMessages.action", {programInstanceId:programInstanceId});
+}
+
+function updateEnrollment( patientId, programId, programInstanceId, programName )
+{
+	var dateOfIncident = jQuery('#tab-3 [id=dateOfIncident]').val();
+	var enrollmentDate = jQuery('#tab-3 [id=enrollmentDate]').val();
+	
+	jQuery.postJSON( "saveProgramEnrollment.action",
 		{
-			title:i18n_program_stage,
-			maximize:true, 
-			closable:true,
-			modal:false,
-			overlay:{background:'#000000', opacity:0.1},
-			width:1000,
-			height:500
+			patientId: getFieldValue('patientId'),
+			programId: programId,
+			dateOfIncident: dateOfIncident,
+			enrollmentDate: enrollmentDate
+		}, 
+		function( json ) 
+		{    
+			var infor = programName + " (" + enrollmentDate + ")";
+			setInnerHTML("infor_" + programInstanceId, infor );
+			showSuccessMessage(i18n_enrol_success);
 		});
 }

@@ -34,6 +34,7 @@ import org.hisp.dhis.sms.SmsConfigurationManager;
 import org.hisp.dhis.sms.config.BulkSmsGatewayConfig;
 import org.hisp.dhis.sms.config.ClickatellGatewayConfig;
 import org.hisp.dhis.sms.config.ModemGatewayConfig;
+import org.hisp.dhis.sms.config.SMPPGatewayConfig;
 import org.hisp.dhis.sms.config.SmsConfiguration;
 import org.hisp.dhis.sms.config.SmsGatewayConfig;
 import org.hisp.dhis.sms.outbound.OutboundSmsTransportService;
@@ -124,6 +125,13 @@ public class GetSmsConfigurationAction
         return httpIndex;
     }
 
+    public Integer smppIndex;
+
+    public Integer getSmppIndex()
+    {
+        return smppIndex;
+    }
+
     // -------------------------------------------------------------------------
     // Action implementation
     // -------------------------------------------------------------------------
@@ -131,7 +139,7 @@ public class GetSmsConfigurationAction
     public String execute()
         throws Exception
     {
-        
+
         smsServiceStatus = smsLibService.getServiceStatus();
 
         smsConfig = smsConfigurationManager.getSmsConfiguration();
@@ -157,6 +165,10 @@ public class GetSmsConfigurationAction
                 else if ( gw instanceof ModemGatewayConfig )
                 {
                     modemIndex = index;
+                }
+                else if ( gw instanceof SMPPGatewayConfig )
+                {
+                    smppIndex = index;
                 }
                 else
                 {
