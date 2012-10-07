@@ -21,12 +21,27 @@
 					}
 				}
 		});
-		
-		hideById('patientForm [id=underAgeDiv]');
+		jQuery('#patientForm [id=fullName]').val("");
+		hideById('underAgeDiv');
+		hideById('representativeFormDiv');
+		jQuery('#patientForm [inherit=false]').val("");
+		jQuery('#patientForm [inherit=]').val("");
+		jQuery('#patientForm [id=healthWorkerId]').val("");
+		jQuery('#patientForm [id^="iden"]').val("");
+		hideById('patientForm [id=age]');
+
 		datePickerValid( 'patientForm [id=birthDate]' );
 		addEventForPatientForm('patientForm');
 	});		
 </script>
+
+<h3>
+	<a href="javascript:loadPatientList();">$i18n.getString( 'patient_management' )</a>
+	&#8226; <a href="javascript:showPatientDashboardForm($!patient.id);">$i18n.getString( 'patient_dashboard' )</a>
+	&#8226; <a href="javascript:showRelationshipList( '$patient.id' )">$i18n.getString( "relationship_management" )</a>
+	&raquo; <a href="javascript:showAddRelationship('$patient.id')" >$i18n.getString( 'seach_available_patient' )</a>
+	&#8226; $i18n.getString( 'add_new_patient' )
+</h5>
 
 <h4>$i18n.getString("add_new_relationship_for"):  $patient.getFullName()</h4>
 																		
@@ -39,7 +54,8 @@
 			<select name="relationshipTypeId" id="relationshipTypeId" class="{validate:{required:true}}" >
 				<option value="">[$i18n.getString( "please_select" )]</option>        
 				#foreach ($relationship in $relationshipTypes)
-					<option value="$relationship.id">${relationship.aIsToB} - ${relationship.bIsToA}</option>
+					<option value="$relationship.id" relationshipFromA='true'>${relationship.aIsToB} $i18n.getString("of") $patient.getFullName() (${relationship.bIsToA})</option>
+					<option value="$relationship.id" relationshipFromA='false'>${relationship.bIsToA} $i18n.getString("of") $patient.getFullName() (${relationship.aIsToB})</option>
 				#end
 			</select>
 		</td>
@@ -52,27 +68,9 @@
 		<td></td>
 		<td>
 			<input type="submit" class='button' value="$i18n.getString( 'add' )" />
-			<input type="button" class='button' id='backbtn' value="$i18n.getString( 'back_to_registration' )" onclick="showRelationshipList($patient.id);">
+			<input type="button" class='button' value="$i18n.getString( 'cancel' )" onclick="showRelationshipList($patient.id);">
 		</td>
 	</tr>
-	</table>
-
-<p>
-	
-
+</table>
 </form> 	
-
-<script>
-	var i18n_back_to_registration = '$encoder.jsEscape( $i18n.getString( "back_to_registration" ) , "'" )';
-    var i18n_back_to_relationship = '$encoder.jsEscape( $i18n.getString( "back_to_relationship" ) , "'" )';
-    
-	if( getFieldValue('isShowPatientList') == 'false' )
-	{
-		jQuery('#backbtn').val(i18n_back_to_relationship);
-	}
-	else
-	{
-		jQuery('#backbtn').val(i18n_back_to_registration);
-	}
-</script>
 

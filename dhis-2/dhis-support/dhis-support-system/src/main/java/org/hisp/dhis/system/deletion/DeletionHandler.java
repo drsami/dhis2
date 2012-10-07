@@ -70,11 +70,13 @@ import org.hisp.dhis.patient.PatientIdentifierType;
 import org.hisp.dhis.patientattributevalue.PatientAttributeValue;
 import org.hisp.dhis.patientdatavalue.PatientDataValue;
 import org.hisp.dhis.period.Period;
+import org.hisp.dhis.period.RelativePeriods;
 import org.hisp.dhis.program.Program;
 import org.hisp.dhis.program.ProgramInstance;
 import org.hisp.dhis.program.ProgramStage;
 import org.hisp.dhis.program.ProgramStageDataElement;
 import org.hisp.dhis.program.ProgramStageInstance;
+import org.hisp.dhis.program.ProgramStageSection;
 import org.hisp.dhis.program.ProgramValidation;
 import org.hisp.dhis.relationship.Relationship;
 import org.hisp.dhis.relationship.RelationshipType;
@@ -313,6 +315,15 @@ public abstract class DeletionHandler
         return null;
     }
 
+    public void deleteRelativePeriods( RelativePeriods relativePeriods )
+    {
+    }
+    
+    public String allowDeleteRelativePeriods( RelativePeriods relativePeriods )
+    {
+        return null;
+    }
+    
     public void deleteValidationRule( ValidationRule validationRule )
     {
     }
@@ -581,6 +592,15 @@ public abstract class DeletionHandler
 
     public void deleteProgramStage( ProgramStage programStage )
     {
+    }
+    
+    public void deleteProgramStageSection( ProgramStageSection programStageSection )
+    {
+    }
+    
+    public String allowDeleteProgramStageSection( ProgramStageSection programStageSection )
+    {
+        return null;
     }
 
     public String allowDeleteProgramStageInstance( ProgramStageInstance programStageInstance )

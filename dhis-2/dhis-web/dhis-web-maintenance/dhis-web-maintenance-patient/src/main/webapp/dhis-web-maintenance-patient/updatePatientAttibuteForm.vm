@@ -32,6 +32,14 @@
 		<td></td>				
 	</tr>
 	
+	<tr>
+		<td><label for="inherit">$i18n.getString( "inherit" )</label></td>
+		<td>
+			<input type='checkbox' id="inherit" name="inherit" value='true' #if( $patientAttribute.inherit ) checked #end>
+		</td>		
+		<td></td>				
+	</tr>
+	
     <tr>
         <td>$i18n.getString( "value_type" ) <em title="$i18n.getString( "required" )" class="required">*</em></td>
         <td>
@@ -59,19 +67,6 @@
 		<td><span id="attrMessage"  name="attrMessage" style="color:red;"></span></td>
 	</tr>
 	
-	<tr>
-		<td><label for="programId">$i18n.getString( "program" )</label></td>
-		<td>
-			<select type="text" name="programId" id="programId" value="$!patientAttribute.program" >
-				<option value=''>[$i18n.getString('all')]</option>
-				#foreach( $program in $programs)
-					<option value='$program.id' #if($patientAttribute.program.id==$program.id) selected #end>$program.name</option>
-				#end
-			</select>
-		</td>		
-		<td></td>				
-	</tr> 
-	
     </tbody>
 	
 	<tr>
@@ -81,7 +76,7 @@
 			<input type="button" value="$i18n.getString( 'cancel' )" onclick="window.location.href='patientAttribute.action'">
 		</td>
 	</tr>
-  </table>  
+  </table>
 </form>
 
 <script>

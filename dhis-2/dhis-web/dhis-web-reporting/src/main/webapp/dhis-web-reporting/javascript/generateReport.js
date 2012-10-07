@@ -22,7 +22,7 @@ function validationError()
 
 function viewReport( type )
 {
-	var reportType = type != null && type != "" ? type : "pdf";
+	var reportType = isDefined( type ) && type != "" ? type : "pdf";
 
     if ( validationError() )
     {
@@ -65,9 +65,10 @@ function getUrlParams()
 // Report table
 // -----------------------------------------------------------------------------
 
-function exportReport( type, uid )
+function exportReport( type, uid, pe, ou )
 {
-    var url = "exportTable.action?uid=" + uid + "&type=" + type + "&useLast=true";
+    var url = "exportTable.action?type=" + type + 
+    	"&uid=" + uid + "&pe=" + pe + "&ou=" + ou;
 
     url += $( "#id" ).length ? ( "&id=" + $( "#id" ).val() ) : "";
 

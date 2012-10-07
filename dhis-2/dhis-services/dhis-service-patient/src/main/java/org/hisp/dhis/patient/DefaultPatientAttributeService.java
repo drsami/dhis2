@@ -28,7 +28,6 @@ package org.hisp.dhis.patient;
 
 import java.util.Collection;
 
-import org.hisp.dhis.program.Program;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -103,20 +102,10 @@ public class DefaultPatientAttributeService
     {
         return patientAttributeStore.getByMandatory( mandatory );
     }
-
-    public Collection<PatientAttribute> getPatientAttributes( Program program, PatientAttributeGroup group )
-    {
-        return patientAttributeStore.get( program, group );
-    }
     
     public Collection<PatientAttribute> getPatientAttributesWithoutGroup()
     {
         return patientAttributeStore.getWithoutGroup();
-    }
-    
-    public Collection<PatientAttribute> getPatientAttributes( Program program )
-    {
-        return patientAttributeStore.get( program );
     }
 
 }

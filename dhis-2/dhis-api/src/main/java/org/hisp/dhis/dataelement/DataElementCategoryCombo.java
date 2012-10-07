@@ -64,7 +64,8 @@ public class DataElementCategoryCombo
     private List<DataElementCategory> categories = new ArrayList<DataElementCategory>();
 
     /**
-     * A set of category option combos.
+     * A set of category option combos. Use getSortedOptionCombos() to get a
+     * sorted list of category option combos.
      */
     private Set<DataElementCategoryOptionCombo> optionCombos = new HashSet<DataElementCategoryOptionCombo>();
 
@@ -143,7 +144,7 @@ public class DataElementCategoryCombo
         while ( generator.hasNext() )
         {
             DataElementCategoryOptionCombo optionCombo = new DataElementCategoryOptionCombo();
-            optionCombo.setCategoryOptions( generator.getNext() );
+            optionCombo.setCategoryOptions( new HashSet<DataElementCategoryOption>( generator.getNext() ) );
             optionCombo.setCategoryCombo( this );
             list.add( optionCombo );
         }
@@ -151,26 +152,58 @@ public class DataElementCategoryCombo
         return list;
     }
 
+    public List<DataElementCategoryOptionCombo> getSortedOptionCombos()
+    {
+        List<DataElementCategoryOptionCombo> list = new ArrayList<DataElementCategoryOptionCombo>();
+
+        CombinationGenerator<DataElementCategoryOption> generator =
+            new CombinationGenerator<DataElementCategoryOption>( getCategoryOptionsAsArray() );
+
+        sortLoop : while ( generator.hasNext() )
+        {
+            List<DataElementCategoryOption> categoryOptions = generator.getNext();
+            
+            Set<DataElementCategoryOption> categoryOptionSet = new HashSet<DataElementCategoryOption>( categoryOptions );
+            
+            for ( DataElementCategoryOptionCombo optionCombo : optionCombos )
+            {
+                if ( optionCombo.getCategoryOptions() != null && optionCombo.getCategoryOptions().equals( categoryOptionSet ) )
+                {
+                    optionCombo.setName( getNameFromCategoryOptions( categoryOptions ) );
+                    list.add( optionCombo );
+                    continue sortLoop;
+                }
+            }
+        }
+        
+        return list;
+    }
+    
+    private String getNameFromCategoryOptions( List<DataElementCategoryOption> categoryOptions )
+    {
+        StringBuilder name = new StringBuilder();
+
+        if ( categoryOptions != null && categoryOptions.size() > 0 )
+        {
+            Iterator<DataElementCategoryOption> iterator = categoryOptions.iterator();
+
+            name.append( "(" ).append( iterator.next().getDisplayName() );
+
+            while ( iterator.hasNext() )
+            {
+                name.append( ", " ).append( iterator.next().getDisplayName() );
+            }
+
+            name.append( ")" );
+        }
+
+        return name.toString();
+    }
+    
     //TODO update category option -> category option combo association
     public void generateOptionCombos()
     {
         this.optionCombos = new HashSet<DataElementCategoryOptionCombo>( generateOptionCombosList() );
-    }
-
-    public List<DataElementCategoryOptionCombo> getSortedOptionCombos()
-    {
-        final List<DataElementCategoryOptionCombo> persistedList = new ArrayList<DataElementCategoryOptionCombo>( optionCombos );
-        final List<DataElementCategoryOptionCombo> sortedList = generateOptionCombosList();
-
-        Collections.sort( persistedList, new Comparator<DataElementCategoryOptionCombo>()
-        {
-            public int compare( DataElementCategoryOptionCombo o1, DataElementCategoryOptionCombo o2 )
-            {
-                return new Integer( sortedList.indexOf( o1 ) ).compareTo( new Integer( sortedList.indexOf( o2 ) ) );
-            }
-        } );
-
-        return persistedList;
     }
 
     // -------------------------------------------------------------------------
@@ -250,7 +283,7 @@ public class DataElementCategoryCombo
         this.categories = categories;
     }
 
-    @JsonProperty( value = "categoryOptionCombo" )
+    @JsonProperty( value = "categoryOptionCombos" )
     @JsonSerialize( contentAs = BaseIdentifiableObject.class )
     @JsonView( {DetailedView.class} )
     @JacksonXmlElementWrapper( localName = "categoryOptionCombos", namespace = Dxf2Namespace.NAMESPACE )

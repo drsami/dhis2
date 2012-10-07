@@ -1,93 +1,3 @@
-var SUCCESS_COLOR = '#ccffcc';
-var ERROR_COLOR = '#ccccff';
-var SAVING_COLOR = '#ffffcc';
-var SUCCESS = 'success';
-var ERROR = 'error';
-	
-//--------------------------------------------------------------------------------------------
-// Load program-stages by the selected program
-//--------------------------------------------------------------------------------------------
-
-function loadProgramStages()
-{
-	jQuery('#createNewEncounterDiv').dialog('close');
-	hideById('dataEntryFormDiv');
-	setFieldValue('executionDate','');
-	setFieldValue('dueDate','');
-	disableCompletedButton(true);
-	disable('uncompleteBtn');
-	disable('validationBtn');
-	hideById('inputCriteriaDiv');
-	$('#programStageIdTR').html('');
-	hideById('colorHelpLink');
-	
-	var programId = jQuery('#dataRecordingSelectDiv [name=programId]').val();
-	if ( programId == 0 )
-	{
-		return;
-	}
-	
-	jQuery.getJSON( "loadProgramStageInstances.action",
-		{
-			programId: programId
-		},  
-		function( json ) 
-		{    
-			hideById('executionDateTB');
-			if(byId('repeatableProgramStageId').options.length == 0)
-			{
-				hideById("newEncounterBtn");
-			}
-			
-			var type = jQuery('#dataRecordingSelectDiv [name=programId] option:selected').attr('type');
-			if( type == 1 )
-			{
-				showById('colorHelpLink');
-				for ( i in json.programStageInstances ) 
-				{
-					if( i!= 0 )
-					{
-						$('#programStageIdTR').append('<td><img src="images/rightarrow.png"></td>');
-					}
-
-					var status =json.programStageInstances[i].status;
-					var programStageInstanceId = json.programStageInstances[i].id;
-					var programStageId = json.programStageInstances[i].programStageId;
-					var programStageName= json.programStageInstances[i].programStageName;
-					var elementId = prefixId + programStageInstanceId;
-					
-					$('#programStageIdTR').append('<td><input name="programStageBtn" '
-						+ 'id="' + elementId + '"' 
-						+ 'type="button" class="stage-object" '
-						+ 'psid="' + programStageId + '"' 
-						+ 'psname="' + programStageName + '" '
-						+ 'dueDate="' + json.programStageInstances[i].dueDate + '"'
-						+ 'value="'+ programStageName + ' ' + json.programStageInstances[i].dueDate + '" '
-						+ 'onclick="javascript:loadDataEntry(' + programStageInstanceId + ')"></td>');
-					setEventColorStatus( elementId, status );
-				}
-				
-				disableCompletedButton(true);
-				disable('validationBtn');
-				showById('programStageIdTB');
-				showById('programInstanceFlowDiv');
-			}
-			// Load entry form for Single-event program or normal program with only one program-stage
-			else 
-			{
-				jQuery('#dueDateTR').attr('class','hidden');
-				disableCompletedButton(false);
-				hideById('programStageIdTB');
-				hideById('programInstanceFlowDiv');
-				var programStageInstanceId = '';
-				if( json.programStageInstances.length == 1 )
-				{
-					programStageInstanceId = json.programStageInstances[0].id;
-				}
-				loadDataEntry( programStageInstanceId );
-			}
-	});
-}
 
 //------------------------------------------------------------------------------
 // Save value
@@ -195,13 +105,10 @@ function updateProvidingFacility( dataElementId, checkField )
     
 }
 
-function saveExecutionDate( programId, executionDateValue )
+function saveExecutionDate( programId, programStageInstanceId, field )
 {
-    var field = document.getElementById( 'executionDate' );
-	
-    field.style.backgroundColor = SAVING_COLOR;
-	
-    var executionDateSaver = new ExecutionDateSaver( programId, executionDateValue, SUCCESS_COLOR );
+	field.style.backgroundColor = SAVING_COLOR;
+    var executionDateSaver = new ExecutionDateSaver( programId, programStageInstanceId, field.value, SUCCESS_COLOR );
     executionDateSaver.save();
 	
     if( !jQuery("#entryForm").is(":visible") )
@@ -430,9 +337,10 @@ function FacilitySaver( dataElementId_, providedElsewhere_, resultColor_ )
     }
 }
 
-function ExecutionDateSaver( programId_, executionDate_, resultColor_ )
+function ExecutionDateSaver( programId_, programStageInstanceId_, executionDate_, resultColor_ )
 {
     var programId = programId_;
+    var programStageInstanceId = programStageInstanceId_;
     var executionDate = executionDate_;
     var resultColor = resultColor_;
 
@@ -440,22 +348,31 @@ function ExecutionDateSaver( programId_, executionDate_, resultColor_ )
     {
 		var params  = "executionDate=" + executionDate;
 			params += "&programId=" + programId;
+			params += "&programStageInstanceId=" + programStageInstanceId;
 			
 		$.ajax({
 			   type: "POST",
 			   url: "saveExecutionDate.action",
 			   data: params,
 			   dataType: "xml",
-			   success: function( result ){
-					handleResponse (result);
-					
+			   success: function( result ){	
 					var selectedProgramStageInstance = jQuery( '#' + prefixId + getFieldValue('programStageInstanceId') );
-					jQuery(".stage-object-selected").css('border-color', COLOR_LIGHTRED);
-					jQuery(".stage-object-selected").css('background-color', COLOR_LIGHT_LIGHTRED);
+					var box = jQuery(".stage-object-selected");
+					var boxName = box.attr('psname') + "\n" + executionDate;
+					box.val( boxName );
+					box.css('border-color', COLOR_LIGHTRED);
+					box.css('background-color', COLOR_LIGHT_LIGHTRED);
 					disableCompletedButton(false);
 					enable('validationBtn');
 					setFieldValue( 'programStageId', selectedProgramStageInstance.attr('psid') );
 					
+					var fieldId = "value_" + programStageInstanceId + "_date";
+					jQuery("#" + fieldId).css('background-color', SUCCESS_COLOR);
+					jQuery('#executionDate').val(executionDate);
+					jQuery("#org_" + programStageInstanceId ).html(getFieldValue("orgunitName"));
+					showById('inputCriteriaDiv');
+					
+					handleResponse (result);
 			   },
 			   error: function(request,status,errorThrown) {
 					handleHttpError (request);
@@ -560,7 +477,7 @@ function doComplete( isCreateEvent )
 				{
 					programStageInstanceId: getFieldValue('programStageInstanceId')
 				},
-				function (data)
+				function (json)
 				{
 					jQuery(".stage-object-selected").css('border-color', COLOR_GREEN);
 					jQuery(".stage-object-selected").css('background-color', COLOR_LIGHT_GREEN);
@@ -575,25 +492,16 @@ function doComplete( isCreateEvent )
 					}
 					
 					var selectedProgram = jQuery('.stage-object-selected');
-					if( selectedProgram.attr('programType')=='2' )
+					if( selectedProgram.attr('programType')=='2' || json.response == 'programcompleted' )
 					{
-						selectedProgram.remove();
-						hideById('programInstanceDiv');
-						hideById('entryFormContainer');
+						var completedRow = jQuery('#td_' + programInstanceId).html();
+						jQuery('#completedList' ).append('<option value="' +  programInstanceId + '">' + getInnerHTML('infor_' + programInstanceId ) + '</option>');
 					}
 					
-					selection.enable();
 					hideLoader();
 					hideById('contentDiv');
 					
-					var completedRow = jQuery('#td_' + programInstanceId).html();
-					jQuery('#completedTB' ).prepend("<tr><td>" + completedRow + "</td></tr>");
-					hideById('tr1_' + programInstanceId );
-					hideById('tr2_' + programInstanceId );
-					jQuery('#img_' + programInstanceId).attr('src','');					
-					
-					if( isCreateEvent )
-					{
+					if( isCreateEvent ){
 						showAddEventForm();
 					}
 				});

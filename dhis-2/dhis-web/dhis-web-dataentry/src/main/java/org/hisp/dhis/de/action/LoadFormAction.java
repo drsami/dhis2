@@ -160,11 +160,11 @@ public class LoadFormAction
         return catColRepeat;
     }
 
-    private Map<Integer, Collection<DataElementCategoryOptionCombo>> orderdCategoryOptionCombos = new HashMap<Integer, Collection<DataElementCategoryOptionCombo>>();
+    private Map<Integer, Collection<DataElementCategoryOptionCombo>> orderedCategoryOptionCombos = new HashMap<Integer, Collection<DataElementCategoryOptionCombo>>();
 
-    public Map<Integer, Collection<DataElementCategoryOptionCombo>> getOrderdCategoryOptionCombos()
+    public Map<Integer, Collection<DataElementCategoryOptionCombo>> getOrderedCategoryOptionCombos()
     {
-        return orderdCategoryOptionCombos;
+        return orderedCategoryOptionCombos;
     }
 
     private List<DataElementCategoryCombo> orderedCategoryCombos = new ArrayList<DataElementCategoryCombo>();
@@ -186,6 +186,13 @@ public class LoadFormAction
     public Map<String, Boolean> getGreyedFields()
     {
         return greyedFields;
+    }
+
+    private List<DataElement> dataElementsNotInForm = new ArrayList<DataElement>();
+
+    public List<DataElement> getDataElementsNotInForm()
+    {
+        return dataElementsNotInForm;
     }
 
     // -------------------------------------------------------------------------
@@ -214,7 +221,7 @@ public class LoadFormAction
         {
             List<DataElementCategoryOptionCombo> optionCombos = categoryCombo.getSortedOptionCombos();
 
-            orderdCategoryOptionCombos.put( categoryCombo.getId(), optionCombos );
+            orderedCategoryOptionCombos.put( categoryCombo.getId(), optionCombos );
 
             // -----------------------------------------------------------------
             // Perform ordering of categories and their options so that they
@@ -325,6 +332,10 @@ public class LoadFormAction
         {
             customDataEntryFormCode = dataEntryFormService.prepareDataEntryFormForEntry( dataEntryForm.getHtmlCode(),
                 i18n, dataSet );
+
+            dataElementsNotInForm = new ArrayList<DataElement>( dataSet.getDataElements() );
+            dataElementsNotInForm.removeAll( dataEntryFormService.getDataElementsInDataEntryForm( dataSet ) );        
+            Collections.sort( dataElementsNotInForm, IdentifiableObjectNameComparator.INSTANCE );
         }
 
         List<DataElement> des = new ArrayList<DataElement>();
@@ -337,5 +348,6 @@ public class LoadFormAction
 
             orderedDataElements.put( categoryCombo, des );
         }
+
     }
 }

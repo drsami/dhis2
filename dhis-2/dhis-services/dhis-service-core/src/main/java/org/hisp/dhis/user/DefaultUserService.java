@@ -28,11 +28,7 @@ package org.hisp.dhis.user;
  */
 
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -191,6 +187,12 @@ public class DefaultUserService
     public Collection<User> getAllUsersBetween( int first, int max )
     {
         return userStore.getBetween( first, max );
+    }
+    
+    @Override
+    public Collection<User> getAllUsersBetweenByName( String name, int first, int max )
+    {
+        return userStore.getBetweenByName( name, first, max );
     }
 
     @Override

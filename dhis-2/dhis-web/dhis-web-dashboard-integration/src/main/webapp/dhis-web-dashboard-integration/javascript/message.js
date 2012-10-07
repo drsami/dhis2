@@ -20,7 +20,13 @@ function validateMessage()
 {
 	var subject = $( "#subject" ).val();
 	var text = $( "#text" ).val();
-	
+
+    if( $('#selectionTree').find('.selected').length == 0 && $('#additionalUsers').val().length == 0 )
+    {
+        setHeaderMessage( i18n_select_one_or_more_recipients );
+        return false;
+    }
+
 	if ( subject == null || subject.trim() == '' )
 	{
 		setHeaderMessage( i18n_enter_subject );
@@ -91,4 +97,20 @@ function toggleFollowUp( id, followUp )
 			
 		$( "#" + imageId ).attr( "src", imageSrc );
 	} );
+}
+
+function formatItem( item )
+{
+    if ( item.id && item.id.indexOf("u:") != -1 )
+    {
+        return '<img src="../icons/glyphicons_003_user.png" style="width: 12px; height: 12px; padding-right: 5px;"/>' + item.text;
+    }
+    else if ( item.id && item.id.indexOf('ug:') != -1 )
+    {
+        return '<img src="../icons/glyphicons_043_group.png" style="width: 12px; height: 12px; padding-right: 5px;"/>' + item.text;
+    }
+    else
+    {
+        return item.text;
+    }
 }

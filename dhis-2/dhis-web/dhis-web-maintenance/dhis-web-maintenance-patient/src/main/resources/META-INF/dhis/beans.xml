@@ -88,8 +88,6 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 			ref="org.hisp.dhis.patient.PatientAttributeService" />
 		<property name="patientAttributeOptionService"
 			ref="org.hisp.dhis.patient.PatientAttributeOptionService" />
-		<property name="programService"
-			ref="org.hisp.dhis.program.ProgramService" />
 	</bean>
 
 	<bean
@@ -110,8 +108,6 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 			ref="org.hisp.dhis.patient.PatientAttributeOptionService" />
 		<property name="patientAttributeValueService"
 			ref="org.hisp.dhis.patientattributevalue.PatientAttributeValueService" />
-		<property name="programService"
-			ref="org.hisp.dhis.program.ProgramService" />
 	</bean>
 
 	<bean
@@ -165,6 +161,8 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 		<property name="programService" ref="org.hisp.dhis.program.ProgramService" />
 		<property name="programStageService" ref="org.hisp.dhis.program.ProgramStageService" />
 		<property name="programInstanceService" ref="org.hisp.dhis.program.ProgramInstanceService" />
+		<property name="patientIdentifierTypeService" ref="org.hisp.dhis.patient.PatientIdentifierTypeService" />
+		<property name="patientAttributeService" ref="org.hisp.dhis.patient.PatientAttributeService" />
 	</bean>
 
 	<bean id="org.hisp.dhis.patient.action.program.GetProgramListAction"
@@ -196,13 +194,26 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 	<bean id="org.hisp.dhis.patient.action.program.ShowAddProgramFormAction"
 		class="org.hisp.dhis.patient.action.program.ShowAddProgramFormAction"
 		scope="prototype">
-		<property name="programStageService" ref="org.hisp.dhis.program.ProgramStageService" />
+		<property name="programService" ref="org.hisp.dhis.program.ProgramService" />
+		<property name="patientIdentifierTypeService" ref="org.hisp.dhis.patient.PatientIdentifierTypeService" />
+		<property name="patientAttributeService" ref="org.hisp.dhis.patient.PatientAttributeService" />
 	</bean>
+	
+	<bean id="org.hisp.dhis.patient.action.program.ShowUpdateProgramFormAction"
+		class="org.hisp.dhis.patient.action.program.ShowUpdateProgramFormAction"
+		scope="prototype">
+		<property name="programService" ref="org.hisp.dhis.program.ProgramService" />
+		<property name="patientIdentifierTypeService" ref="org.hisp.dhis.patient.PatientIdentifierTypeService" />
+		<property name="patientAttributeService" ref="org.hisp.dhis.patient.PatientAttributeService" />
+	</bean>
+	
 
 	<bean id="org.hisp.dhis.patient.action.program.UpdateProgramAction"
 		class="org.hisp.dhis.patient.action.program.UpdateProgramAction"
 		scope="prototype">
 		<property name="programService" ref="org.hisp.dhis.program.ProgramService" />
+		<property name="patientIdentifierTypeService" ref="org.hisp.dhis.patient.PatientIdentifierTypeService" />
+		<property name="patientAttributeService" ref="org.hisp.dhis.patient.PatientAttributeService" />
 	</bean>
 
 	<bean id="org.hisp.dhis.patient.action.program.ValidateProgramAction"
@@ -298,7 +309,6 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 	
 	<bean id="org.hisp.dhis.patient.action.programstage.RemoveProgramStageSectionAction"
 		class="org.hisp.dhis.patient.action.programstage.RemoveProgramStageSectionAction" scope="prototype">
-		<property name="programStageService" ref="org.hisp.dhis.program.ProgramStageService" />
 		<property name="programStageSectionService" ref="org.hisp.dhis.program.ProgramStageSectionService" />
 	</bean>
 	
@@ -490,9 +500,6 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 		<property name="patientIdentifierTypeService">
 			<ref bean="org.hisp.dhis.patient.PatientIdentifierTypeService" />
 		</property>
-		<property name="programService">
-			<ref bean="org.hisp.dhis.program.ProgramService" />
-		</property>
 	</bean>
 
 	<bean
@@ -527,9 +534,6 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 		scope="prototype">
 		<property name="patientIdentifierTypeService">
 			<ref bean="org.hisp.dhis.patient.PatientIdentifierTypeService" />
-		</property>
-		<property name="programService">
-			<ref bean="org.hisp.dhis.program.ProgramService" />
 		</property>
 	</bean>
 	<bean
@@ -871,6 +875,28 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 		<property name="programValidationService">
 			<ref bean="org.hisp.dhis.program.ProgramValidationService" />
 		</property>
+	</bean>
+	
+	<!-- Scheduling -->
+	
+	<bean id="org.hisp.dhis.patient.action.schedule.GetScheduleParamsAction"
+		class="org.hisp.dhis.patient.action.schedule.GetScheduleParamsAction"
+		scope="prototype">
+		<property name="systemSettingManager" ref="org.hisp.dhis.setting.SystemSettingManager" />
+		<property name="schedulingManager" ref="org.hisp.dhis.patient.scheduling.ProgramSchedulingManager" />
+	</bean>
+	
+	<bean id="org.hisp.dhis.patient.action.schedule.ScheduleSendMessageTasksAction" class="org.hisp.dhis.patient.action.schedule.ScheduleSendMessageTasksAction"  scope="prototype">
+ 		 <property name="systemSettingManager" ref="org.hisp.dhis.setting.SystemSettingManager" />
+ 		 <property name="schedulingManager" ref="org.hisp.dhis.patient.scheduling.ProgramSchedulingManager" />
+ 	</bean>
+ 	
+ 	<bean id="org.hisp.dhis.patient.action.schedule.ExecuteSendMessageAction"
+		class="org.hisp.dhis.patient.action.schedule.ExecuteSendMessageAction"
+		scope="prototype">
+		<property name="programStageInstanceService" ref="org.hisp.dhis.program.ProgramStageInstanceService" />
+		<property name="jdbcTemplate" ref="jdbcTemplate" />
+		<property name="outboundSmsService" ref="org.hisp.dhis.sms.outbound.OutboundSmsService" />
 	</bean>
 
 </beans>

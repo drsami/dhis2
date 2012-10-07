@@ -6,12 +6,11 @@
 				infrastructuralDataElements: getFieldValue( 'infrastructuralDataElements' ),
 				infrastructuralPeriodType: getFieldValue( 'infrastructuralPeriodType' ),
 				feedbackRecipients: getFieldValue( 'feedbackRecipients' ),
-                completenessRecipients: getFieldValue( 'completenessRecipients' ),
                 offlineOrganisationUnitLevel: getFieldValue( 'offlineOrganisationUnitLevel' ),
 				omitIndicatorsZeroNumeratorDataMart: jQuery( '#omitIndicatorsZeroNumeratorDataMart' ).is( ':checked' ),
-				disableDataEntryWhenCompleted: jQuery( '#disableDataEntryWhenCompleted' ).is( ':checked' ),
 				factorDeviation: getFieldValue( 'factorDeviation' ),
-				completenessOffset: getFieldValue( 'completenessOffset' )
+				completenessOffset: getFieldValue( 'completenessOffset' ),
+				phoneNumberAreaCode: getFieldValue( 'phoneNumberAreaCode' )
 			}, function( json ) {
 				if ( json.response == "success" )
 					setHeaderDelayMessage( json.message );
@@ -67,18 +66,6 @@
 </select>
 </p>
 
-<!-- completeness_recipients -->
-<h4>$i18n.getString( "completeness_recipients" )</h4>
-
-<p>
-<select id="completenessRecipients" name="completenessRecipients" style="width:30em">
-	<option value="-1">$i18n.getString( "no_completeness_recipients" )</option>
-	#foreach ( $group in $userGroups )
-	<option value="$group.id" #if( $group.id == $!completenessRecipients.id )selected="selected"#end>$encoder.htmlEncode( $group.name )</option>
-	#end
-</select>
-</p>
-
 <!-- max_levels_to_offline -->
 <h4>$i18n.getString( "max_levels_to_offline" )</h4>
 
@@ -100,13 +87,6 @@
 	<input type="checkbox" id="omitIndicatorsZeroNumeratorDataMart" name="omitIndicatorsZeroNumeratorDataMart" #if( $omitIndicatorsZeroNumeratorDataMart )checked="checked"#end/>
 </p>
 
-<!-- disable_dataentry_when_dataset_completed -->
-<h4>$i18n.getString( "disable_dataentry_when_dataset_completed" )</h4>
-
-<p>
-	<input type="checkbox" id="disableDataEntryWhenCompleted" name="disableDataEntryWhenCompleted" #if( $dataEntryFormCompleted )checked="checked"#end/>
-</p>
-
 <!-- data_analysis_factor -->
 <h4>$i18n.getString( "data_analysis_factor" )</h4>
 
@@ -119,6 +99,14 @@
 
 <p>
 	<input type="text" id="completenessOffset" name="completenessOffset" value="$!completenessOffset"/>
+</p>
+
+
+<!-- area code -->
+<h4>$i18n.getString( "phone_number_area_code" )</h4>
+
+<p>
+	<input type="text" id="phoneNumberAreaCode" name="phoneNumberAreaCode" value="$!phoneNumberAreaCode"/>
 </p>
 
 <p><input type="button" value="$i18n.getString( 'save' )" style="width:10em"/></p>

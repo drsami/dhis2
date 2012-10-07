@@ -38,7 +38,9 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
     <property name="reportTableService" ref="org.hisp.dhis.reporttable.ReportTableService" />
     <property name="constantService" ref="org.hisp.dhis.constant.ConstantService" />
     <property name="statementManager" ref="statementManager" />
+    <property name="organisationUnitService" ref="org.hisp.dhis.organisationunit.OrganisationUnitService" />
     <property name="organisationUnitGroupService" ref="org.hisp.dhis.organisationunit.OrganisationUnitGroupService" />
+    <property name="periodService" ref="org.hisp.dhis.period.PeriodService" />
   </bean>
 
   <!-- Chart -->
@@ -153,6 +155,11 @@ http://www.springframework.org/schema/aop http://www.springframework.org/schema/
 
   <bean id="org.hisp.dhis.dashboard.DashboardService" class="org.hisp.dhis.dashboard.impl.DefaultDashboardService">
     <property name="dashboardContentStore" ref="org.hisp.dhis.dashboard.DashboardContentStore" />
+    <property name="chartService" ref="org.hisp.dhis.chart.ChartService" />
+    <property name="mappingService" ref="org.hisp.dhis.mapping.MappingService" />
+    <property name="reportService" ref="org.hisp.dhis.report.ReportService" />
+    <property name="reportTableService" ref="org.hisp.dhis.reporttable.ReportTableService" />
+    <property name="documentService" ref="org.hisp.dhis.document.DocumentService" />
   </bean>
 
   <!-- Dashboard Content providers -->

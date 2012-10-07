@@ -2,7 +2,7 @@
 	jQuery('#relationshipSelectForm').ready(function(){
 		
 		jQuery('name').focus();
-			
+		
 		validation( 'relationshipSelectForm', function(form){
 			validateSearchPartner();
 		}); 
@@ -10,7 +10,15 @@
 	});		
 </script>
 
-<h4>$i18n.getString( "adding_new_relationship_for" ):  $encoder.htmlEncode( $patient.getFullName() )  </h4>
+<h3>
+	<a href="javascript:loadPatientList();">$i18n.getString( 'patient_management' )</a>
+	&#8226; <a href="javascript:showPatientDashboardForm($!patient.id);">$i18n.getString( 'patient_dashboard' )</a>
+	&#8226; <a href="javascript:showRelationshipList( '$patient.id' )">$i18n.getString( "relationship_management" )</a>
+	&raquo; $i18n.getString( 'seach_available_patient' )
+</h3>
+<h5>
+	$i18n.getString( "adding_new_relationship_for" ): $encoder.htmlEncode( $patient.getFullName() )
+</h5>
 
 <form id="relationshipSelectForm" name="relationshipSelectForm" method="post" action="showAddRelationshipForm.action">
 <input type="hidden" id="patientId" name="patientId" value="$patient.id"/>
@@ -56,18 +64,17 @@
 				<th colspan='2'>$i18n.getString('relationship_for') $patient.getFullName()</th>
 			</tr>
             <tr>
-                <td>$encoder.htmlEncode( $patient.getFullName() ) $i18n.getString( "'s" )</td>
+                <td>$encoder.htmlEncode( $patient.getFullName() ) $i18n.getString( "is" )</td>
             </tr>
             <tr>  
                 <td>
                     <select id="relationshipTypeId" name="relationshipTypeId" class="{validate:{required:true}}" >
                         <option value="">[$i18n.getString( "select_relationship" )]</option>
                         #foreach( $relationshipType in $relationshipTypes )                        
-                            <option value="$relationshipType.id:$encoder.htmlEncode( $relationshipType.aIsToB )" #if( $relationshipTypeId && "$relationshipType.id:$encoder.htmlEncode( $relationshipType.aIsToB )" == $relationshipTypeId ) selected="selected" #end>$encoder.htmlEncode( $relationshipType.aIsToB )</option>
-                            <option value="$relationshipType.id:$encoder.htmlEncode( $relationshipType.bIsToA )" #if( $relationshipTypeId && "$relationshipType.id:$encoder.htmlEncode( $relationshipType.bIsToA )" == $relationshipTypeId ) selected="selected" #end>$encoder.htmlEncode( $relationshipType.bIsToA )</option>
+                            <option value="$relationshipType.id:$encoder.htmlEncode( $relationshipType.aIsToB )" #if( $relationshipTypeId && "$relationshipType.id:$encoder.htmlEncode( $relationshipType.aIsToB )" == $relationshipTypeId ) selected="selected" #end>$encoder.htmlEncode( $relationshipType.bIsToA ) $i18n.getString("of") $encoder.htmlEncode( $relationshipType.aIsToB ) </option>
+                            <option value="$relationshipType.id:$encoder.htmlEncode( $relationshipType.bIsToA )" #if( $relationshipTypeId && "$relationshipType.id:$encoder.htmlEncode( $relationshipType.bIsToA )" == $relationshipTypeId ) selected="selected" #end>$encoder.htmlEncode( $relationshipType.aIsToB ) $i18n.getString("of") $encoder.htmlEncode( $relationshipType.bIsToA ) </option>
                         #end
                     </select>
-                    &nbsp; $i18n.getString( "is" )
                 </td>
             </tr>           
                                     

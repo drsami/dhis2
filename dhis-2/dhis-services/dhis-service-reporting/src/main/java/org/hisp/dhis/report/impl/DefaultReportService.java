@@ -27,6 +27,9 @@ package org.hisp.dhis.report.impl;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import static org.hisp.dhis.system.util.ConversionUtils.getIdentifiers;
+import static org.hisp.dhis.system.util.TextUtils.getCommaDelimitedString;
+
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.util.Collection;
@@ -44,7 +47,11 @@ import org.hisp.dhis.common.GenericIdentifiableObjectStore;
 import org.hisp.dhis.common.Grid;
 import org.hisp.dhis.constant.ConstantService;
 import org.hisp.dhis.i18n.I18nFormat;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupService;
+import org.hisp.dhis.organisationunit.OrganisationUnitService;
+import org.hisp.dhis.period.Period;
+import org.hisp.dhis.period.PeriodService;
 import org.hisp.dhis.report.Report;
 import org.hisp.dhis.report.ReportService;
 import org.hisp.dhis.reporttable.ReportTable;
@@ -63,6 +70,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DefaultReportService
     implements ReportService
 {
+    public static final String ORGANISATIONUNIT_LEVEL_COLUMN_PREFIX = "idlevel";
+    
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
@@ -95,18 +104,32 @@ public class DefaultReportService
         this.statementManager = statementManager;
     }
     
+    private OrganisationUnitService organisationUnitService;
+    
+    public void setOrganisationUnitService( OrganisationUnitService organisationUnitService )
+    {
+        this.organisationUnitService = organisationUnitService;
+    }
+
     private OrganisationUnitGroupService organisationUnitGroupService;
 
     public void setOrganisationUnitGroupService( OrganisationUnitGroupService organisationUnitGroupService )
     {
         this.organisationUnitGroupService = organisationUnitGroupService;
     }
+    
+    private PeriodService periodService;
+
+    public void setPeriodService( PeriodService periodService )
+    {
+        this.periodService = periodService;
+    }
 
     // -------------------------------------------------------------------------
     // ReportService implementation
     // -------------------------------------------------------------------------
 
-    public void renderReport( OutputStream out, String reportUid, Date reportingPeriod,
+    public void renderReport( OutputStream out, String reportUid, Period period,
         String organisationUnitUid, String type, I18nFormat format )
     {
         Report report = getReport( reportUid );
@@ -115,6 +138,26 @@ public class DefaultReportService
 
         params.putAll( constantService.getConstantParameterMap() );
 
+        Date reportDate = new Date();
+        
+        if ( period != null )
+        {
+            params.put( PARAM_PERIOD_NAME, format.formatPeriod( period ) );
+            
+            reportDate = period.getStartDate();
+        }
+        
+        OrganisationUnit orgUnit = organisationUnitService.getOrganisationUnit( organisationUnitUid );
+        
+        if ( orgUnit != null )
+        {
+            int level = organisationUnitService.getLevelOfOrganisationUnit( orgUnit.getId() );
+            
+            params.put( PARAM_ORGANISATIONUNIT_COLUMN_NAME, orgUnit.getName() );
+            params.put( PARAM_ORGANISATIONUNIT_LEVEL, level );
+            params.put( PARAM_ORGANISATIONUNIT_LEVEL_COLUMN, ORGANISATIONUNIT_LEVEL_COLUMN_PREFIX + level );
+        }
+        
         try
         {
             JasperReport jasperReport = JasperCompileManager.compileReport( StreamUtils.getInputStream( report.getDesignContent() ) );
@@ -125,7 +168,7 @@ public class DefaultReportService
             {
                 ReportTable reportTable = report.getReportTable();
 
-                Grid grid = reportTableService.getReportTableGrid( reportTable.getUid(), format, reportingPeriod, organisationUnitUid );
+                Grid grid = reportTableService.getReportTableGrid( reportTable.getUid(), format, reportDate, organisationUnitUid );
 
                 if ( report.isUsingOrganisationUnitGroupSets() )
                 {
@@ -134,10 +177,22 @@ public class DefaultReportService
 
                 print = JasperFillManager.fillReport( jasperReport, params, grid );
             }
-            else // Assume SQL report and provide JDBC connection
+            else // Use JDBC data source
             {
                 Connection connection = statementManager.getHolder().getConnection();
 
+                if ( report.hasRelativePeriods() )
+                {
+                    Collection<Period> periods = periodService.reloadPeriods( report.getRelatives().getRelativePeriods() );
+                    String periodString = getCommaDelimitedString( getIdentifiers( Period.class, periods ) );
+                    params.put( PARAM_RELATIVE_PERIODS, periodString );
+                }
+                
+                if ( report.hasReportParams() && report.getReportParams().isParamOrganisationUnit() && orgUnit != null )
+                {
+                    params.put( PARAM_ORG_UNITS, String.valueOf( orgUnit.getId() ) );
+                }
+                
                 try
                 {
                     print = JasperFillManager.fillReport( jasperReport, params, connection );
@@ -152,7 +207,7 @@ public class DefaultReportService
             {
                 JRExportUtils.export( type, out, print );
             }
-        } 
+        }
         catch ( Exception ex )
         {
             throw new RuntimeException( "Failed to render report", ex );
@@ -166,7 +221,11 @@ public class DefaultReportService
 
     public void deleteReport( Report report )
     {
-        reportStore.delete( report );
+        if ( report != null )
+        {   
+            periodService.deleteRelativePeriods( report.getRelatives() );
+            reportStore.delete( report );
+        }
     }
 
     public Collection<Report> getAllReports()

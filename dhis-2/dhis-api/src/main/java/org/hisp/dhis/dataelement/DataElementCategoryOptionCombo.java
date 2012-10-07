@@ -69,8 +69,14 @@ public class DataElementCategoryOptionCombo
      * The category options.
      */
     @Scanned
-    private List<DataElementCategoryOption> categoryOptions = new ArrayList<DataElementCategoryOption>();
+    private Set<DataElementCategoryOption> categoryOptions = new HashSet<DataElementCategoryOption>();
 
+    // -------------------------------------------------------------------------
+    // Transient properties
+    // -------------------------------------------------------------------------
+
+    private transient String name;
+    
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -265,6 +271,11 @@ public class DataElementCategoryOptionCombo
     @Override
     public String getName()
     {
+        if ( name != null )
+        {
+            return name;
+        }
+        
         StringBuilder name = new StringBuilder();
 
         if ( categoryOptions != null && categoryOptions.size() > 0 )
@@ -287,7 +298,7 @@ public class DataElementCategoryOptionCombo
     @Override
     public void setName( String name )
     {
-        // throw new UnsupportedOperationException( "Cannot set name on DataElementCategoryOptionCombo: " + name );
+        this.name = name;
     }
 
     @Override
@@ -336,12 +347,12 @@ public class DataElementCategoryOptionCombo
     @JsonView( {DetailedView.class, ExportView.class} )
     @JacksonXmlElementWrapper( localName = "categoryOptions", namespace = Dxf2Namespace.NAMESPACE )
     @JacksonXmlProperty( localName = "categoryOption", namespace = Dxf2Namespace.NAMESPACE )
-    public List<DataElementCategoryOption> getCategoryOptions()
+    public Set<DataElementCategoryOption> getCategoryOptions()
     {
         return categoryOptions;
     }
 
-    public void setCategoryOptions( List<DataElementCategoryOption> categoryOptions )
+    public void setCategoryOptions( Set<DataElementCategoryOption> categoryOptions )
     {
         this.categoryOptions = categoryOptions;
     }

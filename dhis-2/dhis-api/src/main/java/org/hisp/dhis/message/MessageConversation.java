@@ -312,7 +312,6 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JsonSerialize( contentAs = BaseIdentifiableObject.class )
     @JsonView( {DetailedView.class, ExportView.class} )
     @JacksonXmlElementWrapper( localName = "messages", namespace = Dxf2Namespace.NAMESPACE )
     @JacksonXmlProperty( localName = "message", namespace = Dxf2Namespace.NAMESPACE )
@@ -330,6 +329,8 @@ public class MessageConversation
     // Transient fields
     //-------------------------------------------------------------------------------------------------------
 
+    @JsonProperty
+    @JacksonXmlProperty( isAttribute = true)
     public boolean isRead()
     {
         return read;
@@ -340,6 +341,8 @@ public class MessageConversation
         this.read = read;
     }
 
+    @JsonProperty
+    @JacksonXmlProperty( isAttribute = true)
     public boolean isFollowUp()
     {
         return followUp;

@@ -1,7 +1,52 @@
 
+var currentPage = 0;
+var pageLock = false;
+
 $( document ).ready( function() {
-	$( '.commentArea' ).autogrow();
+	$( ".commentArea" ).autogrow();
+	
+	$( document ).scroll( function() {
+		isNextPage();
+	} );
+	
+	$( "#interpretationFeed" ).load( "getInterpretations.action" );
 } );
+
+function isNextPage()
+{
+	var fromTop = $( document ).scrollTop();
+	var docHeight = $( document ).height();
+	var windowHeight = $( window ).height();
+	var threshold = parseInt( 350 );
+	var remaining = parseInt( docHeight - ( fromTop + windowHeight ) );
+	
+	if ( remaining < threshold )
+	{
+		loadNextPage();
+	}
+}
+
+function loadNextPage()
+{
+	if ( pageLock == true )
+	{
+		return false;
+	}
+	
+	pageLock = true;
+	currentPage++;
+	
+	$.get( "getInterpretations.action", { page: currentPage }, function( data ) {
+		$( "#interpretationFeed" ).append( data );
+		
+		if ( !isDefined ( data ) || $.trim( data ).length == 0 )
+		{
+			$( document ).off( "scroll" );
+		}
+		
+		pageLock = false;
+	} );
+}
 
 function showUserInfo( id )
 {
@@ -18,6 +63,8 @@ function showUserInfo( id )
 function postComment( uid )
 {	
 	var text = $( "#commentArea" + uid ).val();
+	
+	$( "#commentArea" + uid ).val( "" );
 	
 	var url = "../api/interpretations/" + uid + "/comment";
 	
@@ -37,8 +84,6 @@ function postComment( uid )
 					"<div class=\"interpretationText\">${text}<\/div>";
 				
 				$.tmpl( template, { "userId": currentUser.id, "userName": currentUser.name, created: created, text: text } ).appendTo( "#comments" + uid );
-				
-				$( "#commentArea" + uid ).val( "" );
 			}		
 		} );
 	}

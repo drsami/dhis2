@@ -27,7 +27,19 @@ package org.hisp.dhis.interceptor;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static org.hisp.dhis.setting.SystemSettingManager.*;
+import static org.hisp.dhis.setting.SystemSettingManager.DEFAULT_COMPLETENESS_OFFSET;
+import static org.hisp.dhis.setting.SystemSettingManager.DEFAULT_FACTOR_OF_DEVIATION;
+import static org.hisp.dhis.setting.SystemSettingManager.DEFAULT_START_MODULE;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_APPLICATION_TITLE;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_CACHE_STRATEGY;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_COMPLETENESS_OFFSET;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_FACTOR_OF_DEVIATION;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_FLAG;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_FLAG_IMAGE;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_OMIT_INDICATORS_ZERO_NUMERATOR_DATAMART;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_START_MODULE;
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_SYSTEM_IDENTIFIER;
+import static org.hisp.dhis.setting.SystemSettingManager.PHONE_NUMBER_AREA_CODE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,10 +91,9 @@ public class SystemSettingInterceptor
         map.put( KEY_FLAG_IMAGE, systemSettingManager.getFlagImage() );
         map.put( KEY_START_MODULE, systemSettingManager.getSystemSetting( KEY_START_MODULE, DEFAULT_START_MODULE ) );
         map.put( KEY_OMIT_INDICATORS_ZERO_NUMERATOR_DATAMART, systemSettingManager.getSystemSetting( KEY_OMIT_INDICATORS_ZERO_NUMERATOR_DATAMART, false ) );
-        map.put( KEY_DISABLE_DATAENTRYFORM_WHEN_COMPLETED, systemSettingManager.getSystemSetting( KEY_DISABLE_DATAENTRYFORM_WHEN_COMPLETED, false ) );
         map.put( KEY_FACTOR_OF_DEVIATION, systemSettingManager.getSystemSetting( KEY_FACTOR_OF_DEVIATION, DEFAULT_FACTOR_OF_DEVIATION ) );
         map.put( KEY_COMPLETENESS_OFFSET, systemSettingManager.getSystemSetting( KEY_COMPLETENESS_OFFSET, DEFAULT_COMPLETENESS_OFFSET ) );
-        
+        map.put( PHONE_NUMBER_AREA_CODE, systemSettingManager.getSystemSetting( PHONE_NUMBER_AREA_CODE, "" ) );
         invocation.getStack().push( map );
         
         return invocation.invoke();

@@ -55,6 +55,10 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
     <property name="mappingService" ref="org.hisp.dhis.mapping.MappingService" />
   </bean>
   
+  <bean id="org.hisp.dhis.dashboard.action.SearchAction" class="org.hisp.dhis.dashboard.action.SearchAction"
+    scope="prototype">
+  </bean>
+  
   <!-- Message -->
 
   <bean id="org.hisp.dhis.dashboard.message.action.GetMessagesAction" class="org.hisp.dhis.dashboard.message.action.GetMessagesAction"
@@ -107,6 +111,12 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
   <bean id="org.hisp.dhis.dashboard.interpretation.action.GetInterpretationsAction" class="org.hisp.dhis.dashboard.interpretation.action.GetInterpretationsAction"
 	scope="prototype">
 	<property name="interpretationService" ref="org.hisp.dhis.interpretation.InterpretationService" />
+  </bean>
+
+  <!-- Profile -->
+
+  <bean id="org.hisp.dhis.dashboard.profile.action.GetUserAction" class="org.hisp.dhis.dashboard.profile.action.GetUserAction"
+    scope="prototype">
   </bean>
 
 </beans>

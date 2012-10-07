@@ -2,7 +2,7 @@
 <html#if( $offline && $offline == "true" ) manifest="../dhis-web-commons/cacheManifest.action"#end>
   <head>
     <title>DHIS 2</title>
-	<link type="text/css" rel="stylesheet" media="screen" href="../dhis-web-commons/javascripts/jQuery/ui/css/redmond/jquery-ui-1.8.12.custom.css" />
+	<link type="text/css" rel="stylesheet" media="screen" href="../dhis-web-commons/javascripts/jQuery/ui/css/redmond/jquery-ui-1.8.23.custom.css" />
     <link type="text/css" rel="stylesheet" media="screen" href="../dhis-web-commons/css/${stylesheet}" />
     <link type="text/css" rel="stylesheet" media="screen" href="../dhis-web-commons/css/widgets.css" />
     #foreach ( $style in $stylesheets )
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.upload-1.0.2.min.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.dhisAjaxSelect.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.utils.js"></script>
-    <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/ui/jquery-ui-1.8.12.custom.min.js"></script>
+    <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/ui/jquery-ui-1.8.23.custom.min.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/ui/jquery.blockUI.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.validate.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.validate.ext.js"></script>
@@ -61,43 +61,50 @@
       <img id="headerBanner" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_banner.png" 
         onclick="window.location.href='../dhis-web-commons-about/modules.action'" style="cursor:pointer" title="$i18n.getString( 'go_to_system_overview' )">
       
+      #if( $maintenanceModules.size() > 0 )
       <img id="menuSeparator1" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_separator.png">
+      #end
       <img id="menuSeparator2" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_separator.png">
       <img id="menuSeparator3" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_separator.png">
       <img id="menuSeparator4" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_separator.png">
       <img id="menuSeparator5" src="../dhis-web-commons/css/${stylesheetDirectory}/logo_separator.png">
 
+      #if( $maintenanceModules.size() > 0 )
       <div id="menuLink1" class="menuLink">$i18n.getString( "maintenance" )</div>
+      #end
+      #if( $serviceModules.size() > 0 )
       <div id="menuLink2" class="menuLink">$i18n.getString( "services" )</div>
+      #end
       <div id="menuLink3" class="menuLink">$i18n.getString( "help" )</div>
       <div id="menuLink4" class="menuLink">$i18n.getString( "log_out" )</div>
 
+      #if( $maintenanceModules.size() > 0 )
       <div id="menuDropDown1" class="menuDropDownArea" >
       <ul class="menuDropDownBox">
       #foreach( $module in $maintenanceModules )
-      #if( $auth.hasAccess( $module.name, "index" ) )
         <li>
           <a href="${module.defaultAction}">$i18n.getString( $module.name )&nbsp;</a>
         </li>
       #end
-      #end
       </ul>      
       </div>
+      #end
 
+      #if( $serviceModules.size() > 0 )
       <div id="menuDropDown2" class="menuDropDownArea">
       <ul class="menuDropDownBox">
       #foreach( $module in $serviceModules )
-      #if( $auth.hasAccess( $module.name, "index" ) )
         <li>
           <a href="${module.defaultAction}">$i18n.getString( $module.name )&nbsp;</a>
         </li>
       #end
-      #end
       </ul>      
       </div>
+      #end
 	  
       <div id="menuDropDown3" class="menuDropDownArea">
       <ul class="menuDropDownBox">
+        <li><a id="menuDropDownUserSettings">$i18n.getString( "settings" )&nbsp;</a></li>
         <li><a id="menuDropDownHelpCenter">$i18n.getString( "help_center" )&nbsp;</a></li>
         <li><a id="menuDropDownChangeLog">$i18n.getString( "change_log" )&nbsp;</a></li>
         <li><a id="menuDropDownSupportiveSoftware">$i18n.getString( "supportive_software" )&nbsp;</a></li>
@@ -108,7 +115,7 @@
       </ul>
       </div>
 	  
-      <span id="headerText" onclick="window.location.href='../${startModule}/index.action'" style="cursor:pointer">
+      <span id="headerText" onclick="window.location.href='../${startModule}/index.action'" style="cursor:pointer" title="$i18n.getString( 'go_to_home_page' )">
         #if ( $applicationTitle )
           $encoder.htmlEncode( $applicationTitle )
         #else
@@ -117,8 +124,8 @@
       </span>
       
       <span id="showLeftBar">
-        <a href="javascript:leftBar.showAnimated()" title="$i18n.getString( "show_menu" )">
-          <img src="../images/show_menu.png" width="16" height="16" alt="$i18n.getString( "show_menu" )"></a>
+        <a href="javascript:leftBar.showAnimated()" title="$i18n.getString( 'show_menu' )">
+          <img src="../images/show_menu.png" width="16" height="16" alt="$i18n.getString( 'show_menu' )"/></a>
       </span>
     </div>
 
@@ -128,12 +135,12 @@
     </style>
     #else
     <div id="leftBar">    
-      <span id="hideLeftBar">
-        <a href="index.action" title="$i18n.getString( "show_main_menu" )" id="showMainMenuLink">
-          <img src="../images/home_small.png" width="16" height="16" title="$i18n.getString( "show_main_menu" )"></a>
-        <a href="javascript:leftBar.hideAnimated()" title="$i18n.getString( "hide_menu" )" id="hideMainMenuLink">
-          <img src="../images/hide_menu.png" width="16" height="16" title="$i18n.getString( "hide_menu" )"></a>
-      </span>
+      <div id="hideLeftBar">
+        <a href="index.action" title="$i18n.getString( 'show_main_menu' )" id="showMainMenuLink">
+          <img src="../images/home_small.png" width="16" height="16" title="$i18n.getString( 'show_main_menu' )"/></a>
+        <a href="javascript:leftBar.hideAnimated()" title="$i18n.getString( 'hide_menu' )" id="hideMainMenuLink">
+          <img src="../images/hide_menu.png" width="16" height="16" title="$i18n.getString( 'hide_menu' )"/></a>
+      </div>
       
       <div id="leftBarContents">
         #parse( $menu )
@@ -158,7 +165,7 @@
     
     <div id="rightBar">
       <span id="hideRightBar"><a href="javascript:hideHelpContent()" title="$i18n.getString( 'close' )">
-        <img id="hideRightBarImg" src="../images/hide.png" alt="$i18n.getString( 'close' )"></a>
+        <img id="hideRightBarImg" src="../images/hide.png" alt="$i18n.getString( 'close' )"/></a>
       </span>
       <div id="rightBarContents"/>
     </div>

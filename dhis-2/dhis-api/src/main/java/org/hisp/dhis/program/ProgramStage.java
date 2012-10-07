@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.hisp.dhis.common.BaseIdentifiableObject;
 import org.hisp.dhis.dataentryform.DataEntryForm;
+import org.hisp.dhis.patient.PatientReminder;
 
 /**
  * @author Abyot Asalefew
@@ -44,14 +45,24 @@ public class ProgramStage
 
     public static final String TYPE_CUSTOM = "custom";
 
+    public static final String TEMPLATE_MESSSAGE_PATIENT_NAME = "{patient-name}";
+
+    public static final String TEMPLATE_MESSSAGE_PROGRAM_NAME = "{program-name}";
+
+    public static final String TEMPLATE_MESSSAGE_PROGAM_STAGE_NAME = "{program-stage-name}";
+
+    public static final String TEMPLATE_MESSSAGE_DUE_DATE = "{due-date}";
+
+    public static final String TEMPLATE_MESSSAGE_ORGUNIT_NAME = "{orgunit-name}";
+
+    public static final String TEMPLATE_MESSSAGE_DAYS_SINCE_DUE_DATE = "{days-since-due-date}";
+
     /**
      * Determines if a de-serialized file is compatible with this class.
      */
     private static final long serialVersionUID = 6876401001559656214L;
 
     private String description;
-
-    private int stageInProgram;
 
     private int minDaysFromStart;
 
@@ -66,6 +77,12 @@ public class ProgramStage
     private DataEntryForm dataEntryForm;
 
     private Integer standardInterval;
+
+    private String reportDateDescription;
+
+    private Set<PatientReminder> patientReminders = new HashSet<PatientReminder>();
+
+    private Boolean autoGenerateEvent = true;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -130,6 +147,16 @@ public class ProgramStage
         return dataEntryForm;
     }
 
+    public Set<PatientReminder> getPatientReminders()
+    {
+        return patientReminders;
+    }
+
+    public void setPatientReminders( Set<PatientReminder> patientReminders )
+    {
+        this.patientReminders = patientReminders;
+    }
+
     public void setDataEntryForm( DataEntryForm dataEntryForm )
     {
         this.dataEntryForm = dataEntryForm;
@@ -175,16 +202,6 @@ public class ProgramStage
         this.irregular = irregular;
     }
 
-    public int getStageInProgram()
-    {
-        return stageInProgram;
-    }
-
-    public void setStageInProgram( int stageInProgram )
-    {
-        this.stageInProgram = stageInProgram;
-    }
-
     public int getMinDaysFromStart()
     {
         return minDaysFromStart;
@@ -215,6 +232,26 @@ public class ProgramStage
         this.programStageDataElements = programStageDataElements;
     }
 
+    public String getReportDateDescription()
+    {
+        return reportDateDescription;
+    }
+
+    public void setReportDateDescription( String reportDateDescription )
+    {
+        this.reportDateDescription = reportDateDescription;
+    }
+
+    public Boolean getAutoGenerateEvent()
+    {
+        return autoGenerateEvent;
+    }
+
+    public void setAutoGenerateEvent( Boolean autoGenerateEvent )
+    {
+        this.autoGenerateEvent = autoGenerateEvent;
+    }
+
     public String getDataEntryType()
     {
         if ( dataEntryForm != null )
@@ -228,5 +265,10 @@ public class ProgramStage
         }
 
         return TYPE_DEFAULT;
+    }
+
+    public String getDefaultTemplateMessage()
+    {
+        return "Dear {person-name}, please come to your appointment on {program-stage-name} at {due-date}";
     }
 }

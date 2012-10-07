@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.program.Program;
+import org.hisp.dhis.user.User;
 
 /**
  * @author Abyot Asalefew Gizaw
@@ -63,6 +64,7 @@ public class Patient
     public static String PREFIX_FIXED_ATTRIBUTE = "fixedAttr";    
     public static String PREFIX_PATIENT_ATTRIBUTE = "attr";
     public static String PREFIX_PROGRAM = "prg";
+    public static String PREFIX_PROGRAM_EVENT_BY_STATUS = "stat";
     public static String PREFIX_PROGRAM_STAGE = "prgst";
     public static String FIXED_ATTR_BIRTH_DATE = "birthDate";
     public static String FIXED_ATTR_AGE = "age";
@@ -100,6 +102,8 @@ public class Patient
     private boolean underAge;
 
     private Character dobType;
+    
+    private User healthWorker;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -354,6 +358,16 @@ public class Patient
         this.programs = programs;
     }
 
+    public User getHealthWorker()
+    {
+        return healthWorker;
+    }
+
+    public void setHealthWorker( User healthWorker )
+    {
+        this.healthWorker = healthWorker;
+    }
+
     public void setRegistrationDate( Date registrationDate )
     {
         this.registrationDate = registrationDate;
@@ -404,11 +418,11 @@ public class Patient
 
         if ( age < 1 )
         {
-            return "( < 1 yr )";
+            return "< 1 yr";
         }
         else
         {
-            return "( " + age + " yr )";
+            return age + " yr";
         }
     }
 

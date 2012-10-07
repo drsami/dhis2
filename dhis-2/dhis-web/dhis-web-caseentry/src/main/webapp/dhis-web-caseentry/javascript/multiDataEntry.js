@@ -22,6 +22,8 @@ selection.setListenerFunction( multiDataEntryOrgunitSelected );
 function listAllPatient()
 {
 	hideById('listPatientDiv');
+	hideById('advanced-search');
+	
 	contentDiv = 'listPatientDiv';
 	$('#contentDataRecord').html('');
 	showLoader();
@@ -34,6 +36,7 @@ function listAllPatient()
 		{
 			showById('colorHelpLink');
 			showById('listPatientDiv');
+			resize();
 			hideLoader();
 		});
 }

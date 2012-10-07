@@ -39,8 +39,6 @@ import org.hisp.dhis.patient.PatientAttributeOption;
 import org.hisp.dhis.patient.PatientAttributeOptionService;
 import org.hisp.dhis.patient.PatientAttributeService;
 import org.hisp.dhis.patientattributevalue.PatientAttributeValueService;
-import org.hisp.dhis.program.Program;
-import org.hisp.dhis.program.ProgramService;
 
 import com.opensymphony.xwork2.Action;
 
@@ -76,13 +74,6 @@ public class UpdatePatientAttributeAction
     public void setPatientAttributeValueService( PatientAttributeValueService patientAttributeValueService )
     {
         this.patientAttributeValueService = patientAttributeValueService;
-    }
-
-    private ProgramService programService;
-
-    public void setProgramService( ProgramService programService )
-    {
-        this.programService = programService;
     }
 
     // -------------------------------------------------------------------------
@@ -130,12 +121,12 @@ public class UpdatePatientAttributeAction
     {
         this.attrOptions = attrOptions;
     }
-    
-    private Integer programId;
 
-    public void setProgramId( Integer programId )
+    private Boolean inherit;
+
+    public void setInherit( Boolean inherit )
     {
-        this.programId = programId;
+        this.inherit = inherit;
     }
 
     // -------------------------------------------------------------------------
@@ -150,12 +141,12 @@ public class UpdatePatientAttributeAction
         patientAttribute.setName( name );
         patientAttribute.setDescription( description );
         patientAttribute.setValueType( valueType );
-        
+
         mandatory = (mandatory == null) ? false : true;
         patientAttribute.setMandatory( mandatory );
         
-        Program program = (programId != null) ? programService.getProgram( programId ) : null;
-        patientAttribute.setProgram( program );
+        inherit = (inherit == null) ? false : true;
+        patientAttribute.setInherit( inherit );
 
         HttpServletRequest request = ServletActionContext.getRequest();
 

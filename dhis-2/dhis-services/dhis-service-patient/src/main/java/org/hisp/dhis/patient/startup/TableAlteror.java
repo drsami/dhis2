@@ -119,9 +119,28 @@ public class TableAlteror
         updateMultiOrgunitTabularReportTable();
         updateProgramStageTabularReportTable();
         moveStoredByFormStageInstanceToDataValue();
-        
+
         executeSql( "ALTER TABLE patientattribute DROP COLUMN inheritable" );
         executeSql( "ALTER TABLE programstageinstance DROP COLUMN stageInProgram" );
+
+        updateRelationshipIdentifiers();
+        updateRelationshipAttributes();
+
+        executeSql( "UPDATE programstage SET reportDateDescription='Report date' WHERE reportDateDescription is null" );
+
+        executeSql( "CREATE INDEX programstageinstance_executiondate ON programstageinstance (executiondate)" );
+
+        executeSql( "UPDATE programstage SET autoGenerateEvent=true WHERE autoGenerateEvent is null" );
+
+        executeSql( "UPDATE program SET generatedByEnrollmentDate=false WHERE generatedByEnrollmentDate is null" );
+
+        executeSql( "ALTER TABLE programstage DROP COLUMN stageinprogram" );
+
+        executeSql( "CREATE INDEX index_patientdatavalue ON patientdatavalue( programstageinstanceid, dataelementid, value, timestamp )" );
+
+        executeSql( "CREATE INDEX index_programinstance ON programinstance( programinstanceid )" );
+        
+        executeSql( "ALTER TABLE program DROP COLUMN maxDaysAllowedInputData");
     }
 
     // -------------------------------------------------------------------------
@@ -162,8 +181,8 @@ public class TableAlteror
 
     private void updateCaseAggregationCondition()
     {
-        String regExp = "\\[" + OBJECT_PROGRAM_STAGE_DATAELEMENT + SEPARATOR_OBJECT + "[0-9]+" + SEPARATOR_ID
-            + "[0-9]+" + "\\]";
+        String regExp = "\\[" + OBJECT_PROGRAM_STAGE_DATAELEMENT + SEPARATOR_OBJECT + "([0-9]+" + SEPARATOR_ID
+            + "[0-9]+" + "\\])";
 
         try
         {
@@ -183,8 +202,8 @@ public class TableAlteror
                 // ---------------------------------------------------------------------
 
                 Pattern pattern = Pattern.compile( regExp );
-
-                Matcher matcher = pattern.matcher( resultSet.getString( 2 ) );
+                String expression = resultSet.getString( 2 ).replaceAll( "'", "''" );
+                Matcher matcher = pattern.matcher( expression );
 
                 while ( matcher.find() )
                 {
@@ -203,19 +222,15 @@ public class TableAlteror
                     if ( rsProgramId.next() )
                     {
                         int programId = rsProgramId.getInt( 1 );
-
                         String aggregationExpression = "[" + OBJECT_PROGRAM_STAGE_DATAELEMENT + SEPARATOR_OBJECT
-                            + programId + "." + programStageId + "." + ids[1] + "]";
-
+                            + programId + SEPARATOR_ID + programStageId + SEPARATOR_ID + ids[1] + "]";
                         matcher.appendReplacement( formular, aggregationExpression );
                     }
                 }
 
                 matcher.appendTail( formular );
-
                 executeSql( "UPDATE caseaggregationcondition SET aggregationExpression='" + formular.toString()
                     + "'  WHERE caseaggregationconditionid=" + resultSet.getInt( 1 ) );
-
             }
         }
         catch ( Exception e )
@@ -302,6 +317,64 @@ public class TableAlteror
         }
         catch ( Exception ex )
         {
+        }
+    }
+
+    private void updateRelationshipIdentifiers()
+    {
+        StatementHolder holder = statementManager.getHolder();
+
+        try
+        {
+            Statement statement = holder.getStatement();
+
+            ResultSet resultSet = statement
+                .executeQuery( "SELECT distinct programid, patientidentifiertypeid FROM patientidentifiertype" );
+
+            while ( resultSet.next() )
+            {
+                executeSql( "INSERT into program_patientIdentifierTypes( programid, patientidentifiertypeid) values ("
+                    + resultSet.getString( 1 ) + "," + resultSet.getString( 2 ) + ")" );
+            }
+
+            executeSql( "ALTER TABLE patientidentifiertype DROP COLUMN programid" );
+        }
+        catch ( Exception ex )
+        {
+            log.debug( ex );
+        }
+        finally
+        {
+            holder.close();
+        }
+    }
+
+    private void updateRelationshipAttributes()
+    {
+        StatementHolder holder = statementManager.getHolder();
+
+        try
+        {
+            Statement statement = holder.getStatement();
+
+            ResultSet resultSet = statement
+                .executeQuery( "SELECT distinct programid, patientattributeid FROM program_patientAttributes" );
+
+            while ( resultSet.next() )
+            {
+                executeSql( "INSERT into program_patientAttributes( programid, patientattributeid) values ("
+                    + resultSet.getString( 1 ) + "," + resultSet.getString( 2 ) + ")" );
+            }
+
+            executeSql( "ALTER TABLE patientattribute DROP COLUMN programid" );
+        }
+        catch ( Exception ex )
+        {
+            log.debug( ex );
+        }
+        finally
+        {
+            holder.close();
         }
     }
 

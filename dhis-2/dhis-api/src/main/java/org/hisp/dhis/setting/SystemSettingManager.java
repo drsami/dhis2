@@ -55,7 +55,6 @@ public interface SystemSettingManager
     final String KEY_MAX_NUMBER_OF_ATTEMPTS = "maxAttempts";
     final String KEY_TIMEFRAME_MINUTES = "lockoutTimeframe";
     final String KEY_GOOGLE_MAPS_API_KEY = "googleMapsAPIKey";
-    final String KEY_DISABLE_DATAENTRYFORM_WHEN_COMPLETED = "dataEntryFormCompleted";
     final String KEY_FACTOR_OF_DEVIATION = "factorDeviation";
     final String KEY_COMPLETENESS_OFFSET = "completenessOffset";
     final String KEY_PATIENT_EXCEL_TEMPLATE_FILE_NAME = "patientExcelTemplateFileName";
@@ -69,6 +68,10 @@ public interface SystemSettingManager
     final String KEY_ORGUNITGROUPSET_AGG_LEVEL = "orgUnitGroupSetAggregationLevel";
     final String KEY_SMS_CONFIG = "SMS_CONFIG";
     final String KEY_CACHE_STRATEGY = "keyCacheStrategy";
+    final String KEY_TIME_FOR_SENDING_MESSAGE = "timeSendingMessage";
+    final String KEY_SEND_MESSAGE_SCHEDULED_TASKS = "sendMessageScheduled";
+    final String KEY_SCHEDULE_MESSAGE_TASKS = "scheduleMessage";
+    final String PHONE_NUMBER_AREA_CODE = "phoneNumberAreaCode";
 
     final int DEFAULT_MAX_NUMBER_OF_ATTEMPTS = 20;
     final int DEFAULT_TIMEFRAME_MINUTES = 1;
@@ -78,6 +81,7 @@ public interface SystemSettingManager
     final String DEFAULT_START_MODULE = "dhis-web-dashboard-integration";
     
     final int DEFAULT_COMPLETENESS_OFFSET = 15;
+    final String DEFAULT_TIME_FOR_SENDING_MESSAGE = "08:00";
     
     final HashSet<String> DEFAULT_SCHEDULED_PERIOD_TYPES = new HashSet<String>() { {
         add( MonthlyPeriodType.NAME ); 

@@ -210,3 +210,6 @@ pip-log.txt
 /dhis-2/dhis-web/dhis-web-caseentry/target/
 /dhis-2/dhis-web/dhis-web-light/target/
 /dhis-2/dhis-web/dhis-web-portal/target/
+/dhis-2/dhis-web/dhis-web-api - Copy/target/
+/dhis-2/dhis-web/dhis-web-ws/target/
+/dhis-2/dhis-web/dhis-web-rest/target/

@@ -35,6 +35,8 @@ import org.hisp.dhis.light.utils.FormUtils;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.patient.*;
 import org.hisp.dhis.patientattributevalue.PatientAttributeValue;
+import org.hisp.dhis.program.Program;
+import org.hisp.dhis.program.ProgramService;
 import org.hisp.dhis.util.ContextUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -120,6 +122,18 @@ public class SaveBeneficiaryAction
     public void setPatientAttributeOptionService( PatientAttributeOptionService patientAttributeOptionService )
     {
         this.patientAttributeOptionService = patientAttributeOptionService;
+    }
+
+    private ProgramService programService;
+
+    public ProgramService getProgramService()
+    {
+        return programService;
+    }
+
+    public void setProgramService( ProgramService programService )
+    {
+        this.programService = programService;
     }
 
     // -------------------------------------------------------------------------
@@ -258,6 +272,44 @@ public class SaveBeneficiaryAction
         this.patientAttributes = patientAttributes;
     }
 
+    private String phoneNumber;
+
+    public String getPhoneNumber()
+    {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber( String phoneNumber )
+    {
+        this.phoneNumber = phoneNumber;
+    }
+
+    // Register patient on-the-fly
+
+    private Integer originalPatientId;
+
+    public Integer getOriginalPatientId()
+    {
+        return originalPatientId;
+    }
+
+    public void setOriginalPatientId( Integer originalPatientId )
+    {
+        this.originalPatientId = originalPatientId;
+    }
+
+    private Integer relationshipTypeId;
+
+    public Integer getRelationshipTypeId()
+    {
+        return relationshipTypeId;
+    }
+
+    public void setRelationshipTypeId( Integer relationshipTypeId )
+    {
+        this.relationshipTypeId = relationshipTypeId;
+    }
+
     @Override
     public String execute()
         throws Exception
@@ -269,6 +321,14 @@ public class SaveBeneficiaryAction
 
         patientIdentifierTypes = patientIdentifierTypeService.getAllPatientIdentifierTypes();
         patientAttributes = patientAttributeService.getAllPatientAttributes();
+        Collection<Program> programs = programService.getAllPrograms();
+        
+        for ( Program program : programs )
+        {
+            patientIdentifierTypes.removeAll( program.getPatientIdentifierTypes() );
+            patientAttributes.removeAll( program.getPatientAttributes() );
+        }
+        
         patient.setOrganisationUnit( organisationUnitService.getOrganisationUnit( orgUnitId ) );
 
         if ( this.patientFullName.trim().length() < 7 )
@@ -315,7 +375,8 @@ public class SaveBeneficiaryAction
             try
             {
                 patient.setBirthDateFromAge( Integer.parseInt( dateOfBirth ), Patient.AGE_TYPE_YEAR );
-            } catch ( NumberFormatException nfe )
+            }
+            catch ( NumberFormatException nfe )
             {
                 validationMap.put( "dob", "is_invalid_number" );
             }
@@ -327,19 +388,40 @@ public class SaveBeneficiaryAction
                 DateTimeFormatter sdf = ISODateTimeFormat.yearMonthDay();
                 DateTime date = sdf.parseDateTime( dateOfBirth );
                 patient.setBirthDate( date.toDate() );
-            } catch ( Exception e )
+            }
+            catch ( Exception e )
             {
                 validationMap.put( "dob", "is_invalid_date" );
             }
+        }
+
+        if ( phoneNumber.matches( "^(\\+)?\\d+$" ) )
+        {
+            patient.setPhoneNumber( phoneNumber );
+        }
+        else
+        {
+            validationMap.put( "phoneNumber", "invalid_phone_number" );
         }
 
         HttpServletRequest request = (HttpServletRequest) ActionContext.getContext().get(
             ServletActionContext.HTTP_REQUEST );
         Map<String, String> parameterMap = ContextUtils.getParameterMap( request );
 
-        for ( PatientIdentifierType patientIdentifierType : patientIdentifierTypeService.getAllPatientIdentifierTypes() )
+        // Add Identifier and Attributes
+        Collection<PatientIdentifierType> patientIdentifierTypes = patientIdentifierTypeService
+            .getAllPatientIdentifierTypes();
+        Collection<PatientAttribute> patientAttributes = patientAttributeService.getAllPatientAttributes();
+        
+
+        for ( Program program : programs )
         {
-            if ( patientIdentifierType.getProgram() == null )
+            patientIdentifierTypes.removeAll( program.getPatientIdentifierTypes() );
+            patientAttributes.removeAll( program.getPatientAttributes() );
+        }
+
+        for ( PatientIdentifierType patientIdentifierType : patientIdentifierTypes )
+        {
             {
                 String key = "IDT" + patientIdentifierType.getId();
                 String value = parameterMap.get( key );
@@ -370,8 +452,8 @@ public class SaveBeneficiaryAction
                         PatientIdentifier patientIdentifier = new PatientIdentifier();
                         patientIdentifier.setIdentifierType( patientIdentifierType );
                         patientIdentifier.setPatient( patient );
-                        patientIdentifierSet.add( patientIdentifier );
                         patientIdentifier.setIdentifier( value.trim() );
+                        patientIdentifierSet.add( patientIdentifier );
                     }
 
                     this.previousValues.put( key, value );
@@ -379,10 +461,9 @@ public class SaveBeneficiaryAction
             }
         }
 
-        for ( PatientAttribute patientAttribute : patientAttributeService.getAllPatientAttributes() )
+        for ( PatientAttribute patientAttribute : patientAttributes )
         {
             patientAttributeSet.add( patientAttribute );
-            if ( patientAttribute.getProgram() == null )
             {
                 String key = "AT" + patientAttribute.getId();
                 String value = parameterMap.get( key ).trim();
@@ -438,6 +519,7 @@ public class SaveBeneficiaryAction
             this.previousValues.put( "gender", this.gender );
             this.previousValues.put( "dob", this.dateOfBirth );
             this.previousValues.put( "dobType", this.dobType );
+            this.previousValues.put( "phoneNumber", this.phoneNumber );
             return ERROR;
         }
 
@@ -446,6 +528,10 @@ public class SaveBeneficiaryAction
         patientId = patientService.createPatient( patient, null, null, patientAttributeValues );
         validated = true;
 
+        if ( this.originalPatientId != null )
+        {
+            return "redirect";
+        }
         return SUCCESS;
     }
 }
