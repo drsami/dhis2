@@ -65,7 +65,7 @@ function addAttributeOption()
 	var rowId = 'advSearchBox' + jQuery('#advancedSearchTB select[name=searchObjectId]').length + 1;
 	var contend  = '<td>' + getInnerHTML('searchingAttributeIdTD') + '</td>';
 		contend += '<td>' + searchTextBox ;
-		contend += '&nbsp;<input type="button" class="small-button" value="-" onclick="removeAttributeOption(' + "'" + rowId + "'" + ');"></td>';
+		contend += '&nbsp;<input type="button" class="tiny-button" value="-" onclick="removeAttributeOption(' + "'" + rowId + "'" + ');"></td>';
 		contend = '<tr id="' + rowId + '">' + contend + '</tr>';
 
 	jQuery('#advancedSearchTB').append( contend );
@@ -141,15 +141,15 @@ function getGenderSelector()
 
 function getAgeTextBox( container )
 {
-	var ageField = '<select id="dateOperator" style="width:30px;" name="dateOperator" ><option value="="> = </option><option value="<"> < </option><option value="<="> <= </option><option value=">"> > </option><option value=">="> >= </option></select>';
-	ageField += '<input type="text" id="searchText_' + container + '" name="searchText" style="width:230px;">';
+	var ageField = '<select id="dateOperator" name="dateOperator" style="width:40px"><option value=">"> > </option><option value=">="> >= </option><option value="="> = </option><option value="<"> < </option><option value="<="> <= </option></select>';
+	ageField += '<input type="text" id="searchText_' + container + '" name="searchText" style="width:220px;">';
 	return ageField;
 }
 
 function getDateField( container )
 {
-	var dateField = '<select id="dateOperator" name="dateOperator" style="width:30px"><option value=">"> > </option><option value=">="> >= </option><option value="="> = </option><option value="<"> < </option><option value="<="> <= </option></select>';
-	dateField += '<input type="text" id="searchText_' + container + '" name="searchText" maxlength="30" style="width:210px;" onkeyup="searchPatientsOnKeyUp( event );">';
+	var dateField = '<select id="dateOperator" name="dateOperator" style="width:40px"><option value=">"> > </option><option value=">="> >= </option><option value="="> = </option><option value="<"> < </option><option value="<="> <= </option></select>';
+	dateField += '<input type="text" id="searchText_' + container + '" name="searchText" style="width:200px;" onkeyup="searchPatientsOnKeyUp( event );">';
 	return dateField;
 }
 
@@ -180,7 +180,9 @@ function validateAdvancedSearch()
 	var flag = true;
 	var dateOperator = '';
 	
-	if (getFieldValue('searchByProgramStage') == "false"){
+	if (getFieldValue('searchByProgramStage') == "false" 
+		|| ( getFieldValue('searchByProgramStage') == "true"  
+			&& jQuery( '#advancedSearchTB tr' ).length > 1) ){
 		jQuery("#searchDiv :input").each( function( i, item )
 		{
 			var elementName = $(this).attr('name');
@@ -208,7 +210,7 @@ function getSearchParams()
 		var statusEvent = jQuery('#programStageAddPatientTR [id=statusEvent]').val();
 		var startDueDate = getFieldValue('startDueDate');
 		var endDueDate = getFieldValue('endDueDate');
-		params += '&searchTexts=stat_' + getFieldValue('programIdAddPatient') 
+		params = '&searchTexts=stat_' + getFieldValue('programIdAddPatient') 
 			   + '_' + startDueDate + '_' + endDueDate
 			   + "_" + getFieldValue('orgunitId')
 			   + '_false_' + statusEvent;
@@ -273,7 +275,7 @@ function getSearchParams()
 }
 
 // ----------------------------------------------------------------------------
-// Show patients
+// Show death field in person re form
 // ----------------------------------------------------------------------------
 
 function isDeathOnChange()
@@ -522,14 +524,14 @@ function showCreateNewEvent( programInstanceId, programStageId )
 		
 	if( programStageId != undefined )
 	{
-		jQuery('#repeatableProgramStageId').val(programStageId);
+		jQuery('#repeatableProgramStage_' + programInstanceId).val(programStageId);
 	}
 	setSuggestedDueDate( programInstanceId );
 }
 
 function setSuggestedDueDate( programInstanceId )
 {
-	var standardInterval =  jQuery('#repeatableProgramStageId option:selected').attr('standardInterval');
+	var standardInterval =  jQuery('#repeatableProgramStage_' + programInstanceId + ' option:selected').attr('standardInterval');
 	var date = new Date();
 	var d = date.getDate() + eval(standardInterval);
 	var m = date.getMonth();
@@ -549,7 +551,6 @@ function closeDueDateDiv( programInstanceId )
 
 function registerIrregularEncounter( programInstanceId, programStageId, programStageName, dueDate )
 {
-	setInnerHTML('createEventMessage_' + programInstanceId, '');
 	jQuery.postJSON( "registerIrregularEncounter.action",
 		{ 
 			programInstanceId:programInstanceId,
@@ -783,12 +784,12 @@ function setEventStatus( field, programStageInstanceId )
 	jQuery.postUTF8( 'setEventStatus.action',
 		{
 			programStageInstanceId:programStageInstanceId,
-			status:field.value
+			status:status
 		}, function ( json )
 		{
 			var eventBox = jQuery('#ps_' + programStageInstanceId);
-			eventBox.attr('status',field.value);
-			setEventColorStatus( programStageInstanceId, field.value );
+			eventBox.attr('status',status);
+			setEventColorStatus( programStageInstanceId, status );
 			resetActiveEvent( eventBox.attr("pi") );
 			if( status==1){
 				hideById('del_' + programStageInstanceId);
@@ -884,9 +885,7 @@ function removeEvent( programStageInstanceId, isEvent )
 					jQuery('#arrow_' + programStageInstanceId).remove();
 					jQuery('#org_' + programStageInstanceId).remove();
 					resetActiveEvent( programInstanceId );
-					reloadOneRecord( programInstanceId );
 					showSuccessMessage( i18n_delete_success );
-					resize();
     	    	}
     	    	else if ( json.response == "error" )
     	    	{ 
@@ -1169,6 +1168,8 @@ function programOnchange( programId )
 	if( programId==0){
 		hideById('enrollmentDateTR');
 		hideById('dateOfIncidentTR');
+		disable('enrollmentDateField');
+		disable('dateOfIncidentField');
 	}
 	else{
 		var type = jQuery('#enrollmentDiv [name=programId] option:selected').attr('programType')
@@ -1190,11 +1191,11 @@ function programOnchange( programId )
 			var displayIncidentDate = jQuery('#enrollmentDiv [name=programId] option:selected').attr('displayIncidentDate');
 			if( displayIncidentDate=='true'){
 				showById('dateOfIncidentTR');
-				enable('enrollmentDateField');
+				enable('dateOfIncidentField');
 			}
 			else{
 				hideById('dateOfIncidentTR');
-				disable('enrollmentDateField');
+				disable('dateOfIncidentField');
 			}
 		}
 		var programId = jQuery('#programEnrollmentSelectDiv [id=programId] option:selected').val();
@@ -1205,6 +1206,71 @@ function programOnchange( programId )
 			showById('identifierAndAttributeDiv');
 		});
 	}
+}
+
+function saveSingleEnrollment(patientId, programId)
+{
+	jQuery.postJSON( "saveProgramEnrollment.action",
+		{
+			patientId: patientId,
+			programId: programId,
+			dateOfIncident: getCurrentDate(),
+			enrollmentDate: getCurrentDate()
+		}, 
+		function( json ) 
+		{    
+			var programInstanceId = json.programInstanceId;
+			var programStageInstanceId = json.activeProgramStageInstanceId;
+			var programStageName = json.activeProgramStageName;
+			var programInfor = getInnerHTML('infor_' + programId);
+			var dueDate = json.dueDate;
+			var type = jQuery('#enrollmentDiv [id=programId] option:selected').attr('programType');
+			
+			var activedRow = "<tr id='tr1_" + programInstanceId 
+							+ "' type='" + type +"'"
+							+ " programStageInstanceId='" + programStageInstanceId + "'>"
+							+ " <td id='td_" + programInstanceId + "'>"
+							+ " <a href='javascript:loadActiveProgramStageRecords(" + programInstanceId + "," + programStageInstanceId + ")'>"
+							+ "<span id='infor_" + programInstanceId + "' class='selected bold'>" 
+							+ programInfor + "</span></a></td>"
+							+ "</tr>";
+			
+			jQuery('#tr_' + programId ).remove();
+			
+			jQuery('#activeTB' ).append(activedRow);
+			jQuery('#enrollmentDiv').dialog("close");
+			saveIdentifierAndAttribute( patientId, programId,'identifierAndAttributeDiv' );
+			loadActiveProgramStageRecords( programInstanceId );
+			showSuccessMessage(i18n_enrol_success);
+		});
+}
+
+// ----------------------------------------------------------------
+// Program enrollmment && unenrollment
+// ----------------------------------------------------------------
+
+function validateProgramEnrollment()
+{	
+	jQuery('#loaderDiv').show();
+	$.ajax({
+		type: "GET",
+		url: 'validatePatientProgramEnrollment.action',
+		data: getParamsForDiv('programEnrollmentSelectDiv'),
+		success: function(json) {
+			hideById('message');
+			var type = json.response;
+			if ( type == 'success' ){
+				saveEnrollment();
+			}
+			else if ( type == 'error' ){
+				setMessage( i18n_program_enrollment_failed + ':' + '\n' + message );
+			}
+			else if ( type == 'input' ){
+				setMessage( json.message );
+			}
+			jQuery('#loaderDiv').hide();
+      }
+    });
 }
 
 function saveEnrollment()
@@ -1236,12 +1302,12 @@ function saveEnrollment()
 							+ " <td id='td_" + programInstanceId + "'>"
 							+ " <a href='javascript:loadActiveProgramStageRecords(" + programInstanceId + "," + programStageInstanceId + ")'>"
 							+ "<span id='infor_" + programInstanceId + "' class='selected bold'>" 
-							+ programName + "(" + enrollmentDate + ")</span></a></td>"
+							+ programName + " (" + enrollmentDate + ")</span></a></td>"
 							+ "</tr>";
 			
 			activedRow += "<tr id='tr2_" + programInstanceId +"'"+
 						+ " onclick='javascript:loadActiveProgramStageRecords(" + programInstanceId + "," + programStageInstanceId + ")' style='cursor:pointer;'>"
-						+ "<td colspan='2'><a>&#8226; " + programStageName + "(" + dueDate + ")</a></td></tr>";
+						+ "<td colspan='2'><a>&#8226; " + programStageName + " (" + dueDate + ")</a></td></tr>";
 
 			jQuery('#activeTB' ).prepend(activedRow);
 			jQuery('#enrollmentDiv').dialog("close");
@@ -1249,49 +1315,6 @@ function saveEnrollment()
 			loadActiveProgramStageRecords( programInstanceId );
 			showSuccessMessage(i18n_enrol_success);
 		});
-}
-
-// ----------------------------------------------------------------
-// Program enrollmment && unenrollment
-// ----------------------------------------------------------------
-
-function validateProgramEnrollment()
-{	
-	jQuery('#loaderDiv').show();
-	$.ajax({
-		type: "GET",
-		url: 'validatePatientProgramEnrollment.action',
-		data: getParamsForDiv('programEnrollmentSelectDiv'),
-		success: function(json) {
-			hideById('message');
-			var type = json.response;
-			if ( type == 'success' ){
-				saveProgramEnrollment();
-			}
-			else if ( type == 'error' ){
-				setMessage( i18n_program_enrollment_failed + ':' + '\n' + message );
-			}
-			else if ( type == 'input' ){
-				setMessage( json.message );
-			}
-			jQuery('#loaderDiv').hide();
-      }
-    });
-}
-
-function saveProgramEnrollment()
-{
-	$.ajax({
-		type: "POST",
-		url: 'saveProgramEnrollment.action',
-		data: getParamsForDiv('programEnrollmentSelectDiv'),
-		success: function( html ) {
-				setInnerHTML('programEnrollmentDiv', html );
-				jQuery('#enrollBtn').attr('value',i18n_update);
-				showSuccessMessage( i18n_enrol_success );
-			}
-		});
-    return false;
 }
 
 function unenrollmentForm( programInstanceId )
@@ -1302,10 +1325,18 @@ function unenrollmentForm( programInstanceId )
 		data: "programInstanceId=" + programInstanceId,
 		success: function( json ) 
 		{
-			jQuery('#completedList' ).append('<option value="' +  programInstanceId + '">' + getInnerHTML('infor_' + programInstanceId ) + '</option>');
-			hideById('tr1_' + programInstanceId );
-			hideById('tr2_' + programInstanceId );
-			setInnerHTML('programEnrollmentDiv','');
+			var completed  = "<tr onclick='javascript:loadActiveProgramStageRecords(" + programInstanceId + ");' >";
+				completed += "<td><a><span id='infor_" + programInstanceId + "'>" + jQuery('#tr1_' + programInstanceId + " span" ).html() + "</span></a></td></tr>";
+			jQuery('#completedTB' ).prepend( completed );
+			jQuery('#tr1_' + programInstanceId ).remove();
+			jQuery('#tr2_' + programInstanceId ).remove();
+			
+			jQuery("[id=tab-2] :input").prop('disabled', true);
+			jQuery("[id=tab-3] :input").prop('disabled', true);
+			jQuery("[id=tab-4] :input").prop('disabled', true);
+			jQuery("[id=tab-5] :input").prop('disabled', true);
+			jQuery("[id=tab-3] :input").datepicker("destroy");
+			
 			showSuccessMessage( i18n_unenrol_success );
 		}
     });
@@ -1550,6 +1581,12 @@ function dashboardHistoryToggle(evt)
 	jQuery('#dashboardHistoryDiv').toggle();
 }
 
+function viewPersonProgram ( displayedDiv, hidedDiv )
+{
+	showById(displayedDiv);
+	hideById(hidedDiv);
+}
+
 // --------------------------------------------------------------------
 // Comment && Message
 // --------------------------------------------------------------------
@@ -1649,10 +1686,9 @@ function removeComment( programStageInstanceId, commentId )
 
 function commentDivToggle(isHide)
 {
-	var index = 1;
 	jQuery("#commentTB tr").removeClass("hidden");
-	jQuery("#commentTB tr").each( function(){
-		if(isHide && index > 5){
+	jQuery("#commentTB tr").each( function(index, item){
+		if(isHide && index > 4){
 			jQuery(this).addClass("hidden");
 		}
 		else if(!isHide){		
@@ -1661,7 +1697,12 @@ function commentDivToggle(isHide)
 		index++;
 	});
 	
-	if( isHide ){
+	if(jQuery("#commentTB tr").length <= 5 )
+	{
+		hideById('showCommentBtn');
+		hideById('hideCommentBtn');
+	}
+	else if( isHide ){
 		showById('showCommentBtn');
 		hideById('hideCommentBtn');
 	}

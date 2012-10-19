@@ -40,6 +40,37 @@ function translate( className, objectId )
 }
 
 /**
+ * Scrolls the view port to the bottom of the document.
+ */
+function scrollToBottom()
+{
+	var scrollTop = parseInt( $( document ).height() - $( window ).height() );
+	
+	if ( scrollIsRelevant() )
+	{
+		$( document ).scrollTop( scrollTop );
+	}
+}
+
+/**
+ * Scrolls the view port to the top of the document.
+ */
+function scrollToTop()
+{
+	$( document ).scrollTop( 0 );
+}
+
+/**
+ * Indicates whether there is a need for scrolling.
+ */
+function scrollIsRelevant()
+{
+	var scrollTop = parseInt( $( document ).height() - $( window ).height() );	
+	var relevant = ( scrollTop > 0 );
+	return relevant;
+}
+
+/**
  * Joins the names of the given array of objects and returns it as a single string.
  */
 function joinNameableObjects( objects )
@@ -1154,7 +1185,10 @@ function validation2(formId, submitHandler, kwargs)
 		errorElement:"span",
 		beforeValidateHandler: beforeValidateHandler,
 		submitHandler: submitHandler,
-		rules: rules
+		rules: rules,
+		errorPlacement: function(error, element) {
+			element.parent("td").append("<br>").append(error);
+		}
 	});
 
 	$("#" + formId + " input").each(function(n) {
@@ -1657,7 +1691,7 @@ function pagingList( currentPage, pageSize )
 	}
 	else
 	{		
-		jQuery.postUTF8( link , data, function(html){
+		jQuery.postUTF8( link, data, function( html ) {
 			setInnerHTML( contentDiv, html );
 		});
 	}

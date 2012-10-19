@@ -14,6 +14,7 @@ function organisationUnitSelected( orgUnits, orgUnitNames )
 	enable('listPatientBtn');
 	enable('addPatientBtn');
 	enable('advancedSearchBtn');
+	enable('searchObjectId');
 	setFieldValue("orgunitName", orgUnitNames[0]);
 }
 
@@ -203,6 +204,12 @@ function loadDataEntry( programStageInstanceId )
 	disableCompletedButton(true);
 	disable('uncompleteBtn');
 	
+	$('#executionDate').unbind("change");
+	$('#executionDate').change(function() {
+		saveExecutionDate( getFieldValue('programId'), programStageInstanceId, byId('executionDate') );
+	});
+		
+		
 	jQuery(".stage-object-selected").removeClass('stage-object-selected');
 	var selectedProgramStageInstance = jQuery( '#' + prefixId + programStageInstanceId );
 	selectedProgramStageInstance.addClass('stage-object-selected');
@@ -242,9 +249,3 @@ function loadDataEntry( programStageInstanceId )
 			$(window).scrollTop(200);
 		} );
 }
-
-// ----------------------------------------------------------------
-// Cosmetic UI
-// ----------------------------------------------------------------
-
-function reloadOneRecord(){}

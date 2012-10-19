@@ -30,8 +30,11 @@ package org.hisp.dhis.caseentry.action.patient;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
+import org.hisp.dhis.caseentry.state.SelectedStateManager;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.patient.Patient;
 import org.hisp.dhis.patient.PatientAudit;
 import org.hisp.dhis.patient.PatientAuditService;
@@ -39,11 +42,14 @@ import org.hisp.dhis.patient.PatientIdentifier;
 import org.hisp.dhis.patient.PatientService;
 import org.hisp.dhis.patientattributevalue.PatientAttributeValue;
 import org.hisp.dhis.patientattributevalue.PatientAttributeValueService;
+import org.hisp.dhis.program.Program;
 import org.hisp.dhis.program.ProgramInstance;
 import org.hisp.dhis.program.ProgramInstanceService;
+import org.hisp.dhis.program.ProgramService;
 import org.hisp.dhis.relationship.Relationship;
 import org.hisp.dhis.relationship.RelationshipService;
 import org.hisp.dhis.user.CurrentUserService;
+import org.hisp.dhis.validation.ValidationCriteria;
 
 import com.opensymphony.xwork2.Action;
 
@@ -71,6 +77,10 @@ public class PatientDashboardAction
 
     private CurrentUserService currentUserService;
 
+    private ProgramService programService;
+
+    private SelectedStateManager selectedStateManager;
+
     // -------------------------------------------------------------------------
     // Input && Output
     // -------------------------------------------------------------------------
@@ -91,6 +101,8 @@ public class PatientDashboardAction
 
     private Collection<PatientAudit> patientAudits;
 
+    private Collection<Program> singlePrograms;
+
     // -------------------------------------------------------------------------
     // Action implementation
     // -------------------------------------------------------------------------
@@ -98,6 +110,21 @@ public class PatientDashboardAction
     public void setPatientAuditService( PatientAuditService patientAuditService )
     {
         this.patientAuditService = patientAuditService;
+    }
+
+    public void setSelectedStateManager( SelectedStateManager selectedStateManager )
+    {
+        this.selectedStateManager = selectedStateManager;
+    }
+
+    public void setProgramService( ProgramService programService )
+    {
+        this.programService = programService;
+    }
+
+    public Collection<Program> getSinglePrograms()
+    {
+        return singlePrograms;
     }
 
     public void setPatientAttributeValueService( PatientAttributeValueService patientAttributeValueService )
@@ -199,14 +226,39 @@ public class PatientDashboardAction
             }
         }
 
-        patientAudits = patientAuditService.getPatientAudits( patient );
+        // ---------------------------------------------------------------------
+        // Check single-event with registration
+        // ---------------------------------------------------------------------
 
+        OrganisationUnit orgunit = selectedStateManager.getSelectedOrganisationUnit();
+
+        singlePrograms = programService.getPrograms( Program.SINGLE_EVENT_WITH_REGISTRATION, orgunit );
+
+        singlePrograms.removeAll( patient.getPrograms() );       
+        Iterator<Program> iter = singlePrograms.iterator();
+        while( iter.hasNext() )
+        {
+            Program program = iter.next();
+            ValidationCriteria criteria = program.isValid( patient );
+
+            if( criteria!= null)
+            {
+                iter.remove();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // Patient-Audit
+        // ---------------------------------------------------------------------
+
+        patientAudits = patientAuditService.getPatientAudits( patient );
+        
         long millisInDay = 60 * 60 * 24 * 1000;
         long currentTime = new Date().getTime();
         long dateOnly = (currentTime / millisInDay) * millisInDay;
         Date date = new Date( dateOnly );
         String visitor = currentUserService.getCurrentUsername();
-        PatientAudit patientAudit = patientAuditService.getPatientAudit( visitor, date );
+        PatientAudit patientAudit = patientAuditService.getPatientAudit( patient, visitor, date );
         if ( patientAudit == null )
         {
             patientAudit = new PatientAudit( patient, date, visitor );

@@ -309,6 +309,7 @@ function showUpdateEvent( programStageInstanceId )
 		{
 			jQuery('#inputCriteriaDiv').remove();
 			hideById('mainLinkLbl');
+			showById('actionDiv');
 			var programName = jQuery('#programId option:selected').text();
 			var programStageId = jQuery('#programId option:selected').attr('psid');
 			jQuery('.stage-object-selected').attr('psid',programStageId);
@@ -343,25 +344,38 @@ function showAddEventForm()
 	hideById('selectDiv');
 	hideById('searchDiv');
 	hideById('listDiv');
+	hideById('mainLinkLbl');
+	hideById('actionDiv');
 	showById('dataEntryInfor');
+	setFieldValue('programStageInstanceId','0');
+	setInnerHTML('programName', jQuery('#programId option:selected').text());
 }
 
 function addNewEvent()
 {
-	jQuery.postJSON( "createAnonymousEncounter.action",
+	var programStageInstanceId = getFieldValue('programStageInstanceId');
+	var programId = jQuery('#programId option:selected').val();
+	var executionDate = getFieldValue('executionDate');
+	jQuery("#executionDate").css('background-color', SAVING_COLOR);
+	jQuery.postJSON( "saveExecutionDate.action",
 		{
-			programId: jQuery('#programId option:selected').val(),
-			executionDate: getFieldValue('executionDate')
+			programStageInstanceId:programStageInstanceId,
+			programId:programId,
+			executionDate:executionDate
 		}, 
 		function( json ) 
 		{    
 			if(json.response=='success')
 			{
+				jQuery("#executionDate").css('background-color', SUCCESS_COLOR);
 				setFieldValue('programStageInstanceId',json.message);
-				showUpdateEvent( json.message )
+				if(programStageInstanceId != json.message){
+					showUpdateEvent( json.message );
+				}
 			}
 			else
 			{
+				jQuery("#executionDate").css('background-color', ERROR_COLOR);
 				showWarningMessage( json.message );
 			}
 		});

@@ -3,6 +3,7 @@ var _continue = false;
 
 function orgunitSelected( orgUnits, orgUnitNames )
 {	
+	showById('mainLinkLbl');
 	organisationUnitSelected( orgUnits, orgUnitNames );
 	clearListById('programIdAddPatient');
 	$.postJSON( 'singleEventPrograms.action', {}, function( json )
@@ -19,26 +20,20 @@ selection.setListenerFunction( orgunitSelected );
 function showAddPatientForm()
 {
 	hideById('contentDiv');
+	hideById('mainLinkLbl');
 	hideById('searchDiv');
 	hideById('advanced-search');
 	setInnerHTML('addNewDiv','');
 	setInnerHTML('dataRecordingSelectDiv','');
-	unSave = true;
+	
 	jQuery('#loaderDiv').show();
 	jQuery('#addNewDiv').load('showEventWithRegistrationForm.action',
 		{
 			programId: getFieldValue('programIdAddPatient')
 		}, function()
 		{
+			setInnerHTML('singleProgramName',jQuery('#programIdAddPatient option:selected').text());	unSave = true;
 			showById('addNewDiv');
-			showById('entryForm');
-			hideById('newEncounterBtn');
-			jQuery("#dataForm :input").each(function()
-			{
-				$( this ).attr('onchange','');
-				$( this ).attr('onblur','');
-				$( this ).attr('onkeypress','');
-			});
 			jQuery('#loaderDiv').hide();
 		});
 }
@@ -100,16 +95,53 @@ function addPatient()
 		data: getParamsForDiv('patientForm'),
 		success: function(json) {
 			var patientId = json.message.split('_')[0];
-			addData( getFieldValue('programIdAddPatient'), patientId )
+			validateSingleProgramEnrollment( getFieldValue('programIdAddPatient'), patientId )
 		}
      });
+}
+
+function validateSingleProgramEnrollment( programId, patientId )
+{	
+	jQuery('#loaderDiv').show();
+	jQuery.getJSON( "validatePatientProgramEnrollment.action",
+		{
+			patientId: patientId,
+			programId: programId
+		}, 
+		function( json ) 
+		{    
+			hideById('message');
+			var type = json.response;
+			if ( type == 'success' ){
+				addData( programId, patientId );
+			}
+			else if ( type == 'error' ){
+				setMessage( i18n_program_enrollment_failed + ':' + '\n' + message );
+				removePatientInSingleProgram(patientId);
+			}
+			else if ( type == 'input' ){
+				setMessage( json.message );
+				removePatientInSingleProgram(patientId);
+			}
+			jQuery('#loaderDiv').hide();
+		});
+}
+
+
+function removePatientInSingleProgram( patientId )
+{
+	$("#patientForm :input").attr("disabled",false);
+	jQuery.postJSON( "removePatient.action",
+		{
+			id: patientId
+		}, function(){});
 }
 
 function addData( programId, patientId )
 {		
 	var params = "programId=" + getFieldValue('programIdAddPatient');
 		params += "&patientId=" + patientId;
-		params += "&" + getParamsForDiv('dataForm');
+		params += "&" + getParamsForDiv('entryForm');
 		
 	$.ajax({
 		type: "POST",
@@ -128,10 +160,13 @@ function addData( programId, patientId )
 					}
 					enable(this.id);
 				});
-				jQuery('#dataForm :input').each(function()
+				jQuery('#entryForm :input').each(function()
 				{
 					var type=$( this ).attr('type');
-					if(type!='button'){
+					if(type=='checkbox'){
+						this.checked = false;
+					}
+					else if(type!='button'){
 						$( this ).val('');
 					}
 				});
@@ -235,6 +270,7 @@ function removeDisabledIdentifier()
 
 function backMainPage()
 {
+	showById('mainLinkLbl');
 	showSearchForm();
 	if( getFieldValue('listAll')=='true'){
 		listAllPatient();
