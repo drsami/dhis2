@@ -1,25 +1,42 @@
 
 <script>
-    $(document).bind('pagebeforecreate',function(){
-        $.mobile.showPageLoadingMsg();
+    redirectToLoginIfRequired();
 
-        $.ajax({
+    function redirectToLoginIfRequired() {
+        return $.ajax({
+            url: '../mobile',
+            async: false
+        }).complete(function(e) {
+            if( e.getResponseHeader('Login-Page') ) {
+                document.location = '../mobile';
+            }
+        });
+    }
+
+    function getDashboard() {
+        return $.ajax({
             url: '../api/currentUser/dashboard',
-            dataType: 'json',
+            dataType: 'json'
         }).success(function(data) {
             if( data.unreadMessageConversation > 0 ) {
                 $('#messages a').append("<span class='ui-li-count'>" + data.unreadMessageConversation + "</span>");
             }
-
-            fm.initialize();
-            fm.uploadDataValueSets();
         }).error(function() {
             $('#messages a').append("<span class='ui-li-count'>Offline</span>")
-        }).complete(function() {
-            $('section[data-role="content"] ul').listview('refresh');
             $.mobile.hidePageLoadingMsg();
         });
-    });
+    }
+
+    $(document).bind('pagebeforecreate',function(){
+        $.mobile.showPageLoadingMsg();
+
+        getDashboard().then(
+                fm.getMetaData().then(
+                        fm.uploadDataValueSets()).always(function() {
+            $('section[data-role="content"] ul').listview('refresh');
+            $.mobile.hidePageLoadingMsg();
+        }));
+    })
 </script>
 
 <section data-role="page" id="index-page" data-theme="c">
