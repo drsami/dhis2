@@ -565,22 +565,15 @@ function getInt(str,i,minlength,maxlength) {
     return null;
 }
 
-function validatorFormat( text )
+function validatorFormat( text ) // Custom code
 {
     return $.validator.format( text );
 }
 
-// --------------------------------------------------------------------------
-// Set Message for validatior
-// --------------------------------------------------------------------------
-jQuery(document).ready( function(){
-	if ( typeof validationMessage != "undefined" )
-	{
-		jQuery.validator.setMessages( validationMessage );
-	}
+jQuery( document ).ready( function() { // Custom code
 	
-	jQuery.validator.setDefaults({
-		debug: false,
-		success: "valid"
-	});
-});
+	if ( typeof( validationMessage ) !== "undefined"  ) // From messages.vm
+	{
+		$.validator.setMessages( validationMessage );
+	}
+} );

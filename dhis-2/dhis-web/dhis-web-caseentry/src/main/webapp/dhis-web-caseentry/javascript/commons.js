@@ -9,7 +9,7 @@ var COLOR_LIGHT_YELLOW = "#ffff99";
 var COLOR_LIGHT_GREEN = "#ccffcc";
 var COLOR_LIGHT_LIGHTRED = "#ff99ff";
 var COLOR_LIGHT_GREY = "#ddd";
-var MARKED_VISIT_COLOR = '#000000';
+var MARKED_VISIT_COLOR = '#AAAAAA';
 var SUCCESS_COLOR = '#ccffcc';
 var ERROR_COLOR = '#ccccff';
 var SAVING_COLOR = '#ffffcc';
@@ -501,7 +501,7 @@ function showColorHelp()
 		closable: true,
 		modal:false,
 		width: 380,
-		height: 250
+		height: 270
 	}).show('fast');
 }
 
@@ -787,16 +787,19 @@ function setEventStatus( field, programStageInstanceId )
 			status:status
 		}, function ( json )
 		{
+			enable('ps_' + programStageInstanceId);
 			var eventBox = jQuery('#ps_' + programStageInstanceId);
 			eventBox.attr('status',status);
 			setEventColorStatus( programStageInstanceId, status );
 			resetActiveEvent( eventBox.attr("pi") );
-			if( status==1){
+			
+			if( status==1 || status==2 ){
 				hideById('del_' + programStageInstanceId);
 			}
 			else{
 				showById('del_' + programStageInstanceId);
 				if( status==5){
+					disable('ps_' + programStageInstanceId);
 					var id = 'ps_' + programStageInstanceId;
 					if( jQuery(".stage-object-selected").attr('id')==id )
 					{
@@ -1596,8 +1599,7 @@ function sendSmsOnePatient( field, programStageInstanceId )
 	setInnerHTML('smsError', '');
 	if(field.value==""){
 		field.style.backgroundColor = ERROR_COLOR;
-		jQuery('#smsError').css("color", "red");
-		setInnerHTML('smsError', i18n_this_field_is_required);
+		jQuery('#' + field.id).attr("placeholder", i18n_this_field_is_required);
 		return;
 	}
 	
@@ -1642,6 +1644,7 @@ function addComment( field, programStageInstanceId )
 	var commentText = field.value;
 	if( commentText == ''){
 		field.style.backgroundColor = ERROR_COLOR;
+		jQuery('#' + field.id).attr("placeholder", i18n_this_field_is_required);
 		return;
 	}
 	
@@ -1662,7 +1665,7 @@ function addComment( field, programStageInstanceId )
 			showSuccessMessage( i18n_comment_added );
 			field.style.backgroundColor = SUCCESS_COLOR;
 			
-			if( jQuery("#commentTB tr.hidden").length > 0 ){
+			if( jQuery("#commentTB tr").length > 5 ){
 				commentDivToggle(true);
 			}
 			else{

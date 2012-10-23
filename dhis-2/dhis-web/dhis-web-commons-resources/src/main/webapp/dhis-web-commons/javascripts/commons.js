@@ -1178,7 +1178,13 @@ function insertTextCommon( inputAreaName, inputText )
  */
 function validation2( formId, submitHandler, kwargs )
 {
-	var beforeValidateHandler = kwargs["beforeValidateHandler"];
+	var beforeValidateHandler = null;
+	
+	if ( isDefined( kwargs ) )
+	{
+		beforeValidateHandler = kwargs["beforeValidateHandler"];
+	}
+
 	var rules = kwargs["rules"];
 	var validator = jQuery( "#" + formId ).validate( {
 		meta: "validate",
@@ -1216,8 +1222,8 @@ function validation2( formId, submitHandler, kwargs )
  * 
  * @return Validation rules for a given form
  */
-function getValidationRules(form) {
-	if( form !== undefined ) {
+function getValidationRules( form ) {
+	if ( form !== undefined ) {
 		return validationRules[form];
 	}
 	

@@ -277,3 +277,28 @@ function backMainPage()
 	}
 	hideById('backBtnFromEntry');
 }
+
+// --------------------------------------------------------
+// Check an available person allowed to enroll a program
+// --------------------------------------------------------
+
+function validateAllowEnrollment( patientId, programId  )
+{	
+	jQuery.getJSON( "validatePatientProgramEnrollment.action",
+		{
+			patientId: patientId,
+			programId: programId
+		}, 
+		function( json ) 
+		{    
+			jQuery('#loaderDiv').hide();
+			hideById('message');
+			var type = json.response;
+			if ( type == 'success' ){
+				showSelectedDataRecoding(patientId, programId );
+			}
+			else if ( type == 'input' ){
+				setMessage( json.message );
+			}
+		});
+}
