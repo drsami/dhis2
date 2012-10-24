@@ -42,7 +42,7 @@
     
     <!-- Web maintenance modules -->
 	
-    <dependency>
+    <!--dependency>
       <groupId>org.hisp.dhis</groupId>
       <artifactId>dhis-web-maintenance-datadictionary</artifactId>
       <version>${project.version}</version>
@@ -126,13 +126,13 @@
       <artifactId>dhis-web-caseentry</artifactId>
       <version>${project.version}</version>
       <type>war</type>
-    </dependency>
+    </dependency-->
     <dependency>
       <groupId>org.hisp.dhis</groupId>
       <artifactId>dhis-web-api-mobile</artifactId>
       <type>jar</type>
     </dependency>
-    <dependency>
+    <!--dependency>
       <groupId>org.hisp.dhis</groupId>
       <artifactId>dhis-web-light</artifactId>
       <version>${project.version}</version>
@@ -155,7 +155,7 @@
       <artifactId>dhis-web-visualizer</artifactId>
       <version>${project.version}</version>
       <type>war</type>
-    </dependency>
+    </dependency-->
   </dependencies>
   <properties>
     <rootDir>../../</rootDir>

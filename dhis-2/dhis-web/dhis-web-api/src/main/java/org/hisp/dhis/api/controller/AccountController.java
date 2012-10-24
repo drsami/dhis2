@@ -27,14 +27,19 @@ package org.hisp.dhis.api.controller;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.util.Collection;
+import java.util.HashSet;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hisp.dhis.api.utils.ContextUtils;
 import org.hisp.dhis.configuration.ConfigurationService;
+import org.hisp.dhis.security.PasswordManager;
 import org.hisp.dhis.system.util.ValidationUtils;
 import org.hisp.dhis.user.User;
 import org.hisp.dhis.user.UserAuthorityGroup;
@@ -44,6 +49,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
@@ -82,6 +89,9 @@ public class AccountController
     @Autowired
     private ConfigurationService configurationService;
     
+    @Autowired
+    private PasswordManager passwordManager;
+    
     @RequestMapping( method = RequestMethod.POST, produces = ContextUtils.CONTENT_TYPE_TEXT )
     public @ResponseBody String createAccount( 
         @RequestParam String username,
@@ -95,9 +105,9 @@ public class AccountController
         HttpServletRequest request,
         HttpServletResponse response )
     {
-        UserAuthorityGroup userRole = configurationService.getConfiguration().getSelfRegistrationRole();
+        boolean allowed = configurationService.getConfiguration().selfRegistrationAllowed();
         
-        if ( userRole == null )
+        if ( !allowed )
         {
             response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
             return "User self registration is not allowed";
@@ -204,6 +214,8 @@ public class AccountController
         // Create and save user, return 201
         // ---------------------------------------------------------------------
         
+        UserAuthorityGroup userRole = configurationService.getConfiguration().getSelfRegistrationRole();
+        
         User user = new User();
         user.setFirstName( firstName );
         user.setSurname( surname );
@@ -212,7 +224,7 @@ public class AccountController
         
         credentials = new UserCredentials();
         credentials.setUsername( username );
-        credentials.setPassword( password );
+        credentials.setPassword( passwordManager.encodePassword( username, password ) );
         credentials.setUser( user );
         credentials.getUserAuthorityGroups().add( userRole );
         
@@ -222,10 +234,10 @@ public class AccountController
         
         userService.addUser( user );
         userService.addUserCredentials( credentials );
+
+        authenticate( username, password, userRole, request );
         
-        log.info( "Created user successfully with username: " + username );
-        
-        authenticate( user );
+        log.info( "Created user with username: " + username );
         
         response.setStatus( HttpServletResponse.SC_CREATED );
         return "Account created";
@@ -262,16 +274,29 @@ public class AccountController
         return result != null ? result.split( SPLIT ) : null;
     }
     
-    private void authenticate( User user )
+    private void authenticate( String username, String rawPassword, UserAuthorityGroup userRole, HttpServletRequest request )
     {
-        String uname = user.getUserCredentials().getUsername();
-        String passwd = user.getUserCredentials().getPassword();
-        
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken( uname, passwd );
-        token.setDetails( user );
-        
+        UsernamePasswordAuthenticationToken token = 
+            new UsernamePasswordAuthenticationToken( username, rawPassword, getAuthorities( userRole ) );
+
         Authentication auth = authenticationManager.authenticate( token );
         
         SecurityContextHolder.getContext().setAuthentication( auth );
+
+        HttpSession session = request.getSession();
+        
+        session.setAttribute( "SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext() );
+    }
+    
+    private Collection<GrantedAuthority> getAuthorities( UserAuthorityGroup userRole )
+    {
+        Collection<GrantedAuthority> auths = new HashSet<GrantedAuthority>();
+        
+        for ( String auth : userRole.getAuthorities() )
+        {
+            auths.add( new SimpleGrantedAuthority( auth ) );
+        }
+        
+        return auths;
     }
 }

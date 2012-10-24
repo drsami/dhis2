@@ -1,5 +1,5 @@
 <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.validate.js"></script>
-<script type="text/javascript" src="../dhis-web-commons/javascripts/commons.js"></script>
+<script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.validate.ext.js"></script>
 <script type="text/javascript" src="../dhis-web-commons/i18nJavaScript.action"></script>
 <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.glob.js"></script>
 <script type="text/javascript" src="../dhis-web-commons/javascripts/jQuery/jquery.date.js"></script>
@@ -215,21 +215,24 @@
 
         fm.saveDataValueSet( dataValueSet ).always(function() {
             $.mobile.hidePageLoadingMsg();
-            $.mobile.changePage('index');
+            location.href = 'index';
         });
     }
 
     $(document).bind( 'pagechange', function (event, data) {
         var pageId = data.toPage.attr('id');
 
-        if( pageId == 'organisation-units-page' ) {
-            loadOrganisationUnitsPage();
-        } else if( pageId == 'data-sets-page' ) {
-            loadDataSetsPage();
-        } else if( pageId == 'period-page' ) {
-            loadPeriodPage();
-        } else if( pageId == 'data-entry-page' ) {
-            loadDataEntryPage();
+        var pageLoaders = {
+            'organisation-units-page': loadOrganisationUnitsPage,
+            'data-sets-page': loadDataSetsPage,
+            'period-page': loadPeriodPage,
+            'data-entry-page': loadDataEntryPage
+        };
+
+        if( pageLoaders[pageId] ) {
+            pageLoaders[pageId].call();
+        } else {
+            $.mobile.showPageLoadingMsg($.mobile.pageLoadErrorMessageTheme, "Tried changing to invalid page.", true);
         }
     });
 </script>

@@ -34,7 +34,7 @@ var validationRules = {
 $( document ).ready( function() {
 	
 	Recaptcha.create( "6LcM6tcSAAAAANwYsFp--0SYtcnze_WdYn8XwMMk", "recaptchaDiv", {
-		callback: Recaptcha.focus_response_field
+		theme: "white"
 	} );
 	
 	$( "#accountForm" ).validate( {
@@ -47,25 +47,27 @@ $( document ).ready( function() {
 } );
 
 function accountSubmitHandler()
-{
+{	
 	if ( $.trim( $( "#recaptcha_challenge_field" ).val() ).length == 0 ||
 		$.trim( $( "#recaptcha_response_field" ).val() ).length == 0 )
 	{
-		$( "#messageSpan" ).show().text( "Please enter a value for the word verification above" );
-		
+		$( "#messageSpan" ).show().text( "Please enter a value for the word verification above" );		
 		return false;
 	}
+	
+	$( "#submitButton" ).attr( "disabled", "disabled" );
 	
 	$.ajax( {
 		url: "../../api/account",
 		data: $( "#accountForm" ).serialize(),
 		type: "post",
 		success: function( data ) {
-			alert("Account created");
+			window.location.href = "../../dhis-web-commons-about/redirect.action";
 		},
 		error: function( jqXHR, textStatus, errorThrown ) {
-			$( "#messageSpan" ).show().text( jqXHR.responseText );
+			$( "#messageSpan" ).show().text( jqXHR.responseText );			
 			Recaptcha.reload();
+			$( "#submitButton" ).removeAttr( "disabled" );
 		}
 	} );
 }
