@@ -104,6 +104,8 @@ public class TableAlteror
         executeSql( "DROP TABLE datasetlock" );
         executeSql( "DROP TABLE datasetlockexceptions" );
         executeSql( "DROP TABLE indicator_indicatorgroupsetmembers" );
+        executeSql( "DROP TABLE maplegendsetindicator" );
+        executeSql( "DROP TABLE maplegendsetdataelement" );
         executeSql( "ALTER TABLE dataelementcategoryoption drop column categoryid" );
         executeSql( "ALTER TABLE reporttable DROP column dimension_type" );
         executeSql( "ALTER TABLE reporttable DROP column dimensiontype" );
@@ -123,6 +125,7 @@ public class TableAlteror
         executeSql( "ALTER TABLE configuration DROP COLUMN completenessrecipientsid" );
         executeSql( "ALTER TABLE dataelement DROP COLUMN alternativename" );
         executeSql( "ALTER TABLE indicator DROP COLUMN alternativename" );
+        executeSql( "ALTER TABLE orgunitgroup DROP COLUMN image" );
         
         executeSql( "DROP INDEX crosstab" );
         
@@ -138,15 +141,16 @@ public class TableAlteror
         executeSql( "ALTER TABLE mapview DROP COLUMN mapsource" );
         executeSql( "ALTER TABLE mapview DROP COLUMN mapsourcetype" );
         executeSql( "ALTER TABLE mapview DROP COLUMN mapdatetype" );
-        executeSql( "DROP TABLE map" );
+        executeSql( "ALTER TABLE mapview RENAME COLUMN mapvaluetype TO valuetype" );
+        executeSql( "ALTER TABLE mapview RENAME COLUMN maplegendtype TO legendtype" );
+        executeSql( "ALTER TABLE mapview RENAME COLUMN maplegendsetid TO legendsetid" );
+        executeSql( "ALTER TABLE maplegend DROP CONSTRAINT maplegend_name_key" );
+        
+        executeSql( "UPDATE mapview SET layer = 'thematic1' WHERE layer IS NULL" );
+        
         executeSql( "DELETE FROM systemsetting WHERE name = 'longitude'" );
         executeSql( "DELETE FROM systemsetting WHERE name = 'latitude'" );
         
-        executeSql( "ALTER TABLE map DROP CONSTRAINT fk_map_organisationunitid" );
-        executeSql( "ALTER TABLE map DROP COLUMN organisationunitid" );
-        executeSql( "ALTER TABLE map DROP COLUMN longitude" );
-        executeSql( "ALTER TABLE map DROP COLUMN latitude" );
-        executeSql( "ALTER TABLE map DROP COLUMN zoom" );
         executeSql( "ALTER TABLE maplayer DROP CONSTRAINT maplayer_mapsource_key" );
         executeSql( "ALTER TABLE maplayer DROP COLUMN mapsource" );
         executeSql( "ALTER TABLE maplayer DROP COLUMN mapsourcetype" );
