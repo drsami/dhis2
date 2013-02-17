@@ -82,6 +82,8 @@ public class OrgUnitsTest
         unit.setChangeUpdateDataSetLangUrl( "changeUpdateDataSetLangUrl" );
         unit.setSearchUrl( "search" );
         unit.setUpdateNewVersionUrl( "test" );
+        unit.setUpdateContactUrl( "updateContactUrl" );
+        unit.setFindPatientUrl( "findPatientUrl" );
         return unit;
     }
 }

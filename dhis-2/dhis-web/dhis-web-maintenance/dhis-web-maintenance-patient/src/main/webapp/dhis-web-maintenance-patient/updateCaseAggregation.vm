@@ -15,7 +15,7 @@
 <table> 
 	<thead>
       <tr>
-        <th colspan="2">$i18n.getString( "aggregation_query_builder_detail" )</th>
+        <th colspan="2">$i18n.getString( "case_aggregation_query_builder_detail" )</th>
       </tr>
     </thead>
 	
@@ -32,7 +32,7 @@
 			<select id="dataSets" name="dataSets" onchange="getDataElementsByDataset();">
 				<option value="">[$i18n.getString('please_select')]</option>
 				#foreach( $dataSet in $dataSets)
-					<option value="$dataSet.id" #if( $dataSetId=="$dataSet.id") selected #end >$dataSet.name</option>
+					<option value="$dataSet.id" #if( $dataSetId=="$dataSet.id") selected #end >$dataSet.displayName</option>
 				#end
 			</select>
 		</td>				
@@ -49,8 +49,12 @@
 	<tr>
 		<td><label for="operator">$i18n.getString( "operator" )</label></td>
 		<td>
-			<input type="radio" id="operator" name="operator" value="COUNT" #if($caseAggregation.operator=="COUNT") checked #end >  $i18n.getString('number_of_patients')
-			<input type="radio" id="operator" name="operator" value="SUM" #if($caseAggregation.operator=="SUM") checked #end > $i18n.getString('number_of_visits')
+			<input type="radio" id="operator" name="operator" value="COUNT" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="COUNT") checked #end >  $i18n.getString('number_of_patients')<br>
+			<input type="radio" id="operator" name="operator" value="times" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="times") checked #end > $i18n.getString('number_of_visits')<br>
+			<input type="radio" id="operator" name="operator" value="sum" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="sum") checked #end > $i18n.getString('sum_dataelement_value')<br>
+			<input type="radio" id="operator" name="operator" value="avg" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="avg") checked #end > $i18n.getString('avg_dataelement_value')<br>
+			<input type="radio" id="operator" name="operator" value="min" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="min") checked #end > $i18n.getString('min_dataelement_value')<br>
+			<input type="radio" id="operator" name="operator" value="max" onchange='operatorOnchange(this.value)' #if($caseAggregation.operator=="max") checked #end > $i18n.getString('max_dataelement_value')
 		</td>
 	</tr>
 	<tr>
@@ -61,7 +65,7 @@
 			<select id="programId" name="programId" onChange="getParams();">
 				<option value="">[$i18n.getString('please_select')]</option>
 				#foreach( $program in $programs )
-					<option value="$program.id" title='$program.name' programType='$program.type'>$encoder.htmlEncode( $program.name )</option>
+					<option value="$program.id" title='$program.displayName' programType='$program.type'>$encoder.htmlEncode( $program.displayName )</option>
 				#end
 			</select>
 		</td>
@@ -73,6 +77,19 @@
 		</td>
 		<td>
 			<select id="programStageId" name="programStageId" onChange="getPatientDataElements();"></select>
+		</td>
+	</tr>
+	
+	<tr>
+		<td>
+			<label for="deSumId">$i18n.getString( "data_element_for_sum_avg" )  <em title="$i18n.getString( "required" )" class="required">*</em></label>
+		</td>
+		<td>
+			<select id="deSumId" name="deSumId" class="{validate:{required:true}}" #if( $caseAggregation.deSum ) #else disabled #end>
+				#if( $caseAggregation.deSum )
+				<option value='$caseAggregation.deSum.id'>$caseAggregation.deSum.displayName</option>
+				#end
+			</select>
 		</td>
 	</tr>
 	

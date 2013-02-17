@@ -33,6 +33,7 @@ import static org.hisp.dhis.expression.Expression.PAR_CLOSE;
 import static org.hisp.dhis.expression.Expression.PAR_OPEN;
 import static org.hisp.dhis.expression.Expression.SEPARATOR;
 import static org.hisp.dhis.system.util.MathUtils.calculateExpression;
+import static org.hisp.dhis.system.util.MathUtils.isEqual;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -40,8 +41,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hisp.dhis.common.GenericStore;
@@ -54,14 +55,15 @@ import org.hisp.dhis.dataelement.DataElementCategoryService;
 import org.hisp.dhis.dataelement.DataElementOperand;
 import org.hisp.dhis.dataelement.DataElementService;
 import org.hisp.dhis.indicator.Indicator;
+import org.hisp.dhis.period.Period;
+import org.hisp.dhis.system.util.DateUtils;
 import org.hisp.dhis.system.util.MathUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The expression is a string describing a formula containing data element ids
  * and category option combo ids. The formula can potentially contain references
- * to category totals (also called sub-totals) and data element totals (also
- * called totals).
+ * to data element totals.
  * 
  * @author Margrethe Store
  * @author Lars Helge Overland
@@ -73,9 +75,6 @@ public class DefaultExpressionService
     implements ExpressionService
 {
     private static final Log log = LogFactory.getLog( DefaultExpressionService.class );
-
-    private final Pattern FORMULA_PATTERN = Pattern.compile( FORMULA_EXPRESSION );
-    private final Pattern OPERAND_PATTERN = Pattern.compile( OPERAND_EXPRESSION );
 
     // -------------------------------------------------------------------------
     // Dependencies
@@ -142,8 +141,27 @@ public class DefaultExpressionService
     // Business logic
     // -------------------------------------------------------------------------
     
+    public Double getIndicatorValue( Indicator indicator, Period period, Map<DataElementOperand, Double> valueMap, 
+        Map<String, Double> constantMap, Integer days )
+    {
+        final double denominatorValue = calculateExpression( generateExpression( indicator.getDenominator(), valueMap, constantMap, days, false ) );
+        
+        if ( !isEqual( denominatorValue, 0d ) )
+        {
+            final double numeratorValue = calculateExpression( generateExpression( indicator.getNumerator(), valueMap, constantMap, days, false ) );
+            
+            final double annualizationFactor = period != null ? DateUtils.getAnnualizationFactor( indicator, period.getStartDate(), period.getEndDate() ) : 1d;
+            final double factor = indicator.getIndicatorType().getFactor();
+            final double aggregatedValue = ( numeratorValue / denominatorValue ) * factor * annualizationFactor;
+            
+            return aggregatedValue;
+        }
+        
+        return null;
+    }
+    
     public Double getExpressionValue( Expression expression, Map<DataElementOperand, Double> valueMap, 
-        Map<Integer, Double> constantMap, Integer days )
+        Map<String, Double> constantMap, Integer days )
     {
         final String expressionString = generateExpression( expression.getExpression(), valueMap, constantMap, days, expression.isNullIfBlank() );
 
@@ -162,8 +180,7 @@ public class DefaultExpressionService
 
             while ( matcher.find() )
             {
-                final DataElement dataElement = dataElementService.getDataElement( DataElementOperand.getOperand(
-                    matcher.group() ).getDataElementId() );
+                final DataElement dataElement = dataElementService.getDataElement( matcher.group( 1 ) );
 
                 if ( dataElement != null )
                 {
@@ -187,8 +204,8 @@ public class DefaultExpressionService
 
             while ( matcher.find() )
             {
-                DataElementCategoryOptionCombo categoryOptionCombo = categoryService.getDataElementCategoryOptionCombo( 
-                    DataElementOperand.getOperand( matcher.group() ).getOptionComboId() );
+                DataElementCategoryOptionCombo categoryOptionCombo = categoryService.
+                    getDataElementCategoryOptionCombo( matcher.group( 2 ) );
 
                 if ( categoryOptionCombo != null )
                 {
@@ -200,55 +217,10 @@ public class DefaultExpressionService
         return optionCombosInExpression;
     }
     
-    public String convertExpression( String expression, Map<Object, Integer> dataElementMapping,
-        Map<Object, Integer> categoryOptionComboMapping )
-    {
-        //TODO constants
-        
-        final StringBuffer convertedFormula = new StringBuffer();
-
-        if ( expression != null )
-        {
-            final Matcher matcher = OPERAND_PATTERN.matcher( expression );
-
-            while ( matcher.find() )
-            {
-                String match = matcher.group();
-
-                final DataElementOperand operand = DataElementOperand.getOperand( match );
-
-                final Integer mappedDataElementId = dataElementMapping.get( operand.getDataElementId() );
-                final Integer mappedCategoryOptionComboId = categoryOptionComboMapping.get( operand.getOptionComboId() );
-
-                if ( mappedDataElementId == null )
-                {
-                    log.warn( "Data element identifier refers to non-existing object: " + operand.getDataElementId() );
-
-                    match = NULL_REPLACEMENT;
-                }
-                else if ( !operand.isTotal() && mappedCategoryOptionComboId == null )
-                {
-                    log.warn( "Category option combo identifier refers to non-existing object: "
-                        + operand.getOptionComboId() );
-
-                    match = NULL_REPLACEMENT;
-                }
-                else
-                {
-                    match = EXP_OPEN + mappedDataElementId + SEPARATOR + mappedCategoryOptionComboId + EXP_CLOSE;
-                }
-
-                matcher.appendReplacement( convertedFormula, match );
-            }
-
-            matcher.appendTail( convertedFormula );
-        }
-
-        return convertedFormula.toString();
-    }
-
     public Set<DataElementOperand> getOperandsInExpression( String expression )
     {
+        //TODO reimplement using uids
+        
         Set<DataElementOperand> operandsInExpression = null;
 
         if ( expression != null )
@@ -266,6 +238,19 @@ public class DefaultExpressionService
         return operandsInExpression;
     }
     
+    public Set<DataElement> getDataElementsInIndicators( Collection<Indicator> indicators )
+    {
+        Set<DataElement> dataElements = new HashSet<DataElement>();
+        
+        for ( Indicator indicator : indicators )
+        {
+            dataElements.addAll( getDataElementsInExpression( indicator.getNumerator() ) );
+            dataElements.addAll( getDataElementsInExpression( indicator.getDenominator() ) );
+        }
+        
+        return dataElements;
+    }
+    
     public void filterInvalidIndicators( Collection<Indicator> indicators )
     {
         if ( indicators != null )
@@ -280,7 +265,7 @@ public class DefaultExpressionService
                     !expressionIsValid( indicator.getDenominator() ).equals( VALID ) )
                 {
                     iterator.remove();
-                    log.warn( "Indicator is invalid: " + indicator );
+                    log.warn( "Indicator is invalid: " + indicator + ", " + indicator.getNumerator() + ", " + indicator.getDenominator() );
                 }
             }
         }
@@ -291,79 +276,69 @@ public class DefaultExpressionService
         return expressionIsValid( formula, null, null, null );
     }
     
-    public String expressionIsValid( String formula, Set<Integer> dataElements, Set<Integer> categoryOptionCombos, Set<Integer> constants )
+    public String expressionIsValid( String expression, Set<String> dataElements, Set<String> categoryOptionCombos, Set<String> constants )
     {
-        if ( formula == null )
+        if ( expression == null || expression.isEmpty() )
         {
             return EXPRESSION_IS_EMPTY;
         }
 
-        final StringBuffer buffer = new StringBuffer();
-
-        final Matcher matcher = FORMULA_PATTERN.matcher( formula );
+        // ---------------------------------------------------------------------
+        // Operands
+        // ---------------------------------------------------------------------
+        
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = OPERAND_PATTERN.matcher( expression );
 
         while ( matcher.find() )
         {
-            DataElementOperand operand = null;
-
-            final String match = matcher.group();
-
-            if ( DAYS_EXPRESSION.equals( match ) )
+            String de = matcher.group( 1 );
+            String coc = matcher.group( 2 );
+            
+            if ( dataElements != null ? !dataElements.contains( de ) : dataElementService.getDataElement( de ) == null )
             {
-                // Ignore
-            }
-            else if ( match.matches( CONSTANT_EXPRESSION ) )
-            {
-                Integer id = null;
-                
-                try
-                {
-                    id = Integer.parseInt( stripConstantExpression( match ) );
-                }
-                catch ( NumberFormatException ex )
-                {
-                    return ID_NOT_NUMERIC;
-                }
-                
-                if ( constants != null ? !constants.contains( id ) : constantService.getConstant( id ) == null )
-                {
-                    return CONSTANT_DOES_NOT_EXIST;
-                }                    
-            }
-            else
-            {
-                try
-                {
-                    operand = DataElementOperand.getOperand( match );
-                }
-                catch ( NumberFormatException ex )
-                {
-                    return ID_NOT_NUMERIC;
-                }
-
-                if ( dataElements != null ? !dataElements.contains( operand.getDataElementId() ) : dataElementService.getDataElement( operand.getDataElementId() ) == null )
-                {
-                    return DATAELEMENT_DOES_NOT_EXIST;
-                }
-
-                if ( !operand.isTotal() && ( categoryOptionCombos != null ? !categoryOptionCombos.contains( operand.getOptionComboId() ) :
-                    categoryService.getDataElementCategoryOptionCombo( operand.getOptionComboId() ) == null ) )
-                {
-                    return CATEGORYOPTIONCOMBO_DOES_NOT_EXIST;
-                }
+                return DATAELEMENT_DOES_NOT_EXIST;
             }
 
-            // -----------------------------------------------------------------
-            // Replacing the operand with 1.1 in order to later be able to
-            // verify that the formula is mathematically valid
-            // -----------------------------------------------------------------
+            if ( !operandIsTotal( matcher ) && ( 
+                categoryOptionCombos != null ? !categoryOptionCombos.contains( coc ) : categoryService.getDataElementCategoryOptionCombo( coc ) == null ) )
+            {
+                return CATEGORYOPTIONCOMBO_DOES_NOT_EXIST;
+            }
+                    
+            matcher.appendReplacement( sb, "1.1" );
+        }
+        
+        expression = appendTail( matcher, sb );
 
-            matcher.appendReplacement( buffer, "1.1" );
+        // ---------------------------------------------------------------------
+        // Constants
+        // ---------------------------------------------------------------------
+        
+        matcher = CONSTANT_PATTERN.matcher( expression );
+        sb = new StringBuffer();
+        
+        while ( matcher.find() )
+        {
+            String constant = matcher.group( 1 );
+            
+            if ( constants != null ? !constants.contains( constant ) : constantService.getConstant( constant ) == null )
+            {
+                return CONSTANT_DOES_NOT_EXIST;
+            }
+            
+            matcher.appendReplacement( sb, "1.1" );
         }
 
-        matcher.appendTail( buffer );
+        expression = appendTail( matcher, sb );
 
-        if ( MathUtils.expressionHasErrors( buffer.toString() ) )
+        expression = expression.replaceAll( DAYS_EXPRESSION, "1.1" );
+        
+        // ---------------------------------------------------------------------
+        // Well-formed expression
+        // ---------------------------------------------------------------------
+
+        if ( MathUtils.expressionHasErrors( expression ) )
         {
             return EXPRESSION_NOT_WELL_FORMED;
         }
@@ -371,67 +346,81 @@ public class DefaultExpressionService
         return VALID;
     }
 
-    public String getExpressionDescription( String formula )
+    public String getExpressionDescription( String expression )
     {
-        StringBuffer buffer = null;
-
-        if ( formula != null )
+        if ( expression == null || expression.isEmpty() )
         {
-            buffer = new StringBuffer();
-
-            final Matcher matcher = FORMULA_PATTERN.matcher( formula );
-
-            while ( matcher.find() )
-            {
-                String match = matcher.group();
-
-                if ( DAYS_EXPRESSION.equals( match ) )
-                {
-                    match = DAYS_DESCRIPTION;
-                }
-                else if ( match.matches( CONSTANT_EXPRESSION ) )
-                {
-                    final Integer id = Integer.parseInt( stripConstantExpression( match ) );
-                    
-                    final Constant constant = constantService.getConstant( id );
-                    
-                    if ( constant == null )
-                    {
-                        throw new IllegalArgumentException( "Identifier does not reference a constant: " + id );
-                    }
-                    
-                    match = constant.getDisplayName();
-                }
-                else
-                {
-                    final DataElementOperand operand = DataElementOperand.getOperand( match );
-
-                    final DataElement dataElement = dataElementService.getDataElement( operand.getDataElementId() );
-                    final DataElementCategoryOptionCombo categoryOptionCombo = categoryService
-                        .getDataElementCategoryOptionCombo( operand.getOptionComboId() );
-
-                    if ( dataElement == null )
-                    {
-                        throw new IllegalArgumentException( "Identifier does not reference a data element: "
-                            + operand.getDataElementId() );
-                    }
-
-                    if ( !operand.isTotal() && categoryOptionCombo == null )
-                    {
-                        throw new IllegalArgumentException( "Identifier does not reference a category option combo: "
-                            + operand.getOptionComboId() );
-                    }
-
-                    match = DataElementOperand.getPrettyName( dataElement, categoryOptionCombo );
-                }
-
-                matcher.appendReplacement( buffer, match );
-            }
-
-            matcher.appendTail( buffer );
+            return null;
         }
 
-        return buffer != null ? buffer.toString() : null;
+        // ---------------------------------------------------------------------
+        // Operands
+        // ---------------------------------------------------------------------
+        
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = OPERAND_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            String de = matcher.group( 1 );
+            String coc = matcher.group( 2 );
+            
+            DataElement dataElement = dataElementService.getDataElement( de );
+            DataElementCategoryOptionCombo categoryOptionCombo = categoryService.getDataElementCategoryOptionCombo( coc );
+            
+            if ( dataElement == null )
+            {
+                throw new IllegalArgumentException( "Identifier does not reference a data element: " + de );
+            }
+
+            if ( !operandIsTotal( matcher ) && categoryOptionCombo == null )
+            {
+                throw new IllegalArgumentException( "Identifier does not reference a category option combo: " + coc );
+            }
+            
+            matcher.appendReplacement( sb, DataElementOperand.getPrettyName( dataElement, categoryOptionCombo ) );
+        }
+        
+        expression = appendTail( matcher, sb );
+        
+        // ---------------------------------------------------------------------
+        // Constants
+        // ---------------------------------------------------------------------
+
+        sb = new StringBuffer();
+        matcher = CONSTANT_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            String co = matcher.group( 1 );
+            
+            Constant constant = constantService.getConstant( co );
+            
+            if ( constant == null )
+            {
+                throw new IllegalArgumentException( "Identifier does not reference a constant: " + co );
+            }
+            
+            matcher.appendReplacement( sb, constant.getDisplayName() );
+        }
+
+        expression = appendTail( matcher, sb );
+
+        // ---------------------------------------------------------------------
+        // Days
+        // ---------------------------------------------------------------------
+
+        sb = new StringBuffer();
+        matcher = DAYS_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            matcher.appendReplacement( sb, DAYS_DESCRIPTION );
+        }
+
+        expression = appendTail( matcher, sb );
+
+        return expression;
     }
 
     public void explodeAndSubstituteExpressions( Collection<Indicator> indicators, Integer days )
@@ -444,7 +433,7 @@ public class DefaultExpressionService
                 indicator.setExplodedDenominator( substituteExpression( indicator.getDenominator(), days ) );
             }
 
-            final Map<Integer, Set<Integer>> dataElementMap = dataElementService.getDataElementCategoryOptionCombos();
+            final Map<String, Set<String>> dataElementMap = dataElementService.getDataElementCategoryOptionCombos();
             
             for ( Indicator indicator : indicators )
             {
@@ -453,161 +442,180 @@ public class DefaultExpressionService
             }     
         }
     }
-        
-    private String explodeExpression( String expression, Map<Integer, Set<Integer>> dataElementMap )
+    
+    private String explodeExpression( String expression, Map<String, Set<String>> dataElementMap )
     {
-        StringBuffer buffer = null;
-
-        if ( expression != null )
+        if ( expression == null || expression.isEmpty() )
         {
-            final Matcher matcher = OPERAND_PATTERN.matcher( expression );
-
-            buffer = new StringBuffer();
-
-            while ( matcher.find() )
-            {
-                final DataElementOperand operand = DataElementOperand.getOperand( matcher.group() );
-                
-                if ( operand.isTotal() )
-                {
-                    final StringBuilder replace = new StringBuilder( PAR_OPEN );
-
-                    for ( Integer categoryOptionCombo : dataElementMap.get( operand.getDataElementId() ) )
-                    {
-                        replace.append( EXP_OPEN ).append( operand.getDataElementId() ).append( SEPARATOR ).append(
-                            categoryOptionCombo ).append( EXP_CLOSE ).append( "+" );
-                    }
-
-                    replace.deleteCharAt( replace.length() - 1 ).append( PAR_CLOSE );
-
-                    matcher.appendReplacement( buffer, replace.toString() );
-                }
-            }
-
-            matcher.appendTail( buffer );
+            return null;
         }
 
-        return buffer != null ? buffer.toString() : null;
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = OPERAND_PATTERN.matcher( expression );
+
+        while ( matcher.find() )
+        {
+            if ( operandIsTotal( matcher ) )
+            {
+                final StringBuilder replace = new StringBuilder( PAR_OPEN );
+
+                for ( String coc : dataElementMap.get( matcher.group( 1 ) ) )
+                {
+                    replace.append( EXP_OPEN ).append( matcher.group( 1 ) ).append( SEPARATOR ).append(
+                        coc ).append( EXP_CLOSE ).append( "+" );
+                }
+
+                replace.deleteCharAt( replace.length() - 1 ).append( PAR_CLOSE );
+                matcher.appendReplacement( sb, replace.toString() );
+            }
+        }
+
+        return appendTail( matcher, sb );
     }
     
     public String explodeExpression( String expression )
     {
-        StringBuffer buffer = null;
-
-        if ( expression != null )
+        if ( expression == null || expression.isEmpty() )
         {
-            final Matcher matcher = OPERAND_PATTERN.matcher( expression );
-
-            buffer = new StringBuffer();
-
-            while ( matcher.find() )
-            {
-                final DataElementOperand operand = DataElementOperand.getOperand( matcher.group() );
-                
-                if ( operand.isTotal() )
-                {
-                    final StringBuilder replace = new StringBuilder( PAR_OPEN );
-
-                    final DataElement dataElement = dataElementService.getDataElement( operand.getDataElementId() );
-
-                    final DataElementCategoryCombo categoryCombo = dataElement.getCategoryCombo();
-
-                    for ( DataElementCategoryOptionCombo categoryOptionCombo : categoryCombo.getOptionCombos() )
-                    {
-                        replace.append( EXP_OPEN ).append( dataElement.getId() ).append( SEPARATOR ).append(
-                            categoryOptionCombo.getId() ).append( EXP_CLOSE ).append( "+" );
-                    }
-
-                    replace.deleteCharAt( replace.length() - 1 ).append( PAR_CLOSE );
-
-                    matcher.appendReplacement( buffer, replace.toString() );
-                }
-            }
-
-            matcher.appendTail( buffer );
+            return null;
         }
 
-        return buffer != null ? buffer.toString() : null;
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = OPERAND_PATTERN.matcher( expression );
+
+        while ( matcher.find() )
+        {
+            if ( operandIsTotal( matcher ) )
+            {
+                final StringBuilder replace = new StringBuilder( PAR_OPEN );
+
+                final DataElement dataElement = dataElementService.getDataElement( matcher.group( 1 ) );
+
+                final DataElementCategoryCombo categoryCombo = dataElement.getCategoryCombo();
+
+                for ( DataElementCategoryOptionCombo categoryOptionCombo : categoryCombo.getOptionCombos() )
+                {
+                    replace.append( EXP_OPEN ).append( dataElement.getUid() ).append( SEPARATOR ).append(
+                        categoryOptionCombo.getUid() ).append( EXP_CLOSE ).append( "+" );
+                }
+
+                replace.deleteCharAt( replace.length() - 1 ).append( PAR_CLOSE );
+                matcher.appendReplacement( sb, replace.toString() );
+            }
+        }
+
+        return appendTail( matcher, sb );
     }
     
     public String substituteExpression( String expression, Integer days )
     {
-        StringBuffer buffer = null;
-        
-        if ( expression != null )
+        if ( expression == null || expression.isEmpty() )
         {
-            buffer = new StringBuffer();
-
-            final Matcher matcher = FORMULA_PATTERN.matcher( expression );
-            while ( matcher.find() )
-            {
-                String match = matcher.group();
-
-                if ( DAYS_EXPRESSION.equals( match ) ) // Days
-                {
-                    match = days != null ? String.valueOf( days ) : NULL_REPLACEMENT;
-                }
-                else if ( match.matches( CONSTANT_EXPRESSION ) ) // Constant
-                {
-                    final Constant constant = constantService.getConstant( Integer.parseInt( stripConstantExpression( match ) ) );
-                    
-                    match = constant != null ? String.valueOf( constant.getValue() ) : NULL_REPLACEMENT; 
-                }
-                
-                matcher.appendReplacement( buffer, match );
-            }
-
-            matcher.appendTail( buffer );
+            return null;
         }
 
-        return buffer != null ? buffer.toString() : null;
+        // ---------------------------------------------------------------------
+        // Constants
+        // ---------------------------------------------------------------------
+
+        StringBuffer sb = new StringBuffer();        
+        Matcher matcher = CONSTANT_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            String co = matcher.group( 1 );
+            
+            Constant constant = constantService.getConstant( co );
+            
+            String replacement = constant != null ? String.valueOf( constant.getValue() ) : NULL_REPLACEMENT; 
+            
+            matcher.appendReplacement( sb, replacement );
+        }
+
+        expression = appendTail( matcher, sb );
+        
+        // ---------------------------------------------------------------------
+        // Days
+        // ---------------------------------------------------------------------
+
+        sb = new StringBuffer();
+        matcher = DAYS_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {            
+            String replacement = days != null ? String.valueOf( days ) : NULL_REPLACEMENT;
+            
+            matcher.appendReplacement( sb, replacement );
+        }
+        
+        return appendTail( matcher, sb );
     }
     
-    public String generateExpression( String expression, Map<DataElementOperand, Double> valueMap, Map<Integer, Double> constantMap, Integer days, boolean nullIfNoValues )
+    public String generateExpression( String expression, Map<DataElementOperand, Double> valueMap, Map<String, Double> constantMap, Integer days, boolean nullIfNoValues )
     {
-        StringBuffer buffer = null;
-
-        if ( expression != null )
+        if ( expression == null || expression.isEmpty() )
         {
-            final Matcher matcher = FORMULA_PATTERN.matcher( expression );
-
-            buffer = new StringBuffer();
-
-            while ( matcher.find() )
-            {
-                String match = matcher.group();
-
-                if ( DAYS_EXPRESSION.equals( match ) ) // Days
-                {
-                    match = days != null ? String.valueOf( days ) : NULL_REPLACEMENT;
-                }
-                else if ( match.matches( CONSTANT_EXPRESSION ) ) // Constant
-                {
-                    final Double constant = constantMap.get( Integer.parseInt( stripConstantExpression( match ) ) );
-                    
-                    match = constant != null ? String.valueOf( constant ) : NULL_REPLACEMENT;
-                }
-                else // Operand
-                {
-                    final DataElementOperand operand = DataElementOperand.getOperand( match );
-
-                    final Double value = valueMap.get( operand );
-
-                    if ( value == null && nullIfNoValues )
-                    {
-                        return null;
-                    }
-
-                    match = value != null ? String.valueOf( value ) : NULL_REPLACEMENT;
-                }
-
-                matcher.appendReplacement( buffer, match );
-            }
-
-            matcher.appendTail( buffer );
+            return null;
         }
 
-        return buffer != null ? buffer.toString() : null;
+        // ---------------------------------------------------------------------
+        // Operands
+        // ---------------------------------------------------------------------
+        
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = OPERAND_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            DataElementOperand operand = DataElementOperand.getOperand( matcher.group() );
+
+            final Double value = valueMap.get( operand );
+            
+            if ( value == null && nullIfNoValues )
+            {
+                return null;
+            }
+
+            String replacement = value != null ? String.valueOf( value ) : NULL_REPLACEMENT;
+            
+            matcher.appendReplacement( sb, replacement );
+        }
+        
+        expression = appendTail( matcher, sb );
+        
+        // ---------------------------------------------------------------------
+        // Constants
+        // ---------------------------------------------------------------------
+        
+        sb = new StringBuffer();
+        matcher = CONSTANT_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {
+            final Double constant = constantMap.get( matcher.group( 1 ) );
+            
+            String replacement = constant != null ? String.valueOf( constant ) : NULL_REPLACEMENT;
+            
+            matcher.appendReplacement( sb, replacement );
+        }
+        
+        expression = appendTail( matcher, sb );
+        
+        // ---------------------------------------------------------------------
+        // Days
+        // ---------------------------------------------------------------------
+        
+        sb = new StringBuffer();
+        matcher = DAYS_PATTERN.matcher( expression );
+        
+        while ( matcher.find() )
+        {            
+            String replacement = days != null ? String.valueOf( days ) : NULL_REPLACEMENT;
+            
+            matcher.appendReplacement( sb, replacement );
+        }
+        
+        return appendTail( matcher, sb );
     }
 
     public Set<DataElementOperand> getOperandsInIndicators( Collection<Indicator> indicators )
@@ -625,9 +633,19 @@ public class DefaultExpressionService
         
         return operands;
     }
+
+    // -------------------------------------------------------------------------
+    // Supportive methods
+    // -------------------------------------------------------------------------
     
-    private static final String stripConstantExpression( String match )
+    private String appendTail( Matcher matcher, StringBuffer sb )
     {
-        return match != null ? match.replaceAll( "[\\[C\\]]", "" ) : null;
+        matcher.appendTail( sb );
+        return sb.toString();
+    }
+    
+    private boolean operandIsTotal( Matcher matcher )
+    {
+        return matcher != null && StringUtils.trimToEmpty( matcher.group( 2 ) ).isEmpty();
     }
 }

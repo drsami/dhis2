@@ -53,4 +53,7 @@ public interface ProgramStageSectionService
     ProgramStageSection getProgramStageSectionByName( String name );
     
     Collection<ProgramStageSection> getAllProgramStageSections();
+    
+    Collection<ProgramStageSection> getProgramStages( ProgramStage programStage );
+    
 }

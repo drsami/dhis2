@@ -260,7 +260,21 @@ public interface DataElementService
      */
     Collection<DataElement> getDataElementsWithDataSets();
 
+    /**
+     * Returns all DataElements which are assigned to any of the given DataSets.
+     * 
+     * @param dataSets the collection of DataSets.
+     * @return all DataElements which are assigned to any of the given DataSets.
+     */
     Collection<DataElement> getDataElementsByDataSets( Collection<DataSet> dataSets );
+
+    /**
+     * Returns all DataElements which have the given aggregation level assigned.
+     * 
+     * @param aggregationLevel the aggregation level.
+     * @return all DataElements which have the given aggregation level assigned.
+     */
+    Collection<DataElement> getDataElementsByAggregationLevel( int aggregationLevel );
 
     Collection<DataElement> getDataElementsLikeName( String name );
 
@@ -272,7 +286,9 @@ public interface DataElementService
 
     int getDataElementCountByName( String name );
 
-    Map<Integer, Set<Integer>> getDataElementCategoryOptionCombos();
+    Map<String, Set<String>> getDataElementCategoryOptionCombos();
+    
+    Map<String, Integer> getDataElementUidIdMap();
 
     // -------------------------------------------------------------------------
     // DataElementGroup
@@ -318,13 +334,21 @@ public interface DataElementService
     DataElementGroup getDataElementGroup( int id, boolean i18nDataElements );
 
     /**
-     * Returns data elements with identifiers in the given collection.
+     * Returns data element groups with identifiers in the given collection.
      *
      * @param identifiers the id collection.
      * @return data elements with identifiers in the given collection.
      */
     Collection<DataElementGroup> getDataElementGroups( Collection<Integer> identifiers );
 
+    /**
+     * Returns the data element groups with the given uids.
+     * 
+     * @param uids the uid collection.
+     * @return the data element groups with the given uids.
+     */
+    Collection<DataElementGroup> getDataElementGroupsByUid( Collection<String> uids );    
+    
     /**
      * Returns the DataElementGroup with the given UID.
      *
@@ -431,6 +455,8 @@ public interface DataElementService
     Collection<DataElementGroupSet> getAllDataElementGroupSets();
 
     Collection<DataElementGroupSet> getDataElementGroupSets( Collection<Integer> identifiers );
+    
+    List<DataElementGroupSet> getDataElementGroupSetsByUid( Collection<String> uids );
 
     Collection<DataElementGroupSet> getDataElementGroupSetsBetween( int first, int max );
 

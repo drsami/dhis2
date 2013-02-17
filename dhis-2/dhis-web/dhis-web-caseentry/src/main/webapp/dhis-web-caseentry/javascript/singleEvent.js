@@ -3,7 +3,7 @@ var _continue = false;
 
 function orgunitSelected( orgUnits, orgUnitNames )
 {	
-	showById('mainLinkLbl');
+	hideById('addNewDiv');
 	organisationUnitSelected( orgUnits, orgUnitNames );
 	clearListById('programIdAddPatient');
 	$.postJSON( 'singleEventPrograms.action', {}, function( json )
@@ -19,13 +19,14 @@ selection.setListenerFunction( orgunitSelected );
 
 function showAddPatientForm()
 {
+	hideById('dataEntryMenu');
+	showById('eventActionMenu');
+	showById('nextEventLink');
 	hideById('contentDiv');
-	hideById('mainLinkLbl');
 	hideById('searchDiv');
 	hideById('advanced-search');
 	setInnerHTML('addNewDiv','');
 	setInnerHTML('dataRecordingSelectDiv','');
-	
 	jQuery('#loaderDiv').show();
 	jQuery('#addNewDiv').load('showEventWithRegistrationForm.action',
 		{
@@ -33,9 +34,22 @@ function showAddPatientForm()
 		}, function()
 		{
 			setInnerHTML('singleProgramName',jQuery('#programIdAddPatient option:selected').text());	unSave = true;
+			showById('singleProgramName');
 			showById('addNewDiv');
 			jQuery('#loaderDiv').hide();
 		});
+}
+
+function showUpdatePatientForm( patientId )
+{
+	hideById('dataEntryMenu');
+	showById('eventActionMenu');
+	hideById('nextEventLink');
+	setInnerHTML('singleProgramName',jQuery('#programIdAddPatient option:selected').text());	
+	showById('singleProgramName');
+	setInnerHTML('addNewDiv','');
+	unSave = false;
+	showSelectedDataRecoding(patientId, getFieldValue('programIdAddPatient'));
 }
 
 function addEventForPatientForm( divname )
@@ -51,11 +65,12 @@ function addEventForPatientForm( divname )
 
 function validateData()
 {
+	var params = "programId=" + getFieldValue('programIdAddPatient') + "&" + getParamsForDiv('patientForm');
 	$("#patientForm :input").attr("disabled", true);
 	$.ajax({
 		type: "POST",
 		url: 'validatePatient.action',
-		data: getParamsForDiv('patientForm'),
+		data: params,
 		success: function( data ){
 			var type = jQuery(data).find('message').attr('type');
 			var message = jQuery(data).find('message').text();
@@ -95,46 +110,9 @@ function addPatient()
 		data: getParamsForDiv('patientForm'),
 		success: function(json) {
 			var patientId = json.message.split('_')[0];
-			validateSingleProgramEnrollment( getFieldValue('programIdAddPatient'), patientId )
+			addData( getFieldValue('programIdAddPatient'), patientId );
 		}
      });
-}
-
-function validateSingleProgramEnrollment( programId, patientId )
-{	
-	jQuery('#loaderDiv').show();
-	jQuery.getJSON( "validatePatientProgramEnrollment.action",
-		{
-			patientId: patientId,
-			programId: programId
-		}, 
-		function( json ) 
-		{    
-			hideById('message');
-			var type = json.response;
-			if ( type == 'success' ){
-				addData( programId, patientId );
-			}
-			else if ( type == 'error' ){
-				setMessage( i18n_program_enrollment_failed + ':' + '\n' + message );
-				removePatientInSingleProgram(patientId);
-			}
-			else if ( type == 'input' ){
-				setMessage( json.message );
-				removePatientInSingleProgram(patientId);
-			}
-			jQuery('#loaderDiv').hide();
-		});
-}
-
-
-function removePatientInSingleProgram( patientId )
-{
-	$("#patientForm :input").attr("disabled",false);
-	jQuery.postJSON( "removePatient.action",
-		{
-			id: patientId
-		}, function(){});
 }
 
 function addData( programId, patientId )
@@ -148,7 +126,7 @@ function addData( programId, patientId )
 		url: 'saveValues.action',
 		data: params,
 		success: function(json) {
-			showSuccessMessage( i18n_save_success );
+			$("#patientForm :input").attr("disabled", true);
 			jQuery("#resultSearchDiv").dialog("close");
 			if( _continue==true )
 			{
@@ -182,6 +160,7 @@ function addData( programId, patientId )
 					showById('contentDiv');
 				}
 			}
+			showSuccessMessage( i18n_save_success );
 		}
      });
     return false;
@@ -268,9 +247,11 @@ function removeDisabledIdentifier()
 	});
 }
 
-function backMainPage()
+function backEventList()
 {
-	showById('mainLinkLbl');
+	showById('dataEntryMenu');
+	hideById('eventActionMenu');
+	hideById('singleProgramName');
 	showSearchForm();
 	if( getFieldValue('listAll')=='true'){
 		listAllPatient();
@@ -298,7 +279,13 @@ function validateAllowEnrollment( patientId, programId  )
 				showSelectedDataRecoding(patientId, programId );
 			}
 			else if ( type == 'input' ){
-				setMessage( json.message );
+				showWarningMessage( json.message );
 			}
 		});
+}
+
+function completedAndAddNewEvent()
+{
+	_continue=true;
+	jQuery("#singleEventForm").submit();
 }

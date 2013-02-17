@@ -37,6 +37,8 @@ import org.hisp.dhis.dataset.DataSetService;
 import org.hisp.dhis.dataset.Section;
 import org.hisp.dhis.dataset.comparator.SectionOrderComparator;
 import org.hisp.dhis.i18n.I18n;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.organisationunit.OrganisationUnitService;
 
 import java.util.*;
 
@@ -71,22 +73,18 @@ public class LoadFormAction
         this.dataSetService = dataSetService;
     }
 
+    private OrganisationUnitService organisationUnitService;
+
+    public void setOrganisationUnitService( OrganisationUnitService organisationUnitService )
+    {
+        this.organisationUnitService = organisationUnitService;
+    }
+
     private I18n i18n;
 
     public void setI18n( I18n i18n )
     {
         this.i18n = i18n;
-    }
-
-    // -------------------------------------------------------------------------
-    // Comparator
-    // -------------------------------------------------------------------------
-
-    private Comparator<DataElement> dataElementComparator;
-
-    public void setDataElementComparator( Comparator<DataElement> dataElementComparator )
-    {
-        this.dataElementComparator = dataElementComparator;
     }
 
     // -------------------------------------------------------------------------
@@ -100,9 +98,23 @@ public class LoadFormAction
         this.dataSetId = dataSetId;
     }
 
+    private Integer multiOrganisationUnit;
+
+    public void setMultiOrganisationUnit( Integer multiOrganisationUnit )
+    {
+        this.multiOrganisationUnit = multiOrganisationUnit;
+    }
+
     // -------------------------------------------------------------------------
     // Output
     // -------------------------------------------------------------------------
+
+    private List<OrganisationUnit> organisationUnits = new ArrayList<OrganisationUnit>();
+
+    public List<OrganisationUnit> getOrganisationUnits()
+    {
+        return organisationUnits;
+    }
 
     private Map<DataElementCategoryCombo, List<DataElement>> orderedDataElements = new HashMap<DataElementCategoryCombo, List<DataElement>>();
 
@@ -204,14 +216,15 @@ public class LoadFormAction
     {
         DataSet dataSet = dataSetService.getDataSet( dataSetId, true, false, false );
 
-        List<DataElement> dataElements = new ArrayList<DataElement>( dataSet.getDataElements() );
+        List<DataElement> dataElements = new ArrayList<DataElement>( dataElementService.getDataElements( dataSet, null,
+            null ) );
 
         if ( dataElements.isEmpty() )
         {
             return INPUT;
         }
 
-        Collections.sort( dataElements, dataElementComparator );
+        Collections.sort( dataElements, IdentifiableObjectNameComparator.INSTANCE );
 
         orderedDataElements = dataElementService.getGroupedDataElementsByCategoryCombo( dataElements );
 
@@ -283,6 +296,36 @@ public class LoadFormAction
 
         String displayMode = dataSet.getDataSetType();
 
+        // ---------------------------------------------------------------------
+        // For multi-org unit we only support custom forms
+        // ---------------------------------------------------------------------
+        
+        if ( multiOrganisationUnit != null && multiOrganisationUnit != 0 ) 
+        {
+            OrganisationUnit organisationUnit = organisationUnitService.getOrganisationUnit( multiOrganisationUnit );
+            List<OrganisationUnit> organisationUnitChildren = new ArrayList<OrganisationUnit>();
+
+            for ( OrganisationUnit child : organisationUnit.getChildren() )
+            {
+                if ( child.getDataSets().contains( dataSet ) )
+                {
+                    organisationUnitChildren.add( child );
+                }
+            }
+
+            Collections.sort( organisationUnitChildren, IdentifiableObjectNameComparator.INSTANCE );
+
+            if ( organisationUnit.getDataSets().contains( dataSet ) )
+            {
+                organisationUnits.add( organisationUnit );
+            }
+
+            organisationUnits.addAll( organisationUnitChildren );
+
+            getSectionForm( dataElements, dataSet );
+            
+            displayMode = DataSet.TYPE_SECTION_MULTIORG;
+        }
         if ( displayMode.equals( DataSet.TYPE_SECTION ) )
         {
             getSectionForm( dataElements, dataSet );
@@ -318,7 +361,7 @@ public class LoadFormAction
 
             for ( DataElementOperand operand : section.getGreyedFields() )
             {
-                greyedFields.put( operand.getDataElement().getId() + ":" + operand.getCategoryOptionCombo().getId(),
+                greyedFields.put( operand.getDataElement().getUid() + ":" + operand.getCategoryOptionCombo().getUid(),
                     true );
             }
         }
@@ -334,7 +377,7 @@ public class LoadFormAction
                 i18n, dataSet );
 
             dataElementsNotInForm = new ArrayList<DataElement>( dataSet.getDataElements() );
-            dataElementsNotInForm.removeAll( dataEntryFormService.getDataElementsInDataEntryForm( dataSet ) );        
+            dataElementsNotInForm.removeAll( dataEntryFormService.getDataElementsInDataEntryForm( dataSet ) );
             Collections.sort( dataElementsNotInForm, IdentifiableObjectNameComparator.INSTANCE );
         }
 
@@ -348,6 +391,5 @@ public class LoadFormAction
 
             orderedDataElements.put( categoryCombo, des );
         }
-
     }
 }

@@ -118,6 +118,16 @@
       <result name="success" type="velocity">/dhis-web-commons/useraccount/account.vm</result>
       <result name="error" type="redirect">login.action</result>
     </action>
+    
+    <action name="recovery" class="org.hisp.dhis.useraccount.action.IsAccountRecoveryAllowedAction">
+      <result name="success" type="velocity">/dhis-web-commons/useraccount/recovery.vm</result>
+      <result name="error" type="redirect">login.action</result>
+    </action>
+    
+    <action name="restore" class="org.hisp.dhis.useraccount.action.IsRestoreTokenValidAction">
+      <result name="success" type="velocity">/dhis-web-commons/useraccount/restore.vm</result>
+      <result name="error" type="redirect">login.action</result>
+    </action>
   
   </package>
   
@@ -472,7 +482,7 @@
   <!-- Common actions JSON -->
 
   <package name="dhis-web-commons-ajax-json" extends="dhis-web-commons" namespace="/dhis-web-commons-ajax-json">
-   
+
     <action name="getNotifications" class="org.hisp.dhis.commons.action.GetNotificationsAction">
 	  <result name="success" type="velocity-json">/dhis-web-commons/ajax/jsonNotifications.vm</result>
       <param name="onExceptionReturn">plainTextError</param>

@@ -49,14 +49,12 @@
 				<th>#</th>
 				#foreach( $attribute in $patientAttributes )
 					#if($attribute)
-						<th id="patientAttributeName">$attribute.name</th>
+						<th id="patientAttributeName">$encoder.htmlEncode($attribute.displayName)</th>
 					#end
 				#end
 				
 				#foreach( $identifierType in $identifierTypes)
-					<th>
-						$identifierType.name
-					</th>
+					<th>$encoder.htmlEncode($identifierType.displayName)</th>
 				#end
 				#if( $identifierTypes.size()==0 )
 					<th>$i18n.getString( "full_name" )</th>          
@@ -73,9 +71,8 @@
           </thead>
 		  
           <tbody id="list">	
-		  #set( $mark = false )
           #foreach( $patient in $patients )
-          	<tr id="tr${patient.id}" #alternate($mark) >
+          	<tr id="tr${patient.id}">
 				
 				<td>
 					#set( $nr = ( ( $paging.getCurrentPage() - 1  ) * $paging.pageSize ) + $velocityCount )
@@ -107,7 +104,7 @@
 					#set($value=$patient.getFullName())
 				#end
 				<td style="cursor:pointer;" onclick="javascript:isDashboard=true;showPatientDashboardForm( '$patient.id' )">
-					<a>$value</a>
+					<a>$encoder.htmlEncode($value)</a>
 				</td>
 				
 				<td>$i18n.getString($!patient.gender)</td>
@@ -134,7 +131,6 @@
 				</td>
 				
 			</tr>
-			#set( $mark = !$mark)
     	#end
     	</tbody>
     
@@ -156,7 +152,8 @@
 
 #end
 <script type="text/javascript">
-	jQuery(document).ready(function(){	
+	jQuery(document).ready(function(){
+		setTableStyles();	
 		tableSorter( 'patientList' );
 	});
 	var i18n_patient_details_and_history = '$encoder.jsEscape( $i18n.getString( "patient_details_and_history" ) , "'" )';	

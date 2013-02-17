@@ -27,54 +27,50 @@ package org.hisp.dhis.interpretation;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.hisp.dhis.chart.Chart;
+import org.hisp.dhis.common.BaseIdentifiableObject;
+import org.hisp.dhis.common.DxfNamespaces;
+import org.hisp.dhis.common.annotation.Scanned;
+import org.hisp.dhis.common.view.DetailedView;
+import org.hisp.dhis.common.view.ExportView;
+import org.hisp.dhis.dataset.DataSet;
+import org.hisp.dhis.mapping.Map;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.period.Period;
+import org.hisp.dhis.period.PeriodType;
+import org.hisp.dhis.reporttable.ReportTable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
-import org.hisp.dhis.chart.Chart;
-import org.hisp.dhis.common.BaseIdentifiableObject;
-import org.hisp.dhis.common.Dxf2Namespace;
-import org.hisp.dhis.common.annotation.Scanned;
-import org.hisp.dhis.common.view.DetailedView;
-import org.hisp.dhis.common.view.ExportView;
-import org.hisp.dhis.dataset.DataSet;
-import org.hisp.dhis.mapping.MapView;
-import org.hisp.dhis.organisationunit.OrganisationUnit;
-import org.hisp.dhis.period.Period;
-import org.hisp.dhis.period.PeriodType;
-import org.hisp.dhis.reporttable.ReportTable;
-import org.hisp.dhis.user.User;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * @author Lars Helge Overland
  */
-@JacksonXmlRootElement( localName = "interpretation", namespace = Dxf2Namespace.NAMESPACE )
+@JacksonXmlRootElement( localName = "interpretation", namespace = DxfNamespaces.DXF_2_0)
 public class Interpretation
     extends BaseIdentifiableObject
 {
     private Chart chart;
 
-    private MapView mapView;
+    private Map map;
     
     private ReportTable reportTable;
     
     private DataSet dataSet;
     
-    private Period period; // Applicable to data set report
+    private Period period; // Applicable to report table and data set report
     
-    private OrganisationUnit organisationUnit; // Applicable to report table and data set report
+    private OrganisationUnit organisationUnit; // Applicable to chart, report table and data set report
     
     private String text;
-
-    private User user;
-
-    private Date created;
 
     @Scanned
     private List<InterpretationComment> comments = new ArrayList<InterpretationComment>();
@@ -88,23 +84,25 @@ public class Interpretation
         this.created = new Date();
     }
 
-    public Interpretation( Chart chart, String text )
+    public Interpretation( Chart chart, OrganisationUnit organisationUnit, String text )
     {
         this.chart = chart;
+        this.organisationUnit = organisationUnit;
         this.text = text;
         this.created = new Date();
     }
 
-    public Interpretation( MapView mapView, String text )
+    public Interpretation( Map map, String text )
     {
-        this.mapView = mapView;
+        this.map = map;
         this.text = text;
         this.created = new Date();
     }
     
-    public Interpretation( ReportTable reportTable, OrganisationUnit organisationUnit, String text )
+    public Interpretation( ReportTable reportTable, Period period, OrganisationUnit organisationUnit, String text )
     {
         this.reportTable = reportTable;
+        this.period = period;
         this.organisationUnit = organisationUnit;
         this.text = text;
         this.created = new Date();
@@ -133,9 +131,9 @@ public class Interpretation
         return chart != null;
     }
     
-    public boolean isMapViewInterpretation()
+    public boolean isMapInterpretation()
     {
-        return mapView != null;
+        return map != null;
     }
     
     public boolean isReportTableInterpretation()
@@ -166,7 +164,7 @@ public class Interpretation
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public Chart getChart()
     {
         return chart;
@@ -180,21 +178,21 @@ public class Interpretation
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public MapView getMapView()
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
+    public Map getMap()
     {
-        return mapView;
+        return map;
     }
 
-    public void setMapView( MapView mapView )
+    public void setMap( Map map )
     {
-        this.mapView = mapView;
+        this.map = map;
     }
 
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public ReportTable getReportTable()
     {
         return reportTable;
@@ -208,7 +206,7 @@ public class Interpretation
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public DataSet getDataSet()
     {
         return dataSet;
@@ -222,7 +220,7 @@ public class Interpretation
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public Period getPeriod()
     {
         return period;
@@ -236,7 +234,7 @@ public class Interpretation
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public OrganisationUnit getOrganisationUnit()
     {
         return organisationUnit;
@@ -249,7 +247,7 @@ public class Interpretation
 
     @JsonProperty
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public String getText()
     {
         return text;
@@ -261,36 +259,9 @@ public class Interpretation
     }
 
     @JsonProperty
-    @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public User getUser()
-    {
-        return user;
-    }
-
-    public void setUser( User user )
-    {
-        this.user = user;
-    }
-
-    @JsonProperty
-    @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public Date getCreated()
-    {
-        return created;
-    }
-
-    public void setCreated( Date created )
-    {
-        this.created = created;
-    }
-
-    @JsonProperty
-    @JsonView( { DetailedView.class, ExportView.class } )
-    @JacksonXmlElementWrapper( localName = "comments", namespace = Dxf2Namespace.NAMESPACE )
-    @JacksonXmlProperty( localName = "comment", namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlElementWrapper( localName = "comments", namespace = DxfNamespaces.DXF_2_0)
+    @JacksonXmlProperty( localName = "comment", namespace = DxfNamespaces.DXF_2_0)
     public List<InterpretationComment> getComments()
     {
         return comments;

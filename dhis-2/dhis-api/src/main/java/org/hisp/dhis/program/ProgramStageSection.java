@@ -30,20 +30,14 @@ package org.hisp.dhis.program;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.hisp.dhis.common.BaseIdentifiableObject;
-import org.hisp.dhis.common.Dxf2Namespace;
 
 /**
  * @author Chau Thu Tran
  * 
  * @version ProgramStageSection.java 11:07:27 AM Aug 22, 2012 $
  */
-@XmlRootElement( name = "ProgramStageSection", namespace = Dxf2Namespace.NAMESPACE )
-@XmlAccessorType( value = XmlAccessType.NONE )
+
 public class ProgramStageSection
     extends BaseIdentifiableObject
 {
@@ -51,7 +45,7 @@ public class ProgramStageSection
 
     private List<ProgramStageDataElement> programStageDataElements = new ArrayList<ProgramStageDataElement>();
 
-    private int sortOrder;
+    private Integer sortOrder;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -68,7 +62,7 @@ public class ProgramStageSection
         this.programStageDataElements = programStageDataElements;
     }
 
-    public ProgramStageSection( String name, List<ProgramStageDataElement> programStageDataElements, int sortOrder )
+    public ProgramStageSection( String name, List<ProgramStageDataElement> programStageDataElements, Integer sortOrder )
     {
         this.name = name;
         this.programStageDataElements = programStageDataElements;
@@ -118,12 +112,12 @@ public class ProgramStageSection
     // Constructors
     // -------------------------------------------------------------------------
 
-    public void setSortOrder( int sortOrder )
+    public void setSortOrder( Integer sortOrder )
     {
         this.sortOrder = sortOrder;
     }
 
-    public int getSortOrder()
+    public Integer getSortOrder()
     {
         return sortOrder;
     }

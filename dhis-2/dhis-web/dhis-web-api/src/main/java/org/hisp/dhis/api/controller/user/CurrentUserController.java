@@ -28,6 +28,7 @@ package org.hisp.dhis.api.controller.user;
  */
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,9 +46,11 @@ import org.hisp.dhis.api.webdomain.Forms;
 import org.hisp.dhis.api.webdomain.user.Dashboard;
 import org.hisp.dhis.api.webdomain.user.Inbox;
 import org.hisp.dhis.api.webdomain.user.Recipients;
-import org.hisp.dhis.api.webdomain.user.Settings;
+import org.hisp.dhis.api.webdomain.user.UserAccount;
 import org.hisp.dhis.dataset.DataSet;
+import org.hisp.dhis.dataset.DataSetService;
 import org.hisp.dhis.dxf2.utils.JacksonUtils;
+import org.hisp.dhis.i18n.I18nService;
 import org.hisp.dhis.interpretation.Interpretation;
 import org.hisp.dhis.interpretation.InterpretationService;
 import org.hisp.dhis.message.MessageConversation;
@@ -69,11 +72,14 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author Morten Olav Hansen <mortenoh@gmail.com>
  */
 @Controller
-@RequestMapping( value = CurrentUserController.RESOURCE_PATH, method = RequestMethod.GET )
+@RequestMapping(value = CurrentUserController.RESOURCE_PATH, method = RequestMethod.GET)
 public class CurrentUserController
 {
     public static final String RESOURCE_PATH = "/currentUser";
+
     private static final int MAX_OBJECTS = 50;
+
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd" );
 
     @Autowired
     private CurrentUserService currentUserService;
@@ -92,11 +98,17 @@ public class CurrentUserController
 
     @Autowired
     private OrganisationUnitService organisationUnitService;
-    
+
+    @Autowired
+    private DataSetService dataSetService;
+
     @Autowired
     private ContextUtils contextUtils;
 
-    @RequestMapping( produces = {"application/json", "text/*"} )
+    @Autowired
+    private I18nService i18nService;
+
+    @RequestMapping( produces = { "application/json", "text/*" } )
     public void getCurrentUser( HttpServletResponse response ) throws Exception
     {
         User currentUser = currentUserService.getCurrentUser();
@@ -110,7 +122,7 @@ public class CurrentUserController
         JacksonUtils.toJson( response.getOutputStream(), currentUser );
     }
 
-    @RequestMapping( value = "/inbox", produces = {"application/json", "text/*"} )
+    @RequestMapping(value = "/inbox", produces = { "application/json", "text/*" })
     public void getInbox( HttpServletResponse response ) throws Exception
     {
         User currentUser = currentUserService.getCurrentUser();
@@ -128,7 +140,7 @@ public class CurrentUserController
         JacksonUtils.toJson( response.getOutputStream(), inbox );
     }
 
-    @RequestMapping( value = "/dashboard", produces = {"application/json", "text/*"} )
+    @RequestMapping(value = "/dashboard", produces = { "application/json", "text/*" })
     public void getDashboard( HttpServletResponse response ) throws Exception
     {
         User currentUser = currentUserService.getCurrentUser();
@@ -146,8 +158,8 @@ public class CurrentUserController
         JacksonUtils.toJson( response.getOutputStream(), dashboard );
     }
 
-    @RequestMapping( value = "/settings", produces = {"application/json", "text/*"} )
-    public void getSettings( HttpServletResponse response ) throws Exception
+    @RequestMapping(value = "/user-account", produces = { "application/json", "text/*" })
+    public void getUserAccount( HttpServletResponse response ) throws Exception
     {
         User currentUser = currentUserService.getCurrentUser();
 
@@ -157,19 +169,37 @@ public class CurrentUserController
             return;
         }
 
-        Settings settings = new Settings();
-        settings.setFirstName( currentUser.getFirstName() );
-        settings.setSurname( currentUser.getSurname() );
-        settings.setEmail( currentUser.getEmail() );
-        settings.setPhoneNumber( currentUser.getPhoneNumber() );
+        UserAccount userAccount = new UserAccount();
 
-        JacksonUtils.toJson( response.getOutputStream(), settings );
+        // user account
+        userAccount.setFirstName( currentUser.getFirstName() );
+        userAccount.setSurname( currentUser.getSurname() );
+        userAccount.setEmail( currentUser.getEmail() );
+        userAccount.setPhoneNumber( currentUser.getPhoneNumber() );
+
+        // profile
+        userAccount.setIntroduction( currentUser.getIntroduction() );
+        userAccount.setJobTitle( currentUser.getJobTitle() );
+        userAccount.setGender( currentUser.getGender() );
+
+        if ( currentUser.getBirthday() != null )
+        {
+            userAccount.setBirthday( simpleDateFormat.format( currentUser.getBirthday() ) );
+        }
+
+        userAccount.setNationality( currentUser.getNationality() );
+        userAccount.setEmployer( currentUser.getEmployer() );
+        userAccount.setEducation( currentUser.getEducation() );
+        userAccount.setInterests( currentUser.getInterests() );
+        userAccount.setLanguages( currentUser.getLanguages() );
+
+        JacksonUtils.toJson( response.getOutputStream(), userAccount );
     }
 
-    @RequestMapping( value = "/settings", method = RequestMethod.POST, consumes = "application/xml" )
-    public void postSettingsXml( HttpServletResponse response, HttpServletRequest request ) throws Exception
+    @RequestMapping(value = "/user-account", method = RequestMethod.POST, consumes = "application/json")
+    public void postUserAccountJson( HttpServletResponse response, HttpServletRequest request ) throws Exception
     {
-        Settings settings = JacksonUtils.fromXml( request.getInputStream(), Settings.class );
+        UserAccount userAccount = JacksonUtils.fromJson( request.getInputStream(), UserAccount.class );
         User currentUser = currentUserService.getCurrentUser();
 
         if ( currentUser == null )
@@ -178,42 +208,39 @@ public class CurrentUserController
             return;
         }
 
-        currentUser.setFirstName( settings.getFirstName() );
-        currentUser.setSurname( settings.getSurname() );
-        currentUser.setEmail( settings.getEmail() );
-        currentUser.setPhoneNumber( settings.getPhoneNumber() );
+        // basic user account
+        currentUser.setFirstName( userAccount.getFirstName() );
+        currentUser.setSurname( userAccount.getSurname() );
+        currentUser.setEmail( userAccount.getEmail() );
+        currentUser.setPhoneNumber( userAccount.getPhoneNumber() );
+
+        // profile
+        currentUser.setIntroduction( userAccount.getIntroduction() );
+        currentUser.setJobTitle( userAccount.getJobTitle() );
+        currentUser.setGender( userAccount.getGender() );
+
+        if ( userAccount.getBirthday() != null && !userAccount.getBirthday().isEmpty() )
+        {
+            currentUser.setBirthday( simpleDateFormat.parse( userAccount.getBirthday() ) );
+        }
+
+        currentUser.setNationality( userAccount.getNationality() );
+        currentUser.setEmployer( userAccount.getEmployer() );
+        currentUser.setEducation( userAccount.getEducation() );
+        currentUser.setInterests( userAccount.getInterests() );
+        currentUser.setLanguages( userAccount.getLanguages() );
 
         userService.updateUser( currentUser );
     }
 
-    @RequestMapping( value = "/settings", method = RequestMethod.POST, consumes = "application/json" )
-    public void postSettingsJson( HttpServletResponse response, HttpServletRequest request ) throws Exception
-    {
-        Settings settings = JacksonUtils.fromJson( request.getInputStream(), Settings.class );
-        User currentUser = currentUserService.getCurrentUser();
-
-        if ( currentUser == null )
-        {
-            ContextUtils.notFoundResponse( response, "User object is null, user is not authenticated." );
-            return;
-        }
-
-        currentUser.setFirstName( settings.getFirstName() );
-        currentUser.setSurname( settings.getSurname() );
-        currentUser.setEmail( settings.getEmail() );
-        currentUser.setPhoneNumber( settings.getPhoneNumber() );
-
-        userService.updateUser( currentUser );
-    }
-
-    @RequestMapping( value = "/recipients", produces = {"application/json", "text/*"} )
+    @RequestMapping(value = "/recipients", produces = { "application/json", "text/*" })
     public void recipientsJson( HttpServletResponse response,
-        @RequestParam( value = "filter" ) String filter ) throws IOException
+        @RequestParam(value = "filter") String filter ) throws IOException
     {
         User currentUser = currentUserService.getCurrentUser();
 
         contextUtils.configureResponse( response, ContextUtils.CONTENT_TYPE_JSON, CacheStrategy.CACHE_1_HOUR );
-        
+
         if ( currentUser == null )
         {
             ContextUtils.notFoundResponse( response, "User object is null, user is not authenticated." );
@@ -229,8 +256,22 @@ public class CurrentUserController
         JacksonUtils.toJson( response.getOutputStream(), recipients );
     }
 
+    @RequestMapping(value = "/assignedOrganisationUnits", produces = { "application/json", "text/*" })
+    public void getAssignedOrganisationUnits( HttpServletResponse response ) throws IOException
+    {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if ( currentUser == null )
+        {
+            ContextUtils.notFoundResponse( response, "User object is null, user is not authenticated." );
+            return;
+        }
+
+        JacksonUtils.toJson( response.getOutputStream(), currentUser.getOrganisationUnits() );
+    }
+
     @SuppressWarnings("unchecked")
-    @RequestMapping( value = "/forms", produces = {"application/json", "text/*"} )
+    @RequestMapping(value = "/forms", produces = { "application/json", "text/*" })
     public void getForms( HttpServletResponse response ) throws IOException
     {
         User currentUser = currentUserService.getCurrentUser();
@@ -244,9 +285,24 @@ public class CurrentUserController
         Forms forms = new Forms();
 
         Set<OrganisationUnit> organisationUnits = new HashSet<OrganisationUnit>();
-        Set<DataSet> userDataSets = currentUser.getUserCredentials().getAllDataSets();
+        Set<DataSet> userDataSets;
+        Set<OrganisationUnit> userOrganisationUnits = new HashSet<OrganisationUnit>( currentUser.getOrganisationUnits() );
 
-        for ( OrganisationUnit ou : currentUser.getOrganisationUnits() )
+        if ( currentUser.getUserCredentials().getAllAuthorities().contains( "ALL" ) )
+        {
+            userDataSets = new HashSet<DataSet>( dataSetService.getAllDataSets() );
+
+            if ( userOrganisationUnits.isEmpty() )
+            {
+                userOrganisationUnits = new HashSet<OrganisationUnit>( organisationUnitService.getRootOrganisationUnits() );
+            }
+        }
+        else
+        {
+            userDataSets = currentUser.getUserCredentials().getAllDataSets();
+        }
+
+        for ( OrganisationUnit ou : userOrganisationUnits )
         {
             Set<DataSet> dataSets = new HashSet<DataSet>( CollectionUtils.intersection( ou.getDataSets(), userDataSets ) );
 
@@ -261,26 +317,32 @@ public class CurrentUserController
 
                 if ( childDataSets.size() > 0 )
                 {
-                    organisationUnits.add( ou );
+                    organisationUnits.add( child );
                 }
             }
         }
+
+        i18nService.internationalise( organisationUnits );
 
         for ( OrganisationUnit organisationUnit : organisationUnits )
         {
             FormOrganisationUnit ou = new FormOrganisationUnit();
             ou.setId( organisationUnit.getUid() );
-            ou.setLabel( organisationUnit.getName() );
+            ou.setLabel( organisationUnit.getDisplayName() );
 
             Set<DataSet> dataSets = new HashSet<DataSet>( CollectionUtils.intersection( organisationUnit.getDataSets(), userDataSets ) );
+            i18nService.internationalise( dataSets );
 
             for ( DataSet dataSet : dataSets )
             {
+                i18nService.internationalise( dataSet.getDataElements() );
+                i18nService.internationalise( dataSet.getSections() );
+
                 String uid = dataSet.getUid();
 
                 FormDataSet ds = new FormDataSet();
                 ds.setId( uid );
-                ds.setLabel( dataSet.getName() );
+                ds.setLabel( dataSet.getDisplayName() );
 
                 forms.getForms().put( uid, FormUtils.fromDataSet( dataSet ) );
                 ou.getDataSets().add( ds );

@@ -35,9 +35,9 @@ import java.util.List;
 import org.hibernate.criterion.Restrictions;
 import org.hisp.dhis.caseaggregation.CaseAggregationCondition;
 import org.hisp.dhis.caseaggregation.CaseAggregationConditionStore;
+import org.hisp.dhis.common.hibernate.HibernateIdentifiableObjectStore;
 import org.hisp.dhis.dataelement.DataElement;
 import org.hisp.dhis.dataelement.DataElementCategoryOptionCombo;
-import org.hisp.dhis.hibernate.HibernateGenericStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -47,7 +47,7 @@ import org.springframework.jdbc.core.RowMapper;
  * @version JdbcCaseAggregationConditionStore.java Nov 18, 2010 9:36:20 AM
  */
 public class JdbcCaseAggregationConditionStore
-    extends HibernateGenericStore<CaseAggregationCondition>
+    extends HibernateIdentifiableObjectStore<CaseAggregationCondition>
     implements CaseAggregationConditionStore
 {
     // -------------------------------------------------------------------------

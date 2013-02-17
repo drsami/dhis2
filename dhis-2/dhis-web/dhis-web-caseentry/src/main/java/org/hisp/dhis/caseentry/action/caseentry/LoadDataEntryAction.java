@@ -31,15 +31,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.hisp.dhis.caseentry.state.SelectedStateManager;
 import org.hisp.dhis.dataentryform.DataEntryForm;
 import org.hisp.dhis.i18n.I18n;
+import org.hisp.dhis.i18n.I18nFormat;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.patient.Patient;
+import org.hisp.dhis.patient.PatientAttribute;
+import org.hisp.dhis.patient.PatientAttributeService;
+import org.hisp.dhis.patientattributevalue.PatientAttributeValueService;
 import org.hisp.dhis.patientdatavalue.PatientDataValue;
 import org.hisp.dhis.patientdatavalue.PatientDataValueService;
 import org.hisp.dhis.program.Program;
@@ -49,7 +52,9 @@ import org.hisp.dhis.program.ProgramStageDataElement;
 import org.hisp.dhis.program.ProgramStageInstance;
 import org.hisp.dhis.program.ProgramStageInstanceService;
 import org.hisp.dhis.program.ProgramStageSection;
+import org.hisp.dhis.program.ProgramStageSectionService;
 import org.hisp.dhis.program.comparator.ProgramStageDataElementSortOrderComparator;
+import org.hisp.dhis.program.comparator.ProgramStageSectionSortOrderComparator;
 
 import com.opensymphony.xwork2.Action;
 
@@ -73,6 +78,14 @@ public class LoadDataEntryAction
 
     private SelectedStateManager selectedStateManager;
 
+    private PatientAttributeService patientAttributeService;
+
+    private PatientAttributeValueService patientAttributeValueService;
+
+    private ProgramStageSectionService programStageSectionService;
+    
+    private I18nFormat format;
+
     // -------------------------------------------------------------------------
     // Input && Output
     // -------------------------------------------------------------------------
@@ -95,7 +108,9 @@ public class LoadDataEntryAction
 
     private ProgramStage programStage;
 
-    private Set<ProgramStageSection> sections = new HashSet<ProgramStageSection>();
+    private List<ProgramStageSection> sections = new ArrayList<ProgramStageSection>();
+
+    private Map<String, Double> calAttributeValueMap = new HashMap<String, Double>();
 
     // -------------------------------------------------------------------------
     // Getters && Setters
@@ -106,12 +121,32 @@ public class LoadDataEntryAction
         this.programStageInstanceService = programStageInstanceService;
     }
 
+    public void setProgramStageSectionService( ProgramStageSectionService programStageSectionService )
+    {
+        this.programStageSectionService = programStageSectionService;
+    }
+
+    public void setPatientAttributeService( PatientAttributeService patientAttributeService )
+    {
+        this.patientAttributeService = patientAttributeService;
+    }
+
+    public void setPatientAttributeValueService( PatientAttributeValueService patientAttributeValueService )
+    {
+        this.patientAttributeValueService = patientAttributeValueService;
+    }
+
+    public void setFormat( I18nFormat format )
+    {
+        this.format = format;
+    }
+
     public void setProgramStageInstanceId( Integer programStageInstanceId )
     {
         this.programStageInstanceId = programStageInstanceId;
     }
 
-    public Set<ProgramStageSection> getSections()
+    public List<ProgramStageSection> getSections()
     {
         return sections;
     }
@@ -171,6 +206,25 @@ public class LoadDataEntryAction
         return patientDataValueMap;
     }
 
+    private String visitor;
+
+    public String getVisitor()
+    {
+        return visitor;
+    }
+
+    private Patient patient;
+
+    public Patient getPatient()
+    {
+        return patient;
+    }
+
+    public Map<String, Double> getCalAttributeValueMap()
+    {
+        return calAttributeValueMap;
+    }
+    
     // -------------------------------------------------------------------------
     // Implementation Action
     // -------------------------------------------------------------------------
@@ -193,6 +247,24 @@ public class LoadDataEntryAction
             programStage = programStageInstance.getProgramStage();
 
             selectedStateManager.setSelectedProgramStageInstance( programStageInstance );
+
+            if ( program.isRegistration() )
+            {
+                patient = programStageInstance.getProgramInstance().getPatient();
+
+                Collection<PatientAttribute> calAttributes = patientAttributeService
+                    .getPatientAttributesByValueType( PatientAttribute.TYPE_CALCULATED );
+
+                for ( PatientAttribute calAttribute : calAttributes )
+                {
+                    Double value = patientAttributeValueService.getCalculatedPatientAttributeValue( patient,
+                        calAttribute, format );
+                    if ( value != null )
+                    {
+                        calAttributeValueMap.put( calAttribute.getName(), value );
+                    }
+                }
+            }
 
             // ---------------------------------------------------------------------
             // Get data values
@@ -230,7 +302,9 @@ public class LoadDataEntryAction
             }
             else if ( programStage.getDataEntryType().equals( ProgramStage.TYPE_SECTION ) )
             {
-                sections = programStage.getProgramStageSections();
+                sections = new ArrayList<ProgramStageSection>( programStageSectionService.getProgramStages( programStage ));
+                
+                Collections.sort( sections, new ProgramStageSectionSortOrderComparator() );
             }
         }
 

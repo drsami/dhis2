@@ -876,7 +876,7 @@ function datePicker( id )
 		buttonImage: '../images/calendar.png',
 		buttonImageOnly: true,
 		constrainInput: true,
-        yearRange: '-100:+100',
+        yearRange: '-100:+100'
 	});
 	jQuery( "#" + id ).attr("readonly", true );
 	s = jQuery("#" + id );		
@@ -1188,7 +1188,8 @@ function validation2( formId, submitHandler, kwargs )
 	var rules = kwargs["rules"];
 	var validator = jQuery( "#" + formId ).validate( {
 		meta: "validate",
-		errorElement: "span",
+        errorElement: "span",
+        warningElement: "span",
 		beforeValidateHandler: beforeValidateHandler,
 		submitHandler: submitHandler,
 		rules: rules,
@@ -1260,6 +1261,17 @@ function checkValueIsExist( inputId, url, params )
 {
 	jQuery("#" + inputId).rules("add",{
 		remote: {
+			url:url,
+			type:'post',
+			data:params
+		}
+	});
+}
+
+function checkValueIsExistWarning( inputId, url, params )
+{
+	jQuery("#" + inputId).rules("add",{
+		remoteWarning: {
 			url:url,
 			type:'post',
 			data:params
@@ -1603,6 +1615,11 @@ function isNumber( value )
 	return regex.test( value );
 }
 
+function startsWith( string, substring )
+{
+	return ( string && string.lastIndexOf( substring, 0 ) === 0 ) ? true : false;
+}
+
 function isPositiveNumber( value )
 {
 	return isNumber( value ) && parseFloat( value ) > 0;
@@ -1673,37 +1690,20 @@ function pagingList( currentPage, pageSize )
 {
 	var baseLink = jQuery( "#baseLink" ).val();	
 	var url = baseLink + "currentPage=" + currentPage + "&pageSize=" + pageSize;
-
+	
 	var index = url.indexOf( '?' );
 	var link = url.substring( 0, index );
 	var data = url.substring( index + 1 );
 
 	if ( !isAjax )
 	{
-		var keyParam = data.split( '&' )[0];
-
-		if ( keyParam.split( '=' )[0] == "key" )
-		{
-			setFieldValue( 'key', keyParam.split( '=' )[1] )
-		}
-		
-		url = link + "?currentPage=" + currentPage + "&pageSize=" + pageSize;
-		
-		if ( $( '#filterKeyForm' ).length )
-		{
-			$( '#filterKeyForm' ).attr( 'action', url );
-			$( '#filterKeyForm' ).submit();
-		}
-		else
-		{
-			window.location.href = url;
-		}
+		window.location.href = encodeURI( url );
 	}
 	else
 	{		
 		jQuery.postUTF8( link, data, function( html ) {
 			setInnerHTML( contentDiv, html );
-		});
+		} );
 	}
 }
 

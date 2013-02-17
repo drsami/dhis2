@@ -46,6 +46,7 @@ import org.hisp.dhis.sms.outbound.OutboundSms;
 import org.hisp.dhis.sms.outbound.OutboundSmsStatus;
 import org.hisp.dhis.sms.outbound.OutboundSmsStore;
 import org.hisp.dhis.sms.outbound.OutboundSmsTransportService;
+import org.hisp.dhis.sms.parse.SMSConsumer;
 import org.smslib.AGateway;
 import org.smslib.GatewayException;
 import org.smslib.IInboundMessageNotification;
@@ -60,14 +61,6 @@ public class SmsLibService
 {
     private static final Log log = LogFactory.getLog( SmsLibService.class );
 
-    private Map<String, String> gatewayMap = new HashMap<String, String>();
-
-    private GateWayFactory gatewayFactory = new GateWayFactory();
-
-    private SmsConfiguration config;
-
-    private String message = "success";
-
     private final String BULK_GATEWAY = "bulk_gw";
 
     private final String CLICKATELL_GATEWAY = "clickatell_gw";
@@ -78,6 +71,14 @@ public class SmsLibService
 
     private final String SMPP_GATEWAY = "smpp_gw";
 
+    private Map<String, String> gatewayMap = new HashMap<String, String>();
+
+    private GateWayFactory gatewayFactory = new GateWayFactory();
+
+    private SmsConfiguration config;
+
+    private String message = "success";
+
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
@@ -86,9 +87,16 @@ public class SmsLibService
 
     private OutboundSmsStore outboundSmsStore;
 
+    private SMSConsumer smsConsumer;
+
     // -------------------------------------------------------------------------
     // Implementation methods
     // -------------------------------------------------------------------------
+
+    public void setSmsConsumer( SMSConsumer smsConsumer )
+    {
+        this.smsConsumer = smsConsumer;
+    }
 
     @Override
     public boolean isEnabled()
@@ -99,7 +107,7 @@ public class SmsLibService
     @Override
     public Map<String, String> getGatewayMap()
     {
-        if( gatewayMap == null || gatewayMap.isEmpty())
+        if ( gatewayMap == null || gatewayMap.isEmpty() )
         {
             reloadConfig();
         }
@@ -149,7 +157,7 @@ public class SmsLibService
 
         try
         {
-            log.debug( "Sending message " + sms );
+            log.info( "Sending message " + sms );
 
             if ( gatewayId == null || gatewayId.isEmpty() )
             {
@@ -168,10 +176,14 @@ public class SmsLibService
         catch ( IOException e )
         {
             log.warn( "Unable to send message: " + sms, e );
-
             message = "Unable to send message: " + sms + " " + e.getCause().getMessage();
         }
         catch ( InterruptedException e )
+        {
+            log.warn( "Unable to send message: " + sms, e );
+            message = "Unable to send message: " + sms + " " + e.getCause().getMessage();
+        }
+        catch ( Exception e )
         {
             log.warn( "Unable to send message: " + sms, e );
             message = "Unable to send message: " + sms + " " + e.getCause().getMessage();
@@ -180,7 +192,7 @@ public class SmsLibService
         {
             if ( recipients.size() > 1 )
             {
-                // Make sure we delete tmp. group
+                // Make sure we delete "tmp" group
                 removeGroup( recipient );
             }
             sms.setStatus( OutboundSmsStatus.ERROR );
@@ -334,6 +346,16 @@ public class SmsLibService
                     getService().setInboundMessageNotification( smppInboundMessageNotification );
                 }
 
+                try
+                {
+                    smsConsumer.start();
+                }
+                catch ( Exception e1 )
+                {
+                    message = "Unable to start smsConsumer service " + e1.getMessage();
+                    log.warn( "Unable to start smsConsumer service ", e1 );
+                }
+
             }
             catch ( SMSLibException e )
             {
@@ -366,6 +388,7 @@ public class SmsLibService
         try
         {
             getService().stopService();
+            smsConsumer.stop();
         }
         catch ( SMSLibException e )
         {
@@ -490,7 +513,47 @@ public class SmsLibService
     public void deleteById( Integer outboundSmsId )
     {
         OutboundSms sms = outboundSmsStore.get( outboundSmsId );
-        
-        outboundSmsStore.delete( sms );   
+
+        outboundSmsStore.delete( sms );
+    }
+
+    public String getDefaultGateway()
+    {
+        SmsGatewayConfig gatewayConfig = config.getDefaultGateway();
+
+        if ( gatewayConfig == null )
+        {
+            return null;
+        }
+
+        if ( getGatewayMap() == null )
+        {
+            return null;
+        }
+
+        String gatewayId;
+
+        if ( gatewayConfig instanceof BulkSmsGatewayConfig )
+        {
+            gatewayId = gatewayMap.get( BULK_GATEWAY );
+        }
+        else if ( gatewayConfig instanceof ClickatellGatewayConfig )
+        {
+            gatewayId = gatewayMap.get( CLICKATELL_GATEWAY );
+        }
+        else if ( gatewayConfig instanceof GenericHttpGatewayConfig )
+        {
+            gatewayId = gatewayMap.get( HTTP_GATEWAY );
+        }
+        else if ( gatewayConfig instanceof SMPPGatewayConfig )
+        {
+            gatewayId = gatewayMap.get( SMPP_GATEWAY );
+        }
+        else
+        {
+            gatewayId = gatewayMap.get( MODEM_GATEWAY );
+        }
+
+        return gatewayId;
     }
 }

@@ -33,6 +33,8 @@ import org.hisp.dhis.dxf2.metadata.ExchangeClasses;
 import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.system.util.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.crypto.codec.Base64;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -55,15 +57,15 @@ public class ContextUtils
     public static final String CONTENT_TYPE_PDF = "application/pdf";
     public static final String CONTENT_TYPE_ZIP = "application/zip";
     public static final String CONTENT_TYPE_GZIP = "application/gzip";
-    public static final String CONTENT_TYPE_JSON = "application/json";
-    public static final String CONTENT_TYPE_HTML = "text/html";
-    public static final String CONTENT_TYPE_TEXT = "text/plain";
-    public static final String CONTENT_TYPE_XML = "application/xml";
-    public static final String CONTENT_TYPE_CSV = "application/csv";
+    public static final String CONTENT_TYPE_JSON = "application/json; charset=UTF-8";
+    public static final String CONTENT_TYPE_HTML = "text/html; charset=UTF-8";
+    public static final String CONTENT_TYPE_TEXT = "text/plain; charset=UTF-8";
+    public static final String CONTENT_TYPE_XML = "application/xml; charset=UTF-8";
+    public static final String CONTENT_TYPE_CSV = "application/csv; charset=UTF-8";
     public static final String CONTENT_TYPE_PNG = "image/png";
     public static final String CONTENT_TYPE_JPG = "image/jpeg";
     public static final String CONTENT_TYPE_EXCEL = "application/vnd.ms-excel";
-    public static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript";
+    public static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript; charset=UTF-8";
 
     public static final String HEADER_USER_AGENT = "User-Agent";
     public static final String HEADER_CACHE_CONTROL = "Cache-Control";
@@ -71,7 +73,7 @@ public class ContextUtils
     public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
     public static final String HEADER_CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
     public static final String HEADER_LOCATION = "Location";
-    
+
     @Autowired
     private SystemSettingManager systemSettingManager;
 
@@ -88,9 +90,9 @@ public class ContextUtils
     {
         configureResponse( response, contentType, cacheStrategy, null, false );
     }
-    
+
     public void configureResponse( HttpServletResponse response, String contentType, CacheStrategy cacheStrategy,
-                                   String filename, boolean attachment )
+        String filename, boolean attachment )
     {
         if ( contentType != null )
         {
@@ -118,9 +120,9 @@ public class ContextUtils
         {
             Calendar cal = Calendar.getInstance();
             cal.add( Calendar.HOUR_OF_DAY, 1 );
-            
+
             response.setHeader( HEADER_CACHE_CONTROL, "public, max-age=3600" );
-            response.setHeader( HEADER_EXPIRES, DateUtils.getHttpDateString( cal.getTime() ) );            
+            response.setHeader( HEADER_EXPIRES, DateUtils.getHttpDateString( cal.getTime() ) );
         }
         else if ( cacheStrategy.equals( CacheStrategy.CACHE_6AM_TOMORROW ) )
         {
@@ -148,17 +150,17 @@ public class ContextUtils
     {
         setResponse( response, HttpServletResponse.SC_OK, message );
     }
-    
+
     public static void createdResponse( HttpServletResponse response, String message, String location )
     {
         if ( location != null )
         {
             response.addHeader( HEADER_LOCATION, location );
         }
-        
+
         setResponse( response, HttpServletResponse.SC_CREATED, message );
     }
-    
+
     public static void notFoundResponse( HttpServletResponse response, String message )
     {
         setResponse( response, HttpServletResponse.SC_NOT_FOUND, message );
@@ -173,7 +175,7 @@ public class ContextUtils
     {
         setResponse( response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message );
     }
-    
+
     private static void setResponse( HttpServletResponse response, int statusCode, String message )
     {
         response.setStatus( statusCode );
@@ -184,7 +186,7 @@ public class ContextUtils
             PrintWriter writer = response.getWriter();
             writer.println( message );
             writer.flush();
-        } 
+        }
         catch ( IOException ex )
         {
             // Ignore
@@ -213,7 +215,7 @@ public class ContextUtils
         return getRootPath( getRequest() ) + "/" + resourcePath;
     }
 
-    public static String getRootPath( HttpServletRequest request )
+    public static String getContextPath( HttpServletRequest request )
     {
         StringBuilder builder = new StringBuilder();
         String xForwardedProto = request.getHeader( "X-Forwarded-Proto" );
@@ -235,7 +237,7 @@ public class ContextUtils
         try
         {
             port = Integer.parseInt( xForwardedPort );
-        } 
+        }
         catch ( NumberFormatException e )
         {
             port = request.getServerPort();
@@ -247,8 +249,30 @@ public class ContextUtils
         }
 
         builder.append( request.getContextPath() );
+
+        return builder.toString();
+    }
+
+    public static String getRootPath( HttpServletRequest request )
+    {
+        StringBuilder builder = new StringBuilder( getContextPath( request ) );
         builder.append( request.getServletPath() );
 
         return builder.toString();
+    }
+
+    /**
+     * Adds basic authentication by adding an Authorization header to the
+     * given HttpHeaders object.
+     * 
+     * @param headers the HttpHeaders object.
+     * @param username the user name.
+     * @param password the password.
+     */
+    public static void setBasicAuth( HttpHeaders headers, String username, String password )
+    {
+        String authorisation = username + ":" + password;        
+        byte[] encodedAuthorisation = Base64.encode( authorisation.getBytes() );        
+        headers.add( "Authorization", "Basic " + new String( encodedAuthorisation ) );
     }
 }

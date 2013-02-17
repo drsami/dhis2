@@ -36,6 +36,8 @@ function Selection()
     var unselectAllowed = false;
     var rootUnselectAllowed = false;
     var autoSelectRoot = true;
+    var realRoot = true;
+    var includeChildren = false;
 
     this.setListenerFunction = function ( listenerFunction_, skipInitialCall )
     {
@@ -70,6 +72,11 @@ function Selection()
         autoSelectRoot = autoSelect;
     };
 
+    this.setIncludeChildren = function( children )
+    {
+        includeChildren = children;
+    };
+
     this.load = function ()
     {
         function sync_and_reload()
@@ -97,9 +104,9 @@ function Selection()
 
             organisationUnits = JSON.parse( localStorage["organisationUnits"] );
 
-            if ( sessionStorage["organisationUnits"] !== undefined )
+            if ( sessionStorage['organisationUnits'] !== undefined )
             {
-                $.extend(organisationUnits, JSON.parse( sessionStorage["organisationUnits"] ))
+                $.extend( organisationUnits, JSON.parse( sessionStorage["organisationUnits"] ) );
             }
 
             selection.sync();
@@ -147,6 +154,7 @@ function Selection()
                 if ( data.indexOf( "<!DOCTYPE" ) != 0 )
                 {
                     data = JSON.parse( data );
+                    realRoot = data.realRoot;
                     should_update = update_required( data.version, data.roots );
                 }
             }, "text" ).complete(
@@ -281,6 +289,11 @@ function Selection()
         $.post( organisationUnitTreePath + "clearselected.action" ).complete( this.responseReceived );
     };
 
+    this.getSelected = function()
+    {
+        return JSON.parse( sessionStorage[getTagId( "Selected" )] );
+    };
+
     this.select = function ( unitId )
     {
         var $linkTag = $( "#" + getTagId( unitId ) ).find( "a" ).eq( 0 );
@@ -294,6 +307,11 @@ function Selection()
                 var roots = JSON.parse( localStorage[getTagId( "Roots" )] );
 
                 if ( $.inArray(selected, roots) == -1 )
+                {
+                    return;
+                }
+
+                if( !realRoot )
                 {
                     return;
                 }
@@ -391,6 +409,7 @@ function Selection()
         }
 
         var selected = [];
+        var children = [];
 
         if ( sessionStorage[getTagId( "Selected" )] != null )
         {
@@ -411,12 +430,23 @@ function Selection()
         }
         else
         {
+            // we only support includeChildren for single selects
+            if( includeChildren )
+            {
+                children = organisationUnits[selected].c;
+            }
+
+            if ( sessionStorage['organisationUnits'] !== undefined )
+            {
+                $.extend( organisationUnits, JSON.parse( sessionStorage["organisationUnits"] ) );
+            }
+
             var name = organisationUnits[selected].n;
             ids.push( +selected );
             names.push( name );
         }
 
-        listenerFunction( ids, names );
+        listenerFunction( ids, names, children );
     };
 
     function getTagId( unitId )

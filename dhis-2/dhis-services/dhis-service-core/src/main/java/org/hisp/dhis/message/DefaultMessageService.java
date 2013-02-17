@@ -51,8 +51,9 @@ public class DefaultMessageService
     implements MessageService
 {
     private static final Log log = LogFactory.getLog( DefaultMessageService.class );
-    
+
     private static final String COMPLETE_SUBJECT = "Form registered as complete";
+
     private static final String COMPLETE_TEMPLATE = "completeness_message";
 
     // -------------------------------------------------------------------------
@@ -96,15 +97,26 @@ public class DefaultMessageService
 
     public int sendMessage( String subject, String text, String metaData, Set<User> users )
     {
+        return sendMessage( subject, text, metaData, users, false );
+    }
+
+    public int sendMessage( String subject, String text, String metaData, Set<User> users_,
+        boolean includeFeedbackRecipients )
+    {
+        Set<User> users = new HashSet<User>( users_ );
+
         // ---------------------------------------------------------------------
         // Add feedback recipients to users if they are not there
         // ---------------------------------------------------------------------
 
-        UserGroup userGroup = configurationService.getConfiguration().getFeedbackRecipients();
-
-        if ( userGroup != null && userGroup.getMembers().size() > 0 )
+        if ( includeFeedbackRecipients )
         {
-            users.addAll( userGroup.getMembers() );
+            UserGroup userGroup = configurationService.getConfiguration().getFeedbackRecipients();
+
+            if ( userGroup != null && userGroup.getMembers().size() > 0 )
+            {
+                users.addAll( userGroup.getMembers() );
+            }
         }
 
         User sender = currentUserService.getCurrentUser();
@@ -112,6 +124,13 @@ public class DefaultMessageService
         if ( sender != null )
         {
             users.add( sender );
+        }
+
+        User recipient = currentUserService.getCurrentUser();
+
+        if ( recipient != null )
+        {
+            users.add( recipient );
         }
 
         // ---------------------------------------------------------------------
@@ -138,7 +157,7 @@ public class DefaultMessageService
 
     public int sendFeedback( String subject, String text, String metaData )
     {
-        return sendMessage( subject, text, metaData, new HashSet<User>() );
+        return sendMessage( subject, text, metaData, new HashSet<User>(), true );
     }
 
     public void sendReply( MessageConversation conversation, String text, String metaData )
@@ -151,45 +170,59 @@ public class DefaultMessageService
 
         updateMessageConversation( conversation );
 
-        invokeMessageSenders( conversation.getSubject(), text, sender, conversation.getUsers() );
+        invokeMessageSenders( conversation.getSubject(), text, sender, new HashSet<User>( conversation.getUsers() ) );
     }
 
     public int sendCompletenessMessage( CompleteDataSetRegistration registration )
     {
         DataSet dataSet = registration.getDataSet();
-        
-        if ( dataSet == null || dataSet.getNotificationRecipients() == null || dataSet.getNotificationRecipients().getMembers().isEmpty() )
+
+        if ( dataSet == null )
         {
             return 0;
         }
-        
+
         UserGroup userGroup = dataSet.getNotificationRecipients();
-        
+
         User sender = currentUserService.getCurrentUser();
+
+        Set<User> recipients = new HashSet<User>();
+
+        if ( userGroup != null )
+        {
+            recipients.addAll( new HashSet<User>( userGroup.getMembers() ) );
+        }
+
+        if ( dataSet.isNotifyCompletingUser() )
+        {
+            recipients.add( sender );
+        }
+
+        if ( recipients.isEmpty() )
+        {
+            return 0;
+        }
 
         String text = new VelocityManager().render( registration, COMPLETE_TEMPLATE );
 
         MessageConversation conversation = new MessageConversation( COMPLETE_SUBJECT, sender );
 
         conversation.addMessage( new Message( text, null, sender ) );
-        
-        for ( User user : userGroup.getMembers() )
+
+        for ( User user : recipients )
         {
-            if ( user.getUserCredentials().getAllDataSets().contains( dataSet ) )
-            {
-                conversation.addUserMessage( new UserMessage( user ) );
-            }
+            conversation.addUserMessage( new UserMessage( user ) );
         }
 
         if ( !conversation.getUserMessages().isEmpty() )
         {
             int id = saveMessageConversation( conversation );
             
-            invokeMessageSenders( COMPLETE_SUBJECT, text, sender, conversation.getUsers() );
-            
+            invokeMessageSenders( COMPLETE_SUBJECT, text, sender, new HashSet<User>( conversation.getUsers() ) );
+
             return id;
         }
-            
+
         return 0;
     }
 
@@ -225,14 +258,17 @@ public class DefaultMessageService
 
     public List<MessageConversation> getMessageConversations( int first, int max )
     {
-        return messageConversationStore.getMessageConversations( currentUserService.getCurrentUser(), false, false, first, max );
+        return messageConversationStore.getMessageConversations( currentUserService.getCurrentUser(), false, false,
+            first, max );
     }
 
-    public List<MessageConversation> getMessageConversations( boolean followUpOnly, boolean unreadOnly, int first, int max )
+    public List<MessageConversation> getMessageConversations( boolean followUpOnly, boolean unreadOnly, int first,
+        int max )
     {
-        return messageConversationStore.getMessageConversations( currentUserService.getCurrentUser(), followUpOnly, unreadOnly, first, max );
+        return messageConversationStore.getMessageConversations( currentUserService.getCurrentUser(), followUpOnly,
+            unreadOnly, first, max );
     }
-    
+
     public int getMessageConversationCount()
     {
         return messageConversationStore.getMessageConversationCount( currentUserService.getCurrentUser(), false, false );
@@ -240,9 +276,10 @@ public class DefaultMessageService
 
     public int getMessageConversationCount( boolean followUpOnly, boolean unreadOnly )
     {
-        return messageConversationStore.getMessageConversationCount( currentUserService.getCurrentUser(), followUpOnly, unreadOnly );
+        return messageConversationStore.getMessageConversationCount( currentUserService.getCurrentUser(), followUpOnly,
+            unreadOnly );
     }
-    
+
     public List<MessageConversation> getAllMessageConversations()
     {
         return messageConversationStore.getMessageConversations( null, false, false, null, null );
@@ -254,7 +291,12 @@ public class DefaultMessageService
         messageConversationStore.deleteUserMessages( user );
         messageConversationStore.removeUserFromMessageConversations( user );
     }
-        
+
+    public List<UserMessage> getLastRecipients( int first, int max )
+    {
+        return messageConversationStore.getLastRecipients( currentUserService.getCurrentUser(), first, max );
+    }
+    
     // -------------------------------------------------------------------------
     // Supportive methods
     // -------------------------------------------------------------------------
@@ -263,7 +305,7 @@ public class DefaultMessageService
     {
         for ( MessageSender messageSender : messageSenders )
         {
-            messageSender.sendMessage( subject, text, sender, users );
+            messageSender.sendMessage( subject, text, sender, new HashSet<User>( users ), false );
         }
     }
 }

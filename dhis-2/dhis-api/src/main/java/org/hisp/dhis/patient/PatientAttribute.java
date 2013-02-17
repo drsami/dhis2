@@ -29,19 +29,13 @@ package org.hisp.dhis.patient;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.hisp.dhis.common.BaseIdentifiableObject;
-import org.hisp.dhis.common.Dxf2Namespace;
 
 /**
  * @author Abyot Asalefew
  * @version $Id$
  */
-@XmlRootElement( name = "patientAttribute", namespace = Dxf2Namespace.NAMESPACE )
-@XmlAccessorType( value = XmlAccessType.NONE )
+
 public class PatientAttribute
     extends BaseIdentifiableObject
 {
@@ -60,6 +54,8 @@ public class PatientAttribute
 
     public static final String TYPE_COMBO = "COMBO";
 
+    public static final String TYPE_CALCULATED = "CALCULATED";
+
     private String description;
 
     private String valueType;
@@ -73,6 +69,8 @@ public class PatientAttribute
     private PatientAttributeGroup patientAttributeGroup;
 
     private Set<PatientAttributeOption> attributeOptions;
+
+    private String expression;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -205,6 +203,16 @@ public class PatientAttribute
     public void setPatientAttributeGroup( PatientAttributeGroup patientAttributeGroup )
     {
         this.patientAttributeGroup = patientAttributeGroup;
+    }
+
+    public String getExpression()
+    {
+        return expression;
+    }
+
+    public void setExpression( String expression )
+    {
+        this.expression = expression;
     }
 
 }

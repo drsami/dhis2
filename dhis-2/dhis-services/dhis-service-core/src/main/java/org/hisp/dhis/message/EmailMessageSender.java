@@ -55,11 +55,12 @@ public class EmailMessageSender
     implements MessageSender
 {
     private static final Log log = LogFactory.getLog( EmailMessageSender.class );
-    
     private static final int SMTP_PORT = 587;
+    private static final int LOCAL_SMTP_PORT = 25;
     private static final String FROM_ADDRESS = "noreply@dhis2.org";
     private static final String FROM_NAME = "DHIS2 Message [No reply]";
     private static final String SUBJECT_PREFIX = "[DHIS2] ";
+    private static final String LOCALHOST = "localhost";
     private static final String LB = System.getProperty( "line.separator" );
 
     // -------------------------------------------------------------------------
@@ -89,7 +90,7 @@ public class EmailMessageSender
      */
     @Async
     @Override
-    public void sendMessage( String subject, String text, User sender, Set<User> users )
+    public void sendMessage( String subject, String text, User sender, Set<User> users, boolean forceSend )
     {        
         String hostName = StringUtils.trimToNull( (String) systemSettingManager.getSystemSetting( KEY_EMAIL_HOST_NAME ) );
         String username = StringUtils.trimToNull( (String) systemSettingManager.getSystemSetting( KEY_EMAIL_USERNAME ) );
@@ -119,12 +120,14 @@ public class EmailMessageSender
             for ( User user : users )
             {
                 boolean emailNotification = settings.get( user ) != null && (Boolean) settings.get( user ) == true;
+                
+                boolean doSend = forceSend || emailNotification;
     
-                if ( emailNotification && user.getEmail() != null && !user.getEmail().trim().isEmpty() )
+                if ( doSend && user.getEmail() != null && !user.getEmail().trim().isEmpty() )
                 {
                     email.addBcc( user.getEmail() );
                     
-                    log.debug( "Sent email to user: " + user + " with email address: " + user.getEmail() );
+                    log.debug( "Sending email to user: " + user + " with email address: " + user.getEmail() );
                     
                     hasRecipients = true;
                 }
@@ -133,6 +136,8 @@ public class EmailMessageSender
             if ( hasRecipients )
             {
                 email.send();
+                
+                log.debug( "Email sent" );
             }
         }
         catch ( EmailException ex )
@@ -146,11 +151,19 @@ public class EmailMessageSender
     {
         Email email = new SimpleEmail();
         email.setHostName( hostName );
-        email.setSmtpPort( SMTP_PORT );
-        email.setAuthenticator( new DefaultAuthenticator( username, password ) );
-        email.setTLS( true );
         email.setFrom( FROM_ADDRESS, FROM_NAME );
-        
+
+        if ( hostName.equals( LOCALHOST ) )
+        {
+            email.setSmtpPort( LOCAL_SMTP_PORT );
+        }
+        else
+        {
+            email.setSmtpPort( SMTP_PORT );
+            email.setAuthenticator( new DefaultAuthenticator( username, password ) );
+            email.setTLS( true );
+        }
+
         return email;
     }
 }

@@ -27,9 +27,10 @@ package org.hisp.dhis.dashboard;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.hisp.dhis.report.Report.TYPE_JASPER_REPORT_TABLE;
 
 import org.hibernate.NonUniqueObjectException;
 import org.hisp.dhis.DhisSpringTest;
@@ -73,7 +74,7 @@ public class DashboardStoreTest
         userA = createUser( 'A' );
         userService.addUser( userA );
         
-        reportA = new Report( "ReportA", "DesignA", new ReportTable() );
+        reportA = new Report( "ReportA", TYPE_JASPER_REPORT_TABLE, "DesignA", new ReportTable() );
         reportService.saveReport( reportA );
         
         contentA = new DashboardContent();

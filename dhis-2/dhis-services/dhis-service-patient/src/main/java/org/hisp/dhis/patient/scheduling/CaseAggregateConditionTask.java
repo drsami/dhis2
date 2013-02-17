@@ -27,16 +27,9 @@
 
 package org.hisp.dhis.patient.scheduling;
 
-import static org.hisp.dhis.setting.SystemSettingManager.DEFAULT_ORGUNITGROUPSET_AGG_LEVEL;
-import static org.hisp.dhis.setting.SystemSettingManager.KEY_AGGREGATE_QUERY_BUILDER_ORGUNITGROUPSET_AGG_LEVEL;
-
-import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import org.hisp.dhis.caseaggregation.CaseAggregationCondition;
 import org.hisp.dhis.caseaggregation.CaseAggregationConditionService;
@@ -50,9 +43,8 @@ import org.hisp.dhis.datavalue.DataValue;
 import org.hisp.dhis.datavalue.DataValueService;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
+import org.hisp.dhis.period.CalendarPeriodType;
 import org.hisp.dhis.period.Period;
-import org.hisp.dhis.period.RelativePeriods;
-import org.hisp.dhis.setting.SystemSettingManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
@@ -72,8 +64,6 @@ public class CaseAggregateConditionTask
 
     private DataValueService dataValueService;
 
-    private SystemSettingManager systemSettingManager;
-
     private JdbcTemplate jdbcTemplate;
 
     private DataElementService dataElementService;
@@ -83,36 +73,17 @@ public class CaseAggregateConditionTask
     private DataSetService dataSetService;
 
     // -------------------------------------------------------------------------
-    // Params
-    // -------------------------------------------------------------------------
-
-    private boolean last6Months;
-
-    public void setLast6Months( boolean last6Months )
-    {
-        this.last6Months = last6Months;
-    }
-
-    private boolean last6To12Months;
-
-    public void setLast6To12Months( boolean last6To12Months )
-    {
-        this.last6To12Months = last6To12Months;
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
     public CaseAggregateConditionTask( OrganisationUnitService organisationUnitService,
         CaseAggregationConditionService aggregationConditionService, DataValueService dataValueService,
-        SystemSettingManager systemSettingManager, JdbcTemplate jdbcTemplate, DataElementService dataElementService,
-        DataElementCategoryService categoryService, DataSetService dataSetService )
+        JdbcTemplate jdbcTemplate, DataElementService dataElementService, DataElementCategoryService categoryService,
+        DataSetService dataSetService )
     {
         this.organisationUnitService = organisationUnitService;
         this.aggregationConditionService = aggregationConditionService;
         this.dataValueService = dataValueService;
-        this.systemSettingManager = systemSettingManager;
         this.jdbcTemplate = jdbcTemplate;
         this.dataElementService = dataElementService;
         this.categoryService = categoryService;
@@ -126,57 +97,47 @@ public class CaseAggregateConditionTask
     @Override
     public void run()
     {
-        int level = (Integer) systemSettingManager.getSystemSetting(
-            KEY_AGGREGATE_QUERY_BUILDER_ORGUNITGROUPSET_AGG_LEVEL, DEFAULT_ORGUNITGROUPSET_AGG_LEVEL );
-        Collection<OrganisationUnit> orgunits = organisationUnitService.getOrganisationUnitsAtLevel( level );
-
-        // ---------------------------------------------------------------------
-        // Get Period list in system-setting
-        // ---------------------------------------------------------------------
+        Collection<OrganisationUnit> orgunits = organisationUnitService.getAllOrganisationUnits();
 
         Collection<DataSet> dataSets = dataSetService.getAllDataSets();
 
         for ( DataSet dataSet : dataSets )
         {
-            String periodType = dataSet.getPeriodType().getName();
-            List<Period> periods = getPeriods( periodType );
+            Period period = getPeriod( dataSet.getPeriodType().getName() );
 
-            String sql = "select caseaggregationconditionid, aggregationdataelementid, optioncomboid "
-                + "from caseaggregationcondition cagg inner join datasetmembers dm "
-                + "on cagg.aggregationdataelementid=dm.dataelementid " + "inner join dataset ds "
-                + "on ds.datasetid = dm.datasetid " + "inner join periodtype pt "
-                + "on pt.periodtypeid=ds.periodtypeid " + "where ds.datasetid = " + dataSet.getId();
-
-            SqlRowSet rs = jdbcTemplate.queryForRowSet( sql );
-
-            while ( rs.next() )
+            if ( period != null )
             {
-                // -------------------------------------------------------------
-                // Get formula, agg-dataelement and option-combo
-                // -------------------------------------------------------------
+                String sql = "select caseaggregationconditionid, aggregationdataelementid, optioncomboid "
+                    + "from caseaggregationcondition cagg inner join datasetmembers dm "
+                    + "on cagg.aggregationdataelementid=dm.dataelementid " + "inner join dataset ds "
+                    + "on ds.datasetid = dm.datasetid " + "inner join periodtype pt "
+                    + "on pt.periodtypeid=ds.periodtypeid " + "where ds.datasetid = " + dataSet.getId();
 
-                int dataelementId = rs.getInt( "aggregationdataelementid" );
-                int optionComboId = rs.getInt( "optioncomboid" );
+                SqlRowSet rs = jdbcTemplate.queryForRowSet( sql );
 
-                DataElement dElement = dataElementService.getDataElement( dataelementId );
-                DataElementCategoryOptionCombo optionCombo = categoryService
-                    .getDataElementCategoryOptionCombo( optionComboId );
-
-                CaseAggregationCondition aggCondition = aggregationConditionService.getCaseAggregationCondition( rs
-                    .getInt( "caseaggregationconditionid" ) );
-
-                // ---------------------------------------------------------------------
-                // Aggregation
-                // ---------------------------------------------------------------------
-
-                for ( OrganisationUnit orgUnit : orgunits )
+                while ( rs.next() )
                 {
-                    for ( Period period : periods )
+                    // -------------------------------------------------------------
+                    // Get formula, agg-dataelement and option-combo
+                    // -------------------------------------------------------------
+
+                    int dataelementId = rs.getInt( "aggregationdataelementid" );
+                    int optionComboId = rs.getInt( "optioncomboid" );
+
+                    DataElement dElement = dataElementService.getDataElement( dataelementId );
+                    DataElementCategoryOptionCombo optionCombo = categoryService
+                        .getDataElementCategoryOptionCombo( optionComboId );
+
+                    CaseAggregationCondition aggCondition = aggregationConditionService.getCaseAggregationCondition( rs
+                        .getInt( "caseaggregationconditionid" ) );
+
+                    // ---------------------------------------------------------------------
+                    // Aggregation
+                    // ---------------------------------------------------------------------
+
+                    for ( OrganisationUnit orgUnit : orgunits )
                     {
                         DataValue dataValue = dataValueService.getDataValue( orgUnit, dElement, period, optionCombo );
-
-                        if ( dataValue != null && dataValue.getStoredBy().equals( STORED_BY_DHIS_SYSTEM ) )
-                            continue;
 
                         Integer resultValue = aggregationConditionService.parseConditition( aggCondition, orgUnit,
                             period );
@@ -192,10 +153,11 @@ public class CaseAggregateConditionTask
                                     null, optionCombo );
                                 dataValueService.addDataValue( dataValue );
                             }
+
                             // -----------------------------------------------------
                             // Update dataValue
                             // -----------------------------------------------------
-                            else if ( (double)resultValue != Double.parseDouble( dataValue.getValue() ) )
+                            else if ( (double) resultValue != Double.parseDouble( dataValue.getValue() ) )
                             {
                                 dataValue.setValue( "" + resultValue );
                                 dataValue.setTimestamp( new Date() );
@@ -225,33 +187,16 @@ public class CaseAggregateConditionTask
     // Supportive methods
     // -------------------------------------------------------------------------
 
-    private List<Period> getPeriods( String periodType )
+    private Period getPeriod( String periodTypeName )
     {
-        Set<String> periodTypes = new HashSet<String>();
-        periodTypes.add( periodType );
+        Calendar today = Calendar.getInstance();  
+        
+        today.add(Calendar.DATE, -1);  
 
-        List<Period> relatives = new ArrayList<Period>();
+        CalendarPeriodType periodType = (CalendarPeriodType) CalendarPeriodType.getPeriodTypeByName( periodTypeName );
 
-        if ( last6Months )
-        {
-            relatives.addAll( new RelativePeriods().getLast6Months( periodTypes ) );
-        }
+        Period period = periodType.createPeriod( today );
 
-        if ( last6To12Months )
-        {
-            relatives.addAll( new RelativePeriods().getLast6To12Months( periodTypes ) );
-        }
-
-        Iterator<Period> iter = relatives.iterator();
-        Date currentDate = new Date();
-        while ( iter.hasNext() )
-        {
-            if ( currentDate.before( iter.next().getEndDate() ) )
-            {
-                iter.remove();
-            }
-        }
-        return relatives;
+        return ( period.getEndDate().before( today.getTime() )) ? period : null;
     }
-
 }

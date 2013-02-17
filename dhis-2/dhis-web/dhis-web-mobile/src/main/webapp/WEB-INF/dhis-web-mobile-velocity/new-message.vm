@@ -84,12 +84,12 @@
         var searchField = $('form[role="search"] input:text');
         var clearSearchButton = $('form[role="search"]').find('a[data-icon="delete"]');
 
-        var clearSearchFn = clearSearchButton.data('events')['click'][0];
+        var clearSearchFn = $._data(clearSearchButton[0], ('events'))['click'][0];
         clearSearchButton.unbind('click');
         clearSearchButton.bind('click', displaySelected );
         clearSearchButton.bind('click', clearSearchFn );
 
-        var fn1 = searchField.data('events')['keyup'][1];
+        var fn1 = $._data(searchField[0], ('events'))['keyup'][1];
         searchField.unbind('keyup');
 
         searchField.bind('keyup', function () {
@@ -108,10 +108,10 @@
                 return;
             }
 
-            $.mobile.showPageLoadingMsg();
+            $.mobile.loading( 'show' );
 
             $.ajax({
-                url  : '$baseUrl/../api/currentUser/recipients',
+                url  : '$contextPath/api/currentUser/recipients',
                 type : 'get',
                 dataType: 'json',
                 data : {
@@ -186,8 +186,14 @@
                 $('#selection-list').listview('refresh');
                 $.mobile.hidePageLoadingMsg();
             }).error(function() {
-                $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, "Unable to search, please try again later", true );
-                setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
+                $.mobile.loading( 'show', {
+                    html: '<h1>Unable to search, please try again later</h1>',
+                    textVisible: true
+                });
+
+                setTimeout( function() {
+                    $.mobile.loading( 'hide' );
+                }, 1500);
             });
 
             $('form[role="search"] input:text').bind('keyup', fn1);
@@ -207,7 +213,33 @@
         message.users = [];
         message.userGroups = [];
 
-        $.mobile.showPageLoadingMsg();
+        if( !message.subject.length > 0 ) {
+            $.mobile.loading( 'show', {
+                html: '<h1>Please fill in subject</h1>',
+                textVisible: true
+            });
+
+            setTimeout( function() {
+                $.mobile.loading( 'hide' );
+            }, 1500);
+
+            return false;
+        }
+
+        if( !message.text.length > 0 ) {
+            $.mobile.loading( 'show', {
+                html: '<h1>Please fill in text</h1>',
+                textVisible: true
+            });
+
+            setTimeout( function() {
+                $.mobile.loading( 'hide' );
+            }, 1500);
+
+            return false;
+        }
+
+        $.mobile.loading( 'show' );
 
         _(_(selected).keys()).each(function(key) {
             if( key.indexOf('ou:') != -1 )
@@ -224,19 +256,37 @@
             }
         });
 
+        if( !( message.organisationUnits.length > 0 || message.users.length > 0 || message.userGroups.length > 0 ) ) {
+            $.mobile.loading( 'show', {
+                html: '<h1>Please add at least one recipient</h1>',
+                textVisible: true
+            });
+
+            setTimeout( function() {
+                $.mobile.loading( 'hide' );
+            }, 1500);
+
+            return false;
+        }
+
         $.ajax({
-           url: "$baseUrl/../api/messageConversations",
+           url: "$contextPath/api/messageConversations",
            type: 'POST',
            contentType: 'application/json',
            data: JSON.stringify(message),
            async: false
         }).success(function() {
-            $.mobile.hidePageLoadingMsg();
+            $.mobile.loading( 'hide' );
             window.location.href = '../messages';
         }).error(function() {
-            $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, "Unable to send message, please try again later", true );
-            setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
-            console.log("failed to send message");
+            $.mobile.loading( 'show', {
+                html: '<h1>Unable to send message, please try again later</h1>',
+                textVisible: true
+            });
+
+            setTimeout( function() {
+                $.mobile.loading( 'hide' );
+            }, 1500);
         });
 
         e.preventDefault();
@@ -267,7 +317,7 @@
 <section data-role="page" id="new-message-page" data-theme="c">
 
 	<header data-role="header" data-theme="b">
-        <h1 align="center"><img src="$baseUrl/../dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
+        <h1 align="center"><img src="$contextPath/dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
         <a href="../messages" data-icon="delete" class="ui-btn-right">Discard</a>
     </header>
 
@@ -297,7 +347,7 @@
 <section data-role="page" id="manage-recipients-page" data-theme="c">
 
 	<header data-role="header" data-theme="b">
-        <h1 align="center"><img src="$baseUrl/../dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
+        <h1 align="center"><img src="$contextPath/dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
         <a href="#new-message-page" data-icon="delete" class="ui-btn-right">Finish</a>
     </header>
 

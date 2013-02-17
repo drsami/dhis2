@@ -75,7 +75,7 @@ public class GenerateReportAction
     {
         this.programInstanceService = programInstanceService;
     }
-    
+
     private OrganisationUnitService organisationUnitService;
 
     public void setOrganisationUnitService( OrganisationUnitService organisationUnitService )
@@ -156,7 +156,7 @@ public class GenerateReportAction
     {
         return total;
     }
-
+    
     // -------------------------------------------------------------------------
     // Action implementation
     // -------------------------------------------------------------------------
@@ -206,8 +206,9 @@ public class GenerateReportAction
 
             programInstances = programInstanceService.getProgramInstances( program, orgunitIds, sDate, eDate,
                 paging.getStartPos(), paging.getPageSize() );
+
         }
-        
+
         return SUCCESS;
     }
 }

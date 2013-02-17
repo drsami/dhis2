@@ -27,11 +27,11 @@ package org.hisp.dhis.mapping;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hisp.dhis.common.BaseIdentifiableObject;
-import org.hisp.dhis.common.Dxf2Namespace;
+import org.hisp.dhis.common.DxfNamespaces;
 import org.hisp.dhis.common.IdentifiableObject;
 import org.hisp.dhis.common.annotation.Scanned;
 import org.hisp.dhis.common.view.DetailedView;
@@ -40,7 +40,6 @@ import org.hisp.dhis.user.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -48,20 +47,18 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 /**
  * @author Lars Helge Overland
  */
-@JacksonXmlRootElement( localName = "map", namespace = Dxf2Namespace.NAMESPACE )
+@JacksonXmlRootElement( localName = "map", namespace = DxfNamespaces.DXF_2_0 )
 public class Map
     extends BaseIdentifiableObject
 {
-    private User user;
+    private Double longitude;
 
-    private String longitude;
-
-    private String latitude;
+    private Double latitude;
 
     private Integer zoom;
 
     @Scanned
-    private Set<MapView> views = new HashSet<MapView>();
+    private List<MapView> mapViews = new ArrayList<MapView>();
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -71,7 +68,7 @@ public class Map
     {
     }
     
-    public Map( String name, User user, String longitude, String latitude, Integer zoom )
+    public Map( String name, User user, Double longitude, Double latitude, Integer zoom )
     {
         this.name = name;
         this.user = user;
@@ -85,48 +82,34 @@ public class Map
     // -------------------------------------------------------------------------
 
     @JsonProperty
-    @JsonSerialize( as = BaseIdentifiableObject.class )
     @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public User getUser()
-    {
-        return user;
-    }
-
-    public void setUser( User user )
-    {
-        this.user = user;
-    }
-
-    @JsonProperty
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public String getLongitude()
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
+    public Double getLongitude()
     {
         return longitude;
     }
 
-    public void setLongitude( String longitude )
+    public void setLongitude( Double longitude )
     {
         this.longitude = longitude;
     }
 
     @JsonProperty
     @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
-    public String getLatitude()
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
+    public Double getLatitude()
     {
         return latitude;
     }
 
-    public void setLatitude( String latitude )
+    public void setLatitude( Double latitude )
     {
         this.latitude = latitude;
     }
 
     @JsonProperty
     @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
     public Integer getZoom()
     {
         return zoom;
@@ -139,16 +122,16 @@ public class Map
 
     @JsonProperty
     @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlElementWrapper( localName = "mapViews", namespace = Dxf2Namespace.NAMESPACE )
-    @JacksonXmlProperty( localName = "mapView", namespace = Dxf2Namespace.NAMESPACE )
-    public Set<MapView> getViews()
+    @JacksonXmlElementWrapper( localName = "mapViews", namespace = DxfNamespaces.DXF_2_0 )
+    @JacksonXmlProperty( localName = "mapView", namespace = DxfNamespaces.DXF_2_0 )
+    public List<MapView> getMapViews()
     {
-        return views;
+        return mapViews;
     }
 
-    public void setViews( Set<MapView> views )
+    public void setMapViews( List<MapView> mapViews )
     {
-        this.views = views;
+        this.mapViews = mapViews;
     }
 
     @Override
@@ -165,8 +148,8 @@ public class Map
             latitude = map.getLatitude() == null ? latitude : map.getLatitude();
             zoom = map.getZoom() == null ? zoom : map.getZoom();
             
-            views.clear();
-            views.addAll( map.getViews() );
+            mapViews.clear();
+            mapViews.addAll( map.getMapViews() );
         }            
     }
 }

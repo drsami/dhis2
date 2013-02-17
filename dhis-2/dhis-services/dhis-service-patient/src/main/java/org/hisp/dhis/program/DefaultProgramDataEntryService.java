@@ -152,14 +152,14 @@ public class DefaultProgramDataEntryService
 
                 DataElement dataElement = null;
 
-                String programStageName = programStage.getName();
+                String programStageName = programStage.getDisplayName();
 
                 if ( programStageId != programStage.getId() )
                 {
                     dataElement = dataElementService.getDataElement( dataElementId );
 
                     ProgramStage otherProgramStage = programStageService.getProgramStage( programStageId );
-                    programStageName = otherProgramStage != null ? otherProgramStage.getName() : "N/A";
+                    programStageName = otherProgramStage != null ? otherProgramStage.getDisplayName() : "N/A";
                 }
                 else
                 {
@@ -242,7 +242,8 @@ public class DefaultProgramDataEntryService
                 tabindex++;
 
                 if ( DataElement.VALUE_TYPE_INT.equals( dataElement.getType() )
-                    || DataElement.VALUE_TYPE_STRING.equals( dataElement.getType() ) )
+                    || DataElement.VALUE_TYPE_STRING.equals( dataElement.getType() )
+                    || DataElement.VALUE_TYPE_USER_NAME.equals( dataElement.getType() ) )
                 {
                     inputHTML = populateCustomDataEntryForTextBox( dataElement, inputHTML, dataElementValue );
                 }
@@ -390,7 +391,7 @@ public class DefaultProgramDataEntryService
     private String populateCustomDataEntryForBoolean( DataElement dataElement, String inputHTML,
         String patientDataValue, I18n i18n )
     {
-        final String jsCodeForBoolean = " name=\"entryselect\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME' }\" onchange=\"saveOpt( $DATAELEMENTID )\" style=\" text-align:center;\" ";
+        final String jsCodeForBoolean = " name=\"entryselect\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME' }\" onchange=\"saveOpt( $DATAELEMENTID )\" ";
 
         inputHTML = inputHTML.replaceFirst( "input", "select" );
         inputHTML = inputHTML.replace( "name=\"entryselect\"", jsCodeForBoolean );
@@ -426,7 +427,7 @@ public class DefaultProgramDataEntryService
     private String populateCustomDataEntryForTrueOnly( DataElement dataElement, String inputHTML,
         String dataElementValue )
     {
-        final String jsCodeForInputs = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME', deType:'$DATAELEMENTTYPE'}\" onchange=\"saveVal( $DATAELEMENTID )\" onkeypress=\"return keyPress(event, this)\" style=\" text-align:center;\"  ";
+        final String jsCodeForInputs = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME', deType:'$DATAELEMENTTYPE'}\" onchange=\"saveVal( $DATAELEMENTID )\" onkeypress=\"return keyPress(event, this)\" ";
 
         String checked = "";
         if ( !dataElementValue.equals( EMPTY ) && dataElementValue.equals( "true" ) )
@@ -451,7 +452,7 @@ public class DefaultProgramDataEntryService
 
     private String populateCustomDataEntryForTextBox( DataElement dataElement, String inputHTML, String dataElementValue )
     {
-        final String jsCodeForInputs = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME', deType:'$DATAELEMENTTYPE'}\" options='$OPTIONS' maxlength=255 style=\" text-align:center;\"  ";
+        final String jsCodeForInputs = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME', deType:'$DATAELEMENTTYPE'}\" options='$OPTIONS' maxlength=255 ";
         final String jsCodeForOnchange = " name=\"entryfield\" tabIndex=\"$TABINDEX\" onchange=\"saveVal( $DATAELEMENTID )\" onkeypress=\"return keyPress(event, this)\" maxlength=255 ";
 
         // -------------------------------------------------------------
@@ -487,7 +488,7 @@ public class DefaultProgramDataEntryService
 
     private String populateCustomDataEntryForDate( String inputHTML, String dataElementValue )
     {
-        final String jsCodeForDate = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME'}\" onchange=\"saveVal( $DATAELEMENTID )\" style=\" text-align:center;\" ";
+        final String jsCodeForDate = " name=\"entryfield\" tabIndex=\"$TABINDEX\" $DISABLED data=\"{compulsory:$COMPULSORY, deName:'$DATAELEMENTNAME'}\" onchange=\"saveVal( $DATAELEMENTID )\" ";
 
         // -------------------------------------------------------------
         // Insert value of data element in output code
@@ -511,7 +512,7 @@ public class DefaultProgramDataEntryService
     private String addProvidedElsewherCheckbox( String appendCode, PatientDataValue patientDataValue,
         ProgramStage programStage )
     {
-        String id = "$PROGRAMSTAGEID_$DATAELEMENTID_facility";
+        String id = "$PROGRAMSTAGEID-$DATAELEMENTID-facility";
         appendCode += "<div id=\"span_"
             + id
             + "\" class=\"provided-elsewhere\"><input name=\"providedByAnotherFacility\" title=\"is provided by another Facility ?\"  id=\""

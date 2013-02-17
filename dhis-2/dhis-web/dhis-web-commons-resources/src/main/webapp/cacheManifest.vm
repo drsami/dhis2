@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# 2.9 Final
+# 2.11-SNAPSHOT V6
 NETWORK:
 *
 CACHE:
@@ -8,7 +8,9 @@ css/light_blue/logo_background.png
 css/light_blue/logo_banner.png
 css/light_blue/logo_separator.png
 css/widgets.css
+css/print.css
 ../dhis-web-dataentry/style/dhis-web-dataentry.css
+../favicon.ico
 javascripts/jQuery/jquery.min.js
 javascripts/jQuery/jquery.metadata.js
 javascripts/jQuery/jquery.glob.js

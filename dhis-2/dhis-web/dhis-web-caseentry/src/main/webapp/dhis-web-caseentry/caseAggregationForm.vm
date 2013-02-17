@@ -6,7 +6,7 @@
 
 <div id='caseAggregationDiv'>
 
-	<h1> $i18n.getString( "manual_person_aggregation" ) #openHelp('run_case_aggregation')</h1>
+	<h1> $i18n.getString( "manual_person_aggregation_form" ) #openHelp('run_case_aggregation')</h1>
 	
 	<form id="caseAggregationForm" name="caseAggregationForm" action="caseAggregationResult.action" method="post">
 		<table>
@@ -18,7 +18,7 @@
 					<select id="dataSetId" name="dataSetId" style="width: 30em">
 						<option value=''>[$i18n.getString('please_select')]</option>
 						#foreach ( $dataSet in $datasets )
-							<option value='$dataSet.id' title='$dataSet.name'>$dataSet.name</option>
+							<option value='$dataSet.id' title='$dataSet.displayName'>$dataSet.displayName</option>
 						#end
 					</select>
 				</td>

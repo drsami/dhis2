@@ -32,11 +32,12 @@
 
 		datePickerValid( 'patientForm [id=birthDate]' );
 		addEventForPatientForm('patientForm');
+		jQuery('[name=mainPagelink]').html(i18n_main_form_link);
 	});		
 </script>
 
 <h5>
-	<a href="javascript:loadPatientList();">$i18n.getString( 'patient_management' )</a>
+	<a name="mainPagelink" href="javascript:onClickBackBtn();">$i18n.getString( 'patient_management' )</a>
 	&#8226; <a href="javascript:showPatientDashboardForm($!patient.id);">$i18n.getString( 'patient_dashboard' )</a>
 	&#8226; <a href="javascript:showRelationshipList( '$patient.id' )">$i18n.getString( "relationship_management" )</a>	
 </h5>
@@ -54,8 +55,8 @@
 			<select name="relationshipTypeId" id="relationshipTypeId" class="{validate:{required:true}}" >
 				<option value="">[$i18n.getString( "please_select" )]</option>        
 				#foreach ($relationship in $relationshipTypes)
-					<option value="$relationship.id" relationshipFromA='true'>${relationship.aIsToB} $i18n.getString("of") $patient.getFullName() (${relationship.bIsToA})</option>
-					<option value="$relationship.id" relationshipFromA='false'>${relationship.bIsToA} $i18n.getString("of") $patient.getFullName() (${relationship.aIsToB})</option>
+					<option value="$relationship.id" relationshipFromA='true'>$encoder.htmlEncode(${relationship.aIsToB}) $i18n.getString("of") $encoder.htmlEncode($patient.getFullName()) ($encoder.htmlEncode(${relationship.bIsToA}))</option>
+					<option value="$relationship.id" relationshipFromA='false'>$encoder.htmlEncode(${relationship.bIsToA}) $i18n.getString("of") $encoder.htmlEncode($patient.getFullName()) ($encoder.htmlEncode(${relationship.aIsToB}))</option>
 				#end
 			</select>
 		</td>

@@ -1,31 +1,26 @@
 <script type="text/javascript">
    jQuery(document).ready(	function(){
-		datePickerInRange( 'startDate' , 'endDate' );		
+		datePickerInRange( 'startDate' , 'endDate', false, false );		
 		disableCriteriaDiv();
-		
-		var date = new Date();
-		var d = date.getDate();
-		var m = date.getMonth() - 3;
-		var y = date.getFullYear();
-		var edate= new Date(y, m, d);
-		jQuery('#startDate').datepicker( "setDate" , edate );				
 	});
 </script>
 				
-<h3 id='mainLinkLbl'>$i18n.getString( "anonymous_events_management" ) #openHelp('single_event_without_registration')</h3>
+<h3>$i18n.getString( "anonymous_events_management" ) #openHelp('single_event_without_registration')</h3>
+<h4 id='programName' name='programName'></h4>
+
 <input type='hidden' id='orgunitId' name='orgunitId' value='$orgunit.id'>
 <input type='hidden' id='programStageInstanceId' name='programStageInstanceId' value='0'>
 <input type='hidden' id='programStageId' name='programStageId' class='stage-object-selected'>
-<input type='hidden' id='isShowEventList' name='isShowEventList'>
+<input type='hidden' id='listAll' name='listAll' value="true">
 
-<select multiple id='compulsoryDE' name='compulsoryDE' class='hidden'></select>
+<select multiple id='displayInReports' name='displayInReports' class='hidden'></select>
 
 <div>
 	<div id='selectDiv'>
 		<table>		
 			<tr>
 				<td><label>$i18n.getString( "registering_unit" )</label></td>
-				<td><input type="text" id='orgunitName' name='orgunitName' #if( $orgunit ) value="$encoder.htmlEncode( $orgunit.name )" #else value="[$i18n.getString( 'please_select_village' )]" #end readonly></td>
+				<td><input type="text" id='orgunitName' name='orgunitName' #if( $orgunit ) value="$encoder.htmlEncode( $orgunit.name )" #else value="[$i18n.getString( 'please_select_village' )]" #end readonly /></td>
 			</tr>
 			<tr>	       
 				<td>
@@ -36,51 +31,82 @@
 						<option value="" psid="" reportDateDes="$i18n.getString('report_date')">[$i18n.getString("please_select")]</option>
 						#foreach( $program in $programs )
 							#foreach( $programStage in $program.programStages )
-								<option value='$program.id' psid='$programStage.id' reportDateDes="$programStage.reportDateDescription">$program.name</option>
+								<option value='$program.id' psid='$programStage.id' reportDateDes="$programStage.reportDateDescription">$program.displayName</option>
 							#end
 						#end
 					</select>
-					<input type='hidden' class='stage-object-selected hidden'>
+					<input type='hidden' class='stage-object-selected hidden' />
 				</td>
+				<td colspan="2" style="padding-left: 20px;">
+					<input type="button" class='large-button' id='addBtn' style="width: 145px;" value='$i18n.getString( "add_new" )' onclick="showAddEventForm();" />
+					<input type="button" id='removeBtn' value='$i18n.getString( "remove_empty_events" )' onclick="removeEmptyEvents();" style="width: 145px;" />
+				</td>
+			</tr>
+            <tr><td style="padding-top: 10px;"></td></tr>
+			<tr>
+				<td><label>$i18n.getString('from')</label></td>
 				<td>
-					<input type="button" class='large-button' id='listBtn' value="$i18n.getString( 'list_all_events' )" onclick='validateSearchEvents( true );' style="width:140px;">
-					<input type="button" class='large-button' id='addBtn' value='$i18n.getString( "add_new" )' onclick="setFieldValue('isShowEventList', true);showAddEventForm();" style="width:140px;">
-					<input type="button" class='large-button' id='advancedBtn' value='$i18n.getString( "search" )' onclick="jQuery('#advanced-search').toggle();" style="width:140px;">
-					<input type="button" id='removeBtn' value='$i18n.getString( "remove_empty_events" )' onclick="removeEmptyEvents();" style="width:140px;">
+					<input type="text" id='startDate' name='startDate' style="width:240px;" />
+				</td>
+                <td style="padding-left: 20px;">
+                    <input type="checkbox" id="incompleted" name="incompleted" value="true">$i18n.getString("incomplete")</input>
+                </td>
+            </tr>
+            <tr>
+				<td><label>$i18n.getString('to')</label></td>
+				<td>
+					<input type="text" id='endDate' name='endDate' style="width:240px;" />
+				</td>
+				<td style="padding-left: 20px;">
+					<input type="button" class='large-button' style="width: 145px;" id='filterBtn' name="filterBtn" value='$i18n.getString( "show_filter" )' onclick="showFilterForm();" />
+					<input type="button" class='large-button' style="width: 145px;" id='listBtn' value="$i18n.getString( 'search' )" onclick="validateSearchEvents(false);" />
+				</td>
+			</tr>
+			<tr><td>&nbsp;</td></tr>
+			<tr id='minimized-advanced-search' class="hidden">
+				<td align='right' colspan='5' height="50px">
+					$i18n.getString('you_have_active_filters')&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					<input type="button" class='large-button' value="$i18n.getString('show_all')" onclick='showFilterForm()'>
+					<input type="button" class='large-button' value="$i18n.getString('clear_all')" onclick='removeAllOption()'>&nbsp;
 				</td>
 			</tr>
 		</table>
-		
 		<table id='advanced-search' class='hidden'>
 			<col/>
 			<col/>
 			<col/>
 			<col width="180"/>
-			<tr>
-				<td><span id="reportDateDescriptionField">$i18n.getString('report_date')</span> $i18n.getString('from_to')</td>
-				<td>
-					<input type="text" id='startDate' name='startDate' style='width:105px'>
-					<input type="text" id='endDate' name='endDate' style='width:105px'>
+			<tr class="hidden">
+				<td id='searchingAttributeIdTD'>
+					<select id="searchObjectId" name="searchObjectId" onchange='dataElementOnChange(this);'></select>
 				</td>
 			</tr>
-			<tr><td colspan='2'><hr></td></td>
-			
 			<tbody id='advancedSearchTB'>
-				<tr id='advSearchBox0'>	
-					<td id='searchingAttributeIdTD'>
-						<select id="searchObjectId" name="searchObjectId" onchange='dataElementOnChange(this);'></select>
-					</td>		
-					<td>
-						<input type="text" id="searchText" name="searchText" value="$!searchText" style='margin-right:25px;'>
-					</td>
-					<td>
-						<input type="button" class='tiny-button' id='addSearchOptionBtn' name='addSearchOptionBtn' value='+' onclick='addAttributeOption()'>
-					</td>
-					<td>
-						<input type="button" class='large-button' id='searchBtn' value='$i18n.getString( "search" )' onclick='setFieldValue("isShowEventList", false);validateSearchEvents( false )'>
-					</td>
-				</tr>
+				<tr><td></td></tr>
+				<tr>
+					<td></td>
+					<td></td>
+                <tr/>
+
+                <tr id='advSearchBox0'>
+                    <td>
+                        <select id="searchObjectId" name="searchObjectId" onchange='dataElementOnChange(this);'></select>
+                    </td>
+                    <td>
+                        <input type="text" id="searchText" name="searchText" value="$!searchText">
+                        <input type="button" class='large-button' name="clearSearchBtn" value='$i18n.getString( "clear" )' onclick="removeAttributeOption('advSearchBox0');" disabled>
+                    </td>
+                </tr>
+
 			</tbody>
+            <tfoot>
+            <tr>
+                <td colspan="2">
+                    <input type="button" class='large-button' id='addSearchOptionBtn' name='addSearchOptionBtn' value="$i18n.getString('add')" onclick='addAttributeOption()' />
+                    <input type="button" class='large-button' id='clearAllBtn' name='clearAllBtnaddSearchOptionBtn' value="$i18n.getString('clear_all')" onclick='removeAllOption()' />
+                </td>
+            </tr>
+            </tfoot>
 		</table>
 	</div>
 </div>
@@ -88,26 +114,23 @@
 <div id='listDiv'></div>
 
 <div id='dataEntryInfor' class='hidden'>
-	<h3>
-		<a href="javascript:backEventList();">$i18n.getString( "anonymous_events_management" ) </a>
-		&raquo; <span id='programName' name='programName'></span>
-	</h3>
-	<table style="width:480px;">
-		<tr>
-			<th><span id="reportDateDescriptionField2">$i18n.getString( "report_date" )</span> </th>
-			<th><input type="text" id="executionDate" name="executionDate" onchange="addNewEvent();"></th>
-				<script type="text/javascript">
-				   datePickerValid( 'executionDate', false );
-				</script> 
-		</tr>
-	</table>
+	<table style="width:580px;" class="listTable">
+			<tr>
+				<th><span id="reportDateDescriptionField2">$i18n.getString( "report_date" )</span> <em title="$i18n.getString( "required" )" class="required">*</em> </th>
+				<th><input type="text" id="executionDate" name="executionDate" onchange="addNewEvent();"></th>
+					<script type="text/javascript">
+					   datePickerValid( 'executionDate', false );
+					</script> 
+			</tr>
+	</table> 
 	<div id='dataEntryFormDiv'></div>
 	
-	<div id='actionDiv' class="page inputCriteria" style="width:600px;height:29px;">	
+	<div id='actionDiv' class="page inputCriteria" style="width:700px;height:29px;">	
+		<input type="button" onclick="completedAndAddNewEvent();" value="$i18n.getString('complete_and_add_new_event')" id="completeAndNewBtn" style="width:150px;">
 		<input type="button" onclick="doComplete()" value="$i18n.getString('complete')" id="completeBtn">
 		<input type="button" onclick="doUnComplete()" value="$i18n.getString('incomplete')" id="uncompleteBtn" >
-		<input type="button" value="$i18n.getString('run_validation')" onClick="javascript: runValidation();">
-		<input type="button" onclick="completedAndAddNewEvent()" value="$i18n.getString('complete_and_add_new_event')" id="completeAndAddNewBtn" style="width:150px;">
+		<input type="button" value="$i18n.getString('run_validation')" onclick="javascript: runValidation();">
+		<input type="button" onclick="removeCurrentEvent();" value="$i18n.getString('remove')" id="completeBtn">
 	</div>
 </div>
 
@@ -151,6 +174,10 @@
 	var i18n_yes = '$encoder.jsEscape( $i18n.getString( "yes" ) , "'")';
 	var i18n_no = '$encoder.jsEscape( $i18n.getString( "no" ) , "'")';
 	var i18n_specify_search_criteria = '$encoder.jsEscape( $i18n.getString( "specify_search_criteria" ) , "'")';
+	var i18n_add_filter = '$encoder.jsEscape( $i18n.getString( "add_filter" ) , "'")';
+	var i18n_clear_filter = '$encoder.jsEscape( $i18n.getString( "clear_filter" ) , "'")';
+	var i18n_specify_a_date = '$encoder.jsEscape( $i18n.getString( "specify_a_date" ) , "'")';
+	var i18n_clear = '$encoder.jsEscape( $i18n.getString( "clear" ) , "'")';
 	
 	isAjax = true;
 	contentDiv = '';

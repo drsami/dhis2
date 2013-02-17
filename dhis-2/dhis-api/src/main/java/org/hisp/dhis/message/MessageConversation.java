@@ -34,7 +34,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import org.hisp.dhis.common.BaseIdentifiableObject;
-import org.hisp.dhis.common.Dxf2Namespace;
+import org.hisp.dhis.common.DxfNamespaces;
 import org.hisp.dhis.common.IdentifiableObject;
 import org.hisp.dhis.common.annotation.Scanned;
 import org.hisp.dhis.common.view.DetailedView;
@@ -46,13 +46,13 @@ import java.util.*;
 /**
  * @author Lars Helge Overland
  */
-@JacksonXmlRootElement( localName = "messageConversation", namespace = Dxf2Namespace.NAMESPACE )
+@JacksonXmlRootElement( localName = "messageConversation", namespace = DxfNamespaces.DXF_2_0)
 public class MessageConversation
     extends BaseIdentifiableObject
 {
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // Persistent fields
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     private String subject;
 
@@ -66,9 +66,9 @@ public class MessageConversation
     @Scanned
     private List<Message> messages = new ArrayList<Message>();
 
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // Transient fields
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     private transient boolean read;
 
@@ -80,9 +80,10 @@ public class MessageConversation
 
     private transient int messageCount;
 
-    //--------------------------------------------------------------------------
+
+    // --------------------------------------------------------------------------
     // Constructors
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     public MessageConversation()
     {
@@ -95,9 +96,9 @@ public class MessageConversation
         this.lastMessage = new Date();
     }
 
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // Logic
-    //--------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     @Override
     public int hashCode()
@@ -157,6 +158,19 @@ public class MessageConversation
             {
                 userMessage.setFollowUp( !userMessage.isFollowUp() );
 
+                return userMessage.isFollowUp();
+            }
+        }
+
+        return false;
+    }
+    
+    public boolean isFollowUp( User user )
+    {
+        for ( UserMessage userMessage : userMessages )
+        {
+            if ( userMessage.getUser() != null && userMessage.getUser().equals( user ) )
+            {
                 return userMessage.isFollowUp();
             }
         }
@@ -253,9 +267,9 @@ public class MessageConversation
         userMessages.clear();
     }
 
-    //-------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------
     // Persistent fields
-    //-------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------
 
     @Override
     public String getName()
@@ -264,8 +278,8 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JsonView( { DetailedView.class, ExportView.class } )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public String getSubject()
     {
         return subject;
@@ -278,8 +292,8 @@ public class MessageConversation
 
     @JsonProperty
     @JsonSerialize( as = BaseIdentifiableObject.class )
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JsonView( { DetailedView.class, ExportView.class } )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public User getLastSender()
     {
         return lastSender;
@@ -291,8 +305,8 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlProperty( namespace = Dxf2Namespace.NAMESPACE )
+    @JsonView( { DetailedView.class, ExportView.class } )
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0)
     public Date getLastMessage()
     {
         return lastMessage;
@@ -304,9 +318,9 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlElementWrapper( localName = "userMessages", namespace = Dxf2Namespace.NAMESPACE )
-    @JacksonXmlProperty( localName = "userMessage", namespace = Dxf2Namespace.NAMESPACE )
+    @JsonView( { DetailedView.class, ExportView.class } )
+    @JacksonXmlElementWrapper( localName = "userMessages", namespace = DxfNamespaces.DXF_2_0)
+    @JacksonXmlProperty( localName = "userMessage", namespace = DxfNamespaces.DXF_2_0)
     public Set<UserMessage> getUserMessages()
     {
         return userMessages;
@@ -318,9 +332,9 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, ExportView.class} )
-    @JacksonXmlElementWrapper( localName = "messages", namespace = Dxf2Namespace.NAMESPACE )
-    @JacksonXmlProperty( localName = "message", namespace = Dxf2Namespace.NAMESPACE )
+    @JsonView( { DetailedView.class, ExportView.class } )
+    @JacksonXmlElementWrapper( localName = "messages", namespace = DxfNamespaces.DXF_2_0)
+    @JacksonXmlProperty( localName = "message", namespace = DxfNamespaces.DXF_2_0)
     public List<Message> getMessages()
     {
         return messages;
@@ -331,12 +345,12 @@ public class MessageConversation
         this.messages = messages;
     }
 
-    //-------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------
     // Transient fields
-    //-------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------
 
     @JsonProperty
-    @JacksonXmlProperty( isAttribute = true)
+    @JacksonXmlProperty( isAttribute = true )
     public boolean isRead()
     {
         return read;
@@ -348,7 +362,7 @@ public class MessageConversation
     }
 
     @JsonProperty
-    @JacksonXmlProperty( isAttribute = true)
+    @JacksonXmlProperty( isAttribute = true )
     public boolean isFollowUp()
     {
         return followUp;
@@ -405,7 +419,8 @@ public class MessageConversation
 
             subject = messageConversation.getSubject() == null ? subject : messageConversation.getSubject();
             lastSender = messageConversation.getLastSender() == null ? lastSender : messageConversation.getLastSender();
-            lastMessage = messageConversation.getLastMessage() == null ? lastMessage : messageConversation.getLastMessage();
+            lastMessage = messageConversation.getLastMessage() == null ? lastMessage : messageConversation
+                .getLastMessage();
 
             removeAllUserMessages();
             userMessages.addAll( messageConversation.getUserMessages() );

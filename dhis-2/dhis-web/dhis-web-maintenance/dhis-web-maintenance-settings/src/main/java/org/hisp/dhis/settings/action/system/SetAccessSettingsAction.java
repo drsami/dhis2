@@ -30,11 +30,16 @@ package org.hisp.dhis.settings.action.system;
 import org.hisp.dhis.configuration.Configuration;
 import org.hisp.dhis.configuration.ConfigurationService;
 import org.hisp.dhis.i18n.I18n;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.organisationunit.OrganisationUnitService;
+import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.user.UserAuthorityGroup;
 import org.hisp.dhis.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.opensymphony.xwork2.Action;
+
+import static org.hisp.dhis.setting.SystemSettingManager.KEY_ACCOUNT_RECOVERY;
 
 /**
  * @author Lars Helge Overland
@@ -46,7 +51,13 @@ public class SetAccessSettingsAction
     private ConfigurationService configurationService;
     
     @Autowired
+    private SystemSettingManager systemSettingManager;
+    
+    @Autowired
     private UserService userService;
+    
+    @Autowired
+    private OrganisationUnitService organisationUnitService;
 
     // -------------------------------------------------------------------------
     // Input
@@ -59,6 +70,20 @@ public class SetAccessSettingsAction
         this.selfRegistrationRole = selfRegistrationRole;
     }
 
+    private Integer selfRegistrationOrgUnit;
+
+    public void setSelfRegistrationOrgUnit( Integer selfRegistrationOrgUnit )
+    {
+        this.selfRegistrationOrgUnit = selfRegistrationOrgUnit;
+    }
+
+    private Boolean accountRecovery;
+
+    public void setAccountRecovery( Boolean accountRecovery )
+    {
+        this.accountRecovery = accountRecovery;
+    }
+    
     // -------------------------------------------------------------------------
     // Output
     // -------------------------------------------------------------------------
@@ -84,16 +109,25 @@ public class SetAccessSettingsAction
     public String execute()
     {
         UserAuthorityGroup group = null;
+        OrganisationUnit unit = null;
         
         if ( selfRegistrationRole != null )
         {
             group = userService.getUserAuthorityGroup( selfRegistrationRole );
         }
         
+        if ( selfRegistrationOrgUnit != null )
+        {
+            unit = organisationUnitService.getOrganisationUnit( selfRegistrationOrgUnit );
+        }
+        
         Configuration config = configurationService.getConfiguration();
         config.setSelfRegistrationRole( group );
+        config.setSelfRegistrationOrgUnit( unit );
         configurationService.setConfiguration( config );
 
+        systemSettingManager.saveSystemSetting( KEY_ACCOUNT_RECOVERY, accountRecovery );
+        
         message = i18n.getString( "settings_updated" );
 
         return SUCCESS;

@@ -17,9 +17,11 @@ function scheduleTasks()
 		setInnerHTML('info', i18n_scheduling_is + " " + status);
 		if( json.scheduleTasks.running=="true" ){
 			setFieldValue('scheduledBtn', i18n_stop);
+			enable('executeButton');
 		}
 		else{
 			setFieldValue('scheduledBtn', i18n_start);
+			disable('executeButton');
 		}
 	});
 }
@@ -38,15 +40,13 @@ function executeTasks()
 }
 
 // -----------------------------------------------------------------------
-// Schedule Aggregate Query Builder
+// Schedule Automated Aggregate
 // -----------------------------------------------------------------------
 
 function schedulingAggCondTasks()
 {
 	$.post( 'scheduleCaseAggTasks.action',{
-		execute:false,
-		orgUnitGroupSetAggLevel:getFieldValue("orgUnitGroupSetAggLevel"),
-		aggQueryBuilderStrategy:getFieldValue("aggQueryBuilderStrategy")
+		execute:false
 	}, function( json ){
 		var status = json.scheduleTasks.status;
 		if( status=='not_started' ){
@@ -55,9 +55,11 @@ function schedulingAggCondTasks()
 		setInnerHTML('info', i18n_scheduling_is + " " + status);
 		if( json.scheduleTasks.running=="true" ){
 			setFieldValue('scheduledBtn', i18n_stop);
+			enable('executeButton');
 		}
 		else{
 			setFieldValue('scheduledBtn', i18n_start);
+			disable('executeButton');
 		}
 	});
 }
@@ -69,9 +71,7 @@ function executeAggCondTasks()
 	if ( ok )
 	{
 		$.post( 'scheduleCaseAggTasks.action',{
-			execute:true,
-			orgUnitGroupSetAggLevel:getFieldValue("orgUnitGroupSetAggLevel"),
-			aggQueryBuilderStrategy:getFieldValue("aggQueryBuilderStrategy")
+			execute:true
 		},function( json ){
 			setMessage(i18n_execute_success);
 		});

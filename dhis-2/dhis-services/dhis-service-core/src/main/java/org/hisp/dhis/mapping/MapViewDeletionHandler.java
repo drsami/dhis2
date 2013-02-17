@@ -36,7 +36,6 @@ import org.hisp.dhis.indicator.IndicatorGroup;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.period.Period;
 import org.hisp.dhis.system.deletion.DeletionHandler;
-import org.hisp.dhis.user.User;
 
 /**
  * @author Lars Helge Overland
@@ -83,10 +82,15 @@ public class MapViewDeletionHandler
     @Override
     public void deleteIndicatorGroup( IndicatorGroup indicatorGroup )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getIndicatorGroup() != null && mapView.getIndicatorGroup().equals( indicatorGroup ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
         }
@@ -95,10 +99,15 @@ public class MapViewDeletionHandler
     @Override
     public void deleteIndicator( Indicator indicator )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getIndicator() != null && mapView.getIndicator().equals( indicator ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
         }
@@ -107,10 +116,15 @@ public class MapViewDeletionHandler
     @Override
     public void deleteDataElementGroup( DataElementGroup dataElementGroup )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getDataElementGroup() != null && mapView.getDataElementGroup().equals( dataElementGroup ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
         }
@@ -119,10 +133,15 @@ public class MapViewDeletionHandler
     @Override
     public void deleteDataElement( DataElement dataElement )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getDataElement() != null && mapView.getDataElement().equals( dataElement ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
         }
@@ -131,10 +150,15 @@ public class MapViewDeletionHandler
     @Override
     public void deleteOrganisationUnit( OrganisationUnit organisationUnit )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getParentOrganisationUnit() != null && mapView.getParentOrganisationUnit().equals( organisationUnit ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
         }
@@ -143,25 +167,17 @@ public class MapViewDeletionHandler
     @Override
     public void deleteMapLegendSet( MapLegendSet mapLegendSet )
     {
-        for ( MapView mapView : mappingService.getAllMapViews() )
+        Iterator<MapView> mapViews = mappingService.getAllMapViews().iterator();
+        
+        while ( mapViews.hasNext() )
         {
+            MapView mapView = mapViews.next();
+            
             if ( mapView.getLegendSet() != null && mapView.getLegendSet().equals( mapLegendSet ) )
             {
+                mapViews.remove();
                 mappingService.deleteMapView( mapView );
             }
-        }
-    }
-    
-    @Override
-    public void deleteUser( User user )
-    {
-        Iterator<MapView> iterator = mappingService.getMapViewsByUser( user ).iterator();
-        
-        while ( iterator.hasNext() )
-        {
-            MapView mapView = iterator.next();
-            iterator.remove();
-            mappingService.deleteMapView( mapView );
         }
     }
 }

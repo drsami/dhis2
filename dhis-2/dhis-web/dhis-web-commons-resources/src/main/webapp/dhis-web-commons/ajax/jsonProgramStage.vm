@@ -15,10 +15,10 @@
 	  }#if( $velocityCount < $programStage.patientReminders.size() ),#end
 	#end 
 	],
-	
 	"irregular": "$!programStage.irregular",
 	"autoGenerateEvent": "$!programStage.autoGenerateEvent",
-	
+	"validCompleteOnly": "$!programStage.validCompleteOnly",
+	"displayGenerateEventBox": "$!programStage.displayGenerateEventBox",
 	#set( $size = ${programStageDataElements.size()} )
 	"dataElement": [
 	#foreach($d in $programStageDataElements)

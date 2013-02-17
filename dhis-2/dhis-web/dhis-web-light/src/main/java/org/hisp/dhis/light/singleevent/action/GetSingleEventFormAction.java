@@ -27,13 +27,13 @@
 
 package org.hisp.dhis.light.singleevent.action;
 
-import com.opensymphony.xwork2.Action;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.hisp.dhis.dataelement.DataElement;
 import org.hisp.dhis.patient.Patient;
 import org.hisp.dhis.patient.PatientService;
@@ -48,6 +48,8 @@ import org.hisp.dhis.program.ProgramStageDataElement;
 import org.hisp.dhis.program.ProgramStageInstance;
 import org.hisp.dhis.program.ProgramStageInstanceService;
 import org.hisp.dhis.util.SessionUtils;
+
+import com.opensymphony.xwork2.Action;
 
 public class GetSingleEventFormAction
     implements Action
@@ -222,12 +224,19 @@ public class GetSingleEventFormAction
         this.programStageInstanceId = programStageInstanceId;
     }
 
+    private Patient patient;
+
+    public Patient getPatient()
+    {
+        return patient;
+    }
+
     @Override
     public String execute()
         throws Exception
     {
-
         Program program = programService.getProgram( programId );
+        this.patient = patientService.getPatient( this.patientId );
         eventName = program.getName();
         ProgramStage programStage = program.getProgramStages().iterator().next();
         programStageDataElements = new ArrayList<ProgramStageDataElement>( programStage.getProgramStageDataElements() );
@@ -237,19 +246,17 @@ public class GetSingleEventFormAction
         {
             this.prevDataValues = (Map<String, String>) SessionUtils.getSessionVar( "prevDataValues" );
         }
-        if ( searchResult != null )
+        if ( searchResult != null && !searchResult.equals( "0" ) )
         {
             this.prevDataValues.put( "DE" + this.dataElementIdForSearching, searchResult );
         }
-        else
+        else if ( searchResult == null )
         {
             // For editing if user finished the form
-            Patient patient = patientService.getPatient( this.patientId );
-
-            if ( programInstanceService.getProgramInstances( patient, program ).size() != 0 )
+            if ( programInstanceService.getProgramInstances( this.patient, program ).size() != 0 )
             {
                 List<ProgramInstance> proInstanceList = (List<ProgramInstance>) programInstanceService
-                    .getProgramInstances( patient, program );
+                    .getProgramInstances( this.patient, program );
 
                 ProgramInstance proInstance = null;
 

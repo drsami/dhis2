@@ -39,7 +39,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hisp.dhis.api.utils.ContextUtils;
 import org.hisp.dhis.configuration.ConfigurationService;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.security.PasswordManager;
+import org.hisp.dhis.security.SecurityService;
+import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.system.util.ValidationUtils;
 import org.hisp.dhis.user.User;
 import org.hisp.dhis.user.UserAuthorityGroup;
@@ -92,6 +95,81 @@ public class AccountController
     @Autowired
     private PasswordManager passwordManager;
     
+    @Autowired
+    private SecurityService securityService;
+    
+    @Autowired
+    private SystemSettingManager systemSettingManager;
+    
+    @RequestMapping( value = "/recovery", method = RequestMethod.POST, produces = ContextUtils.CONTENT_TYPE_TEXT )
+    public @ResponseBody String recoverAccount(
+        @RequestParam String username,
+        HttpServletRequest request,
+        HttpServletResponse response )
+    {
+        String rootPath = ContextUtils.getContextPath( request );
+        
+        if ( !systemSettingManager.accountRecoveryEnabled() )
+        {
+            response.setStatus( HttpServletResponse.SC_CONFLICT );
+            return "Account recovery is not enabled";
+        }
+        
+        boolean recover = securityService.sendRestoreMessage( username, rootPath );
+        
+        if ( !recover )
+        {
+            response.setStatus( HttpServletResponse.SC_CONFLICT );
+            return "Account could not be recovered";
+        }
+
+        log.info( "Recovery message sent for user: " + username );
+        
+        response.setStatus( HttpServletResponse.SC_OK );
+        return "Recovery message sent";
+    }
+    
+    @RequestMapping( value = "/restore", method = RequestMethod.POST, produces = ContextUtils.CONTENT_TYPE_TEXT )
+    public @ResponseBody String restoreAccount(
+        @RequestParam String username,
+        @RequestParam String token,
+        @RequestParam String code,
+        @RequestParam String password,
+        HttpServletRequest request,
+        HttpServletResponse response )        
+    {
+        if ( !systemSettingManager.accountRecoveryEnabled() )
+        {
+            response.setStatus( HttpServletResponse.SC_CONFLICT );
+            return "Account recovery is not enabled";
+        }
+        
+        if ( password == null || !ValidationUtils.passwordIsValid( password ) )
+        {
+            response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+            return "Password is not specified or invalid";
+        }
+        
+        if ( password.trim().equals( username.trim() ) )
+        {
+            response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+            return "Password cannot be equal to username";
+        }
+        
+        boolean restore = securityService.restore( username, token, code, password );
+        
+        if ( !restore )
+        {
+            response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+            return "Account could not be restored";
+        }        
+
+        log.info( "Account restored for user: " + username );
+        
+        response.setStatus( HttpServletResponse.SC_OK );
+        return "Account restored";
+    }
+    
     @RequestMapping( method = RequestMethod.POST, produces = ContextUtils.CONTENT_TYPE_TEXT )
     public @ResponseBody String createAccount( 
         @RequestParam String username,
@@ -100,6 +178,7 @@ public class AccountController
         @RequestParam String password,
         @RequestParam String email,
         @RequestParam String phoneNumber,
+        @RequestParam String employer,
         @RequestParam( value = "recaptcha_challenge_field" ) String recapChallenge,
         @RequestParam( value = "recaptcha_response_field" ) String recapResponse,
         HttpServletRequest request,
@@ -123,6 +202,7 @@ public class AccountController
         password = StringUtils.trimToNull( password );
         email = StringUtils.trimToNull( email );
         phoneNumber = StringUtils.trimToNull( phoneNumber );
+        employer = StringUtils.trimToNull( employer );
         recapChallenge = StringUtils.trimToNull( recapChallenge );
         recapResponse = StringUtils.trimToNull( recapResponse );
 
@@ -173,6 +253,18 @@ public class AccountController
             response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
             return "Email is not specified or invalid";
         }
+        
+        if ( phoneNumber == null || phoneNumber.trim().length() > 30 )
+        {
+            response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+            return "Phone number is not specified or invalid";
+        }
+
+        if ( employer == null || employer.trim().length() > MAX_LENGTH )
+        {
+            response.setStatus( HttpServletResponse.SC_BAD_REQUEST );
+            return "Employer is not specified or invalid";
+        }
 
         if ( recapChallenge == null )
         {
@@ -215,22 +307,24 @@ public class AccountController
         // ---------------------------------------------------------------------
         
         UserAuthorityGroup userRole = configurationService.getConfiguration().getSelfRegistrationRole();
+        OrganisationUnit orgUnit = configurationService.getConfiguration().getSelfRegistrationOrgUnit();
         
         User user = new User();
         user.setFirstName( firstName );
         user.setSurname( surname );
         user.setEmail( email );
         user.setPhoneNumber( phoneNumber );
+        user.setEmployer( employer );
+        user.getOrganisationUnits().add( orgUnit );
         
         credentials = new UserCredentials();
         credentials.setUsername( username );
         credentials.setPassword( passwordManager.encodePassword( username, password ) );
+        credentials.setSelfRegistered( true );
         credentials.setUser( user );
         credentials.getUserAuthorityGroups().add( userRole );
         
         user.setUserCredentials( credentials );
-                
-        // TODO org unit
         
         userService.addUser( user );
         userService.addUserCredentials( credentials );

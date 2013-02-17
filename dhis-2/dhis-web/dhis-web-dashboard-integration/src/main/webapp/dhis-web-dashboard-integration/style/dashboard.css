@@ -63,8 +63,10 @@
 
 .labelText
 {
-  color: #888;
-  padding: 3px;
+  color: #999;
+  font-size: 16px;
+  padding: 40px 0 0 30px;
+  width: 230px;
 }
 
 #dashboardMenu
@@ -87,17 +89,18 @@
 #searchDiv
 {
   position: absolute;
-  left: 330px;
-  height: 24px;
-  width: 350px;
-  border: 1px solid #ccc;
-  padding: 3px 6px 0 6px;
+  left: 331px;
+  height: 22px;
+  width: 335px;
+  border: 1px solid #bbb;
+  padding: 5px 6px 0 6px;
 }
 
 #searchField
 {
   width: 320px;
   padding: 0;
+  margin: 0;
   border: 0;
   outline: none;
   width: 100%;
@@ -109,8 +112,8 @@
 {
   position: absolute;
   margin-top: 29px;
-  left: 330px;
-  width: 362px;
+  left: 331px;
+  width: 347px;
   border-right: 1px solid #bbb;
   border-bottom: 1px solid #bbb;
   border-left: 1px solid #bbb;
@@ -189,6 +192,19 @@
   width: 120px;
   height: 24px;
   margin: 0 0 6px 4px;
+}
+
+.interpretationCommentHeader
+{
+  padding: 7px 0 5px 0;
+  margin: 1px 0 12px 0;
+  border-top: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+}
+
+a.alert, .alert
+{
+  color: #E92B2B;
 }
 
 /*----------------------------------------------------------------------------*/

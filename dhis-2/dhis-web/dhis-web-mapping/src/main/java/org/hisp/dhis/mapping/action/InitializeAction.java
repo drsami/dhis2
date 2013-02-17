@@ -32,10 +32,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.struts2.ServletActionContext;
+import org.hisp.dhis.api.utils.ContextUtils;
 import org.hisp.dhis.configuration.ConfigurationService;
 import org.hisp.dhis.dataelement.DataElementGroup;
 import org.hisp.dhis.mapping.MapLayer;
-import org.hisp.dhis.mapping.MapView;
 import org.hisp.dhis.mapping.MappingService;
 import org.hisp.dhis.mapping.comparator.MapLayerNameComparator;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
@@ -86,16 +87,28 @@ public class InitializeAction
     {
         this.id = id;
     }
+    
+    private String callback;
+    
+    public void setCallback( String callback )
+    {
+        this.callback = callback;
+    }
 
     // -------------------------------------------------------------------------
     // Output
     // -------------------------------------------------------------------------
-
-    private MapView mapView;
-
-    public MapView getMapView()
+    
+    public String getCallback()
     {
-        return mapView;
+        return callback;
+    }
+
+    private String contextPath;
+
+    public String getContextPath()
+    {
+        return contextPath;
     }
 
     private List<MapLayer> overlays;
@@ -133,11 +146,8 @@ public class InitializeAction
     public String execute()
         throws Exception
     {
-        if ( id != null )
-        {
-            mapView = mappingService.getMapView( id );
-        }
-
+        contextPath = ContextUtils.getContextPath( ServletActionContext.getRequest() );
+        
         overlays = new ArrayList<MapLayer>( mappingService.getMapLayersByType( MappingService.MAP_LAYER_TYPE_OVERLAY ) );
 
         Collections.sort( overlays, new MapLayerNameComparator() );

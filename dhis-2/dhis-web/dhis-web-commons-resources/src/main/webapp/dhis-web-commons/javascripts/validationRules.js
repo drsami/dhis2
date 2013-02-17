@@ -74,7 +74,7 @@ var validationRules = {
         },
         "shortName" : {
             "required" : true,
-            "rangelength" : [ 2, 49 ]
+            "rangelength" : [ 2, 50 ]
         },
         "code" : {
             "rangelength" : [ 0, 25 ],
@@ -152,7 +152,7 @@ var validationRules = {
         "shortName" : {
             "required" : true,
             "alphanumericwithbasicpuncspaces" : true,
-            "rangelength" : [ 2, 25 ]
+            "rangelength" : [ 2, 40 ]
         },
         "code" : {
             "alphanumericwithbasicpuncspaces" : true,
@@ -214,7 +214,7 @@ var validationRules = {
         },
         "shortName" : {
             "required" : true,
-            "rangelength" : [ 2, 25 ],
+            "rangelength" : [ 2, 40 ],
             "alphanumericwithbasicpuncspaces" : true,
             "notOnlyDigits" : true
         },
@@ -287,12 +287,6 @@ var validationRules = {
         },
         "region" : {
             "rangelength" : [ 0, 255 ]
-        },
-        "memberValidator" : {
-            "required" : true
-        },
-        "memberValidatorIn" : {
-            "required" : true
         }
     },
     "indicator" : {
@@ -304,7 +298,7 @@ var validationRules = {
         },
         "shortName" : {
             "required" : true,
-            "rangelength" : [ 2, 25 ],
+            "rangelength" : [ 2, 40 ],
             "alphanumericwithbasicpuncspaces" : true
         },
         "alternativeName" : {
@@ -447,12 +441,6 @@ var validationRules = {
 	},
 	"emailSettings" : {
 		"smtpHostName" : {
-			"required" : true
-		},
-		"smtpUsername" : {
-			"required" : true
-		},
-		"smtpPassword" : {
 			"required" : true
 		}
 	},

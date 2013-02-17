@@ -28,10 +28,7 @@
 package org.hisp.dhis.caseentry.action.report;
 
 import static org.hisp.dhis.patientreport.PatientTabularReport.PREFIX_DATA_ELEMENT;
-import static org.hisp.dhis.patientreport.PatientTabularReport.PREFIX_FIXED_ATTRIBUTE;
-import static org.hisp.dhis.patientreport.PatientTabularReport.PREFIX_IDENTIFIER_TYPE;
 import static org.hisp.dhis.patientreport.PatientTabularReport.PREFIX_NUMBER_DATA_ELEMENT;
-import static org.hisp.dhis.patientreport.PatientTabularReport.PREFIX_PATIENT_ATTRIBUTE;
 import static org.hisp.dhis.patientreport.PatientTabularReport.VALUE_TYPE_OPTION_SET;
 
 import java.util.ArrayList;
@@ -52,11 +49,6 @@ import org.hisp.dhis.i18n.I18nFormat;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.paging.ActionPagingSupport;
-import org.hisp.dhis.patient.PatientAttribute;
-import org.hisp.dhis.patient.PatientAttributeOption;
-import org.hisp.dhis.patient.PatientAttributeService;
-import org.hisp.dhis.patient.PatientIdentifierType;
-import org.hisp.dhis.patient.PatientIdentifierTypeService;
 import org.hisp.dhis.patientreport.TabularReportColumn;
 import org.hisp.dhis.program.ProgramStage;
 import org.hisp.dhis.program.ProgramStageInstance;
@@ -102,20 +94,6 @@ public class GenerateTabularReportAction
     public void setProgramStageInstanceService( ProgramStageInstanceService programStageInstanceService )
     {
         this.programStageInstanceService = programStageInstanceService;
-    }
-
-    private PatientAttributeService patientAttributeService;
-
-    public void setPatientAttributeService( PatientAttributeService patientAttributeService )
-    {
-        this.patientAttributeService = patientAttributeService;
-    }
-
-    private PatientIdentifierTypeService patientIdentifierTypeService;
-
-    public void setPatientIdentifierTypeService( PatientIdentifierTypeService patientIdentifierTypeService )
-    {
-        this.patientIdentifierTypeService = patientIdentifierTypeService;
     }
 
     // -------------------------------------------------------------------------
@@ -217,19 +195,12 @@ public class GenerateTabularReportAction
     {
         this.format = format;
     }
-
-    private List<PatientIdentifierType> identifierTypes = new ArrayList<PatientIdentifierType>();
-
-    public List<PatientIdentifierType> getIdentifierTypes()
+    
+    private Boolean completed;
+    
+    public void setCompleted( Boolean completed )
     {
-        return identifierTypes;
-    }
-
-    private List<PatientAttribute> patientAttributes = new ArrayList<PatientAttribute>();
-
-    public List<PatientAttribute> getPatientAttributes()
-    {
-        return patientAttributes;
+        this.completed = completed;
     }
 
     private List<DataElement> dataElements = new ArrayList<DataElement>();
@@ -296,9 +267,9 @@ public class GenerateTabularReportAction
             for ( Integer orgunitId : orgunitIds )
             {
                 OrganisationUnit selectedOrgunit = organisationUnitService.getOrganisationUnit( orgunitId );
-                orgunitIds.addAll( organisationUnitService.getOrganisationUnitHierarchy().getChildren(
-                    selectedOrgunit.getId() ) );
-                orgunitIds.remove( orgunitId );
+                organisationUnits.addAll( organisationUnitService.getOrganisationUnitHierarchy().getChildren(
+                    orgunitId) );
+                organisationUnits.remove( selectedOrgunit );
             }
         }
         else
@@ -341,9 +312,6 @@ public class GenerateTabularReportAction
         // ---------------------------------------------------------------------
 
         ProgramStage programStage = programStageService.getProgramStage( programStageId );
-
-        // TODO check sql traffic
-
         Date startValue = format.parseDate( startDate );
         Date endValue = format.parseDate( endDate );
         List<TabularReportColumn> columns = getTableColumns();
@@ -356,21 +324,20 @@ public class GenerateTabularReportAction
             if ( type == null ) // Tabular report
             {
                 totalRecords = programStageInstanceService.getTabularReportCount( programStage, columns,
-                    organisationUnits, level, startValue, endValue );
+                    organisationUnits, level, completed, startValue, endValue );
 
                 total = getNumberOfPages( totalRecords );
 
                 this.paging = createPaging( totalRecords );
-                // total = paging.getTotal(); //TODO
-
+                
                 grid = programStageInstanceService.getTabularReport( programStage, columns, organisationUnits, level,
-                    startValue, endValue, !orderByOrgunitAsc, getStartPos(), paging.getPageSize() );
+                    startValue, endValue, !orderByOrgunitAsc, completed, getStartPos(), paging.getPageSize() );
             }
             else
             // Download as Excel
             {
                 grid = programStageInstanceService.getTabularReport( programStage, columns, organisationUnits, level,
-                    startValue, endValue, !orderByOrgunitAsc, null, null );
+                    startValue, endValue, !orderByOrgunitAsc, completed, null, null );
             }
         }
         catch ( SQLGrammarException ex )
@@ -401,7 +368,7 @@ public class GenerateTabularReportAction
         startPos = (startPos > total) ? total : startPos;
         return startPos;
     }
-    
+
     private List<TabularReportColumn> getTableColumns()
     {
         List<TabularReportColumn> columns = new ArrayList<TabularReportColumn>();
@@ -422,29 +389,7 @@ public class GenerateTabularReportAction
                 column.setHidden( Boolean.parseBoolean( values[2] ) );
                 column.setQuery( values.length == 4 ? TextUtils.lower( values[3] ) : null );
 
-                if ( PREFIX_FIXED_ATTRIBUTE.equals( prefix ) )
-                {
-                    column.setName( values[1] );
-                }
-                else if ( PREFIX_IDENTIFIER_TYPE.equals( prefix ) )
-                {
-                    PatientIdentifierType identifierType = patientIdentifierTypeService
-                        .getPatientIdentifierType( column.getIdentifierAsInt() );
-
-                    column.setName( identifierType.getName() );
-                }
-                else if ( PREFIX_PATIENT_ATTRIBUTE.equals( prefix ) )
-                {
-                    int objectId = Integer.parseInt( values[1] );
-                    PatientAttribute attribute = patientAttributeService.getPatientAttribute( objectId );
-                    patientAttributes.add( attribute );
-
-                    valueTypes.add( attribute.getValueType() );
-                    mapSuggestedValues.put( index, getSuggestedAttributeValues( attribute ) );
-
-                    column.setName( attribute.getName() );
-                }
-                else if ( PREFIX_DATA_ELEMENT.equals( prefix ) )
+                if ( PREFIX_DATA_ELEMENT.equals( prefix ) )
                 {
                     int objectId = Integer.parseInt( values[1] );
                     DataElement dataElement = dataElementService.getDataElement( objectId );
@@ -459,7 +404,7 @@ public class GenerateTabularReportAction
                     valueTypes.add( valueType );
                     mapSuggestedValues.put( index, getSuggestedDataElementValues( dataElement ) );
 
-                    column.setName( dataElement.getName() );
+                    column.setName( dataElement.getFormNameFallback() );
                 }
 
                 columns.add( column );
@@ -469,27 +414,6 @@ public class GenerateTabularReportAction
         }
 
         return columns;
-    }
-
-    private List<String> getSuggestedAttributeValues( PatientAttribute patientAttribute )
-    {
-        List<String> values = new ArrayList<String>();
-        String valueType = patientAttribute.getValueType();
-
-        if ( valueType.equals( PatientAttribute.TYPE_BOOL ) )
-        {
-            values.add( i18n.getString( "yes" ) );
-            values.add( i18n.getString( "no" ) );
-        }
-        else if ( valueType.equals( PatientAttribute.TYPE_COMBO ) )
-        {
-            for ( PatientAttributeOption attributeOption : patientAttribute.getAttributeOptions() )
-            {
-                values.add( attributeOption.getName() );
-            }
-        }
-
-        return values;
     }
 
     private List<String> getSuggestedDataElementValues( DataElement dataElement )

@@ -38,7 +38,7 @@ import org.hisp.dhis.dashboard.DashboardContentStore;
 import org.hisp.dhis.dashboard.DashboardService;
 import org.hisp.dhis.document.Document;
 import org.hisp.dhis.document.DocumentService;
-import org.hisp.dhis.mapping.MapView;
+import org.hisp.dhis.mapping.Map;
 import org.hisp.dhis.mapping.MappingService;
 import org.hisp.dhis.report.Report;
 import org.hisp.dhis.report.ReportService;
@@ -125,7 +125,7 @@ public class DefaultDashboardService
         
         objects.addAll( userService.getAllUsersBetweenByName( query, 0, MAX_PER_OBJECT ) );
         objects.addAll( chartService.getChartsBetweenByName( query, 0, MAX_PER_OBJECT ) );
-        objects.addAll( mappingService.getMapViewsBetweenByName( query, 0, MAX_PER_OBJECT ) );        
+        objects.addAll( mappingService.getAccessibleMapsBetweenLikeName( query, 0, MAX_PER_OBJECT ) );        
 
         remaining = MAX_OBJECTS - objects.size();
         
@@ -188,9 +188,9 @@ public class DefaultDashboardService
         return dashboardContentStore.getByDocument( document );
     }
     
-    public Collection<DashboardContent> getByMapView( MapView mapView )
+    public Collection<DashboardContent> getByMap( Map map )
     {
-        return dashboardContentStore.getByMapView( mapView );
+        return dashboardContentStore.getByMap( map );
     }
     
     public Collection<DashboardContent> getByReport( Report report )

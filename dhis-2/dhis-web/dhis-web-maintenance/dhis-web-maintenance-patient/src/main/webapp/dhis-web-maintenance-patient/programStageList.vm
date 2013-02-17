@@ -4,7 +4,7 @@
 			<table class="listTable" id="listTable">
 				<col>
 				<col>     
-				<col width="150">	 
+				<col width="180">	 
 				<thead>
 					<tr>            
 						<th>$i18n.getString( "name" )</th>
@@ -17,11 +17,12 @@
 					#set( $mark = false )
 					#foreach( $association in $associations )
 						<tr id="tr${association.id}" #alternate( $mark )>			  
-							<td onclick="showProgramStageDetails( $association.id )">$encoder.htmlEncode( $association.name )</td>                
+							<td onclick="showProgramStageDetails( $association.id )">$encoder.htmlEncode( $association.displayName )</td>                
 							<td onclick="showProgramStageDetails( $association.id )">$encoder.htmlEncode( $association.description )</td>
 							
 							<td style="text-align:center"#alternate( $mark )>
 							  <a href="showUpdateProgramStageForm.action?id=$association.id" title="$i18n.getString( "edit" )"><img src="../images/edit.png" alt="$i18n.getString( 'edit' )"></a>
+							  <a href="javascript:translate( 'ProgramStage', '$association.id' )" title="$i18n.getString( 'translation_translate' )"><img src="../images/i18n.png" alt="$i18n.getString( 'translation_translate' )"/></a>
 							  #if( $program.type=='1' )
 								<a href="javascript:removeItem( '$association.id', '$encoder.jsEncode( $association.name )', i18n_confirm_delete , 'removeProgramStage.action' )" title="$i18n.getString( 'remove' )"><img src="../images/delete.png" alt="$i18n.getString( 'remove' )"></a>
 							  #end
@@ -46,7 +47,9 @@
 				<p><label class="bold">$i18n.getString( "scheduled_days_from_start" ):</label><br><span id="scheduledDaysFromStartField"></span></p>
 				<p><label class="bold">$i18n.getString( "auto_generate_event" ):</label><br><span id="autoGenerateEventField"></span></p>
 				<p><label class="bold">$i18n.getString( "irregular" ):</label><br><span id="irregularField"></span></p>
+				<p><label class="bold">$i18n.getString( "display_generate_event_box_after_completed" ):</label><br><span id="displayGenerateEventBoxField"></span></p>
 				<p><label class="bold">$i18n.getString( "standard_interval_days" ):</label><br><span id="standardIntervalField"></span></p>
+				<p><label class="bold">$i18n.getString( "complete_allowed_only_if_validation_passes" ):</label><br><span id="validCompleteOnlyField"></span></p>
 				<p><label class="bold">$i18n.getString( "report_date_description" ):</label><br><span id="reportDateDescriptionField"></span></p>
 				<p><label class="bold">$i18n.getString( "no_of_dataelements" ):</label><br><span id="dataElementCountField"></span></p>		
 				<p><span id="templateMessageField"></span></p>

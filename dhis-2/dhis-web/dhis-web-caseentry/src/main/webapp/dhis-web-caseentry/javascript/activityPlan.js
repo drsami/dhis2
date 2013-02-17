@@ -106,6 +106,11 @@ function loadDataEntry( programStageInstanceId )
 	$('#contentDataRecord' ).load("viewProgramStageRecords.action",
 		{
 			programStageInstanceId: programStageInstanceId
+		}, function(){
+			showById('patientInforTB');
+			showById('postCommentTbl');
+			showById('entryForm');
+			showById('inputCriteriaDiv');
 		}).dialog(
 		{
 			title:i18n_program_stage,
@@ -243,6 +248,7 @@ function reloadRecordList()
 	var startDate = getFieldValue('startDueDate');
 	var endDate = getFieldValue('endDueDate');
 	var arrStatus = getFieldValue('statusEvent').split('_');
+	var paddingIndex = 1;
 	
 	jQuery("#patientList .stage-object").each( function(){
 		var id = this.id.split('_')[1];
@@ -252,6 +258,14 @@ function reloadRecordList()
 		if( dueDate >= startDate && dueDate <= endDate 
 			&& jQuery.inArray(statusEvent, arrStatus) > -1)
 		{
+			if( jQuery("#tb_" + programInstanceId + " .searched").length == 0 )
+			{
+				jQuery("#arrow_" + id ).addClass("displayed");
+				var index = eval(jQuery("#ps_" + id ).attr("index"));
+				if( paddingIndex < index ){
+					 paddingIndex = index;
+				}
+			}
 			jQuery("#ps_" + id ).addClass("stage-object-selected searched");
 		}
 		hideById('arrow_' + id );
@@ -264,7 +278,15 @@ function reloadRecordList()
 		scheduledEvent.css('border-color', MARKED_VISIT_COLOR);
 		scheduledEvent.focus();
 		
-		jQuery(this).find(".searched:first").show();
+		var firstEvent = jQuery(this).find(".searched:first");
+		firstEvent.show();
+		var id = firstEvent.attr("id").split('_')[1];
+		showById('arrow_' + id );
+		var index = firstEvent.attr("index");
+		if( index<paddingIndex){
+			var paddingLeft = ( paddingIndex - index ) * 20;
+			jQuery('#arrow_' + id).css("padding-left", paddingLeft + "px");
+		}
 	});
 	
 	resize();

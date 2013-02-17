@@ -152,9 +152,23 @@ public interface DataElementStore
      */
     Collection<DataElement> getDataElementsWithDataSets();
     
+    /**
+     * Returns all DataElements which are assigned to any of the given DataSets.
+     * 
+     * @param dataSets the collection of DataSets.
+     * @return all DataElements which are assigned to any of the given DataSets.
+     */
     Collection<DataElement> getDataElementsByDataSets( Collection<DataSet> dataSets );
+    
+    /**
+     * Returns all DataElements which have the given aggregation level assigned.
+     * 
+     * @param aggregationLevel the aggregation level.
+     * @return all DataElements which have the given aggregation level assigned.
+     */
+    Collection<DataElement> getDataElementsByAggregationLevel( int aggregationLevel );
 
-    Map<Integer, Set<Integer>> getDataElementCategoryOptionCombos();
+    Map<String, Set<String>> getDataElementCategoryOptionCombos();
     
     Collection<DataElement> get( DataSet dataSet, String key, Integer max );
 }

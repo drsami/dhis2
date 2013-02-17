@@ -133,7 +133,7 @@ public class DefaultIndicatorDataMart
         Collection<OrganisationUnit> organisationUnits, Collection<OrganisationUnitGroup> organisationUnitGroups,
         Collection<DataElementOperand> operands, Class<? extends BatchHandler<AggregatedIndicatorValue>> clazz, String key )
     {
-        statementManager.initialise(); // Running in separate thread // TODO initialize file statement manager
+        statementManager.initialise(); // Running in separate thread
         
         final BatchHandler<AggregatedIndicatorValue> batchHandler = batchHandlerFactory.createBatchHandler( clazz ).init();
 
@@ -141,7 +141,7 @@ public class DefaultIndicatorDataMart
         
         final AggregatedIndicatorValue indicatorValue = new AggregatedIndicatorValue();
         
-        final Map<Integer, Double> constantMap = constantService.getConstantMap();
+        final Map<String, Double> constantMap = constantService.getConstantMap();
 
         organisationUnitGroups = organisationUnitGroups != null ? organisationUnitGroups : DataMartEngine.DUMMY_ORG_UNIT_GROUPS;
         

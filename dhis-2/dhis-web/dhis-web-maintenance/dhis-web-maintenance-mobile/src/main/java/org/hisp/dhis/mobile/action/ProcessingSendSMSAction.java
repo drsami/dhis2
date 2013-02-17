@@ -27,16 +27,24 @@ package org.hisp.dhis.mobile.action;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.hisp.dhis.i18n.I18n;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.oust.manager.SelectionTreeManager;
 import org.hisp.dhis.patient.Patient;
 import org.hisp.dhis.patient.PatientService;
 import org.hisp.dhis.sms.MessageSender;
+import org.hisp.dhis.sms.outbound.OutboundSmsTransportService;
 import org.hisp.dhis.user.CurrentUserService;
 import org.hisp.dhis.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +73,9 @@ public class ProcessingSendSMSAction
 
     @Autowired
     private MessageSender messageSender;
+
+    @Autowired
+    private OutboundSmsTransportService transportService;
 
     // -------------------------------------------------------------------------
     // Input & Output
@@ -127,9 +138,12 @@ public class ProcessingSendSMSAction
     // Action Implementation
     // -------------------------------------------------------------------------
 
+    @SuppressWarnings( "unchecked" )
     public String execute()
     {
-        if ( gatewayId == null || gatewayId.isEmpty() )
+        gatewayId = transportService.getDefaultGateway();
+
+        if ( gatewayId == null || gatewayId.trim().length() == 0 )
         {
             message = i18n.getString( "please_select_a_gateway_type_to_send_sms" );
 
@@ -145,6 +159,26 @@ public class ProcessingSendSMSAction
 
         if ( sendTarget != null && sendTarget.equals( "phone" ) )
         {
+            try
+            {
+                ObjectMapper mapper = new ObjectMapper().setVisibility( JsonMethod.FIELD, Visibility.ANY );
+                mapper.configure( DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+
+                recipients = mapper.readValue( recipients.iterator().next(), Set.class );
+            }
+            catch ( JsonParseException e )
+            {
+                e.printStackTrace();
+            }
+            catch ( JsonMappingException e )
+            {
+                e.printStackTrace();
+            }
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
+
             message = messageSender.sendMessage( smsSubject, smsMessage, currentUserService.getCurrentUser(), true,
                 recipients, gatewayId );
         }
@@ -182,6 +216,26 @@ public class ProcessingSendSMSAction
         {
             Patient patient = null;
             Set<String> phones = new HashSet<String>();
+
+            try
+            {
+                ObjectMapper mapper = new ObjectMapper().setVisibility( JsonMethod.FIELD, Visibility.ANY );
+                mapper.configure( DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+
+                recipients = mapper.readValue( recipients.iterator().next(), Set.class );
+            }
+            catch ( JsonParseException e )
+            {
+                e.printStackTrace();
+            }
+            catch ( JsonMappingException e )
+            {
+                e.printStackTrace();
+            }
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
 
             for ( String patientId : recipients )
             {

@@ -62,6 +62,12 @@ function showProgramStageDetails( programStageId )
 		var autoGenerateEvent = (json.programStage.autoGenerateEvent=='true') ? i18n_yes : i18n_no;
 		setInnerHTML( 'autoGenerateEventField', autoGenerateEvent );  
 		
+		var displayGenerateEventBox = (json.programStage.displayGenerateEventBox=='true') ? i18n_yes : i18n_no;
+		setInnerHTML( 'displayGenerateEventBoxField', displayGenerateEventBox );  
+		
+		var validCompleteOnly = (json.programStage.validCompleteOnly=='true') ? i18n_yes : i18n_no;
+		setInnerHTML( 'validCompleteOnlyField', validCompleteOnly );  
+		
 		setInnerHTML( 'standardIntervalField', json.programStage.standardInterval );  
 		setInnerHTML( 'dataElementCountField', json.programStage.dataElementCount );   
 		setInnerHTML( 'reportDateDescriptionField', json.programStage.reportDateDescription );
@@ -91,8 +97,9 @@ function selectDataElements()
 	jQuery("#availableList").children().each(function(i, item){
 		if( item.selected ){
 			html = "<tr class='selected' id='" + item.value + "' ondblclick='unSelectDataElement( this )'><td onmousedown='select(event,this)'>" + item.text + "</td>";
-			html += "<td align='center'><input type='checkbox' name='compulsory' value='" + item.value + "'></td>";
-			html += "<td align='center'><input type='checkbox' name='allowProvided' value='" + item.value + "'></td>";
+			html += "<td align='center'><input type='checkbox' name='compulsory'></td>";
+			html += "<td align='center'><input type='checkbox' name='allowProvided'></td>";
+			html += "<td align='center'><input type='checkbox' name='displayInReport'></td>";
 			html += "</tr>";
 			selectedList.append( html );
 			jQuery( item ).remove();
@@ -106,8 +113,9 @@ function selectAllDataElements()
 	var selectedList = jQuery("#selectedList");
 	jQuery("#availableList").children().each(function(i, item){
 		html = "<tr class='selected' id='" + item.value + "' ondblclick='unSelectDataElement( this )'><td onmousedown='select(this)'>" + item.text + "</td>";
-		html += "<td align='center'><input type='checkbox' name='compulsory' value='" + item.value + "'></td>";
-		html += "<td align='center'><input type='checkbox' name='allowProvided' value='" + item.value + "'></td>";
+		html += "<td align='center'><input type='checkbox' name='compulsory'></td>";
+		html += "<td align='center'><input type='checkbox' name='allowProvided'></td>";
+		html += "<td align='center'><input type='checkbox' name='displayInReport'></td>";
 		html += "</tr>";
 		selectedList.append( html );
 		jQuery( item ).remove();
@@ -228,11 +236,12 @@ function repeatableOnChange()
 	if( checked )
 	{
 		enable('standardInterval');
+		enable('displayGenerateEventBox');
 	}
 	else
 	{
 		disable('standardInterval');
-		setFieldValue('standardInterval', '0');
+		disable('displayGenerateEventBox');
 	}
 }
 

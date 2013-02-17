@@ -33,12 +33,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.hisp.dhis.aggregation.AggregatedMapValue;
 import org.hisp.dhis.api.utils.ContextUtils;
+import org.hisp.dhis.api.utils.ContextUtils.CacheStrategy;
 import org.hisp.dhis.dataelement.DataElement;
 import org.hisp.dhis.dataelement.DataElementService;
 import org.hisp.dhis.indicator.Indicator;
 import org.hisp.dhis.indicator.IndicatorService;
 import org.hisp.dhis.mapping.MappingService;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.period.Period;
 import org.hisp.dhis.period.PeriodService;
@@ -74,12 +76,15 @@ public class MapValueController
     @Autowired
     private OrganisationUnitService organisationUnitService;
 
+    @Autowired
+    private ContextUtils contextUtils;
+    
     @RequestMapping( value = "/in", method = RequestMethod.GET )
     public String getIndicatorMapValues(
         @RequestParam String in,
         @RequestParam String pe,
         @RequestParam String ou,
-        @RequestParam Integer level,
+        @RequestParam String le,
         Model model,
         HttpServletResponse response ) throws Exception
     {
@@ -109,9 +114,19 @@ public class MapValueController
             return null;            
         }
         
-        Collection<AggregatedMapValue> mapValues = mappingService.getIndicatorMapValues( indicator.getId(), period.getId(), organisationUnit.getId(), level );
+        OrganisationUnitLevel level = organisationUnitService.getOrganisationUnitLevel( le );
+        
+        if ( level == null )
+        {
+            ContextUtils.conflictResponse( response, "Invalid organisation unit level identifier" );
+            return null;            
+        }
+        
+        Collection<AggregatedMapValue> mapValues = mappingService.getIndicatorMapValues( indicator.getId(), period.getId(), organisationUnit.getId(), level.getLevel() );
         
         model.addAttribute( "model", mapValues );
+        
+        contextUtils.configureResponse( response, ContextUtils.CONTENT_TYPE_JSON, CacheStrategy.RESPECT_SYSTEM_SETTING );
         
         return "mapValues";
     }
@@ -121,7 +136,7 @@ public class MapValueController
         @RequestParam String de,
         @RequestParam String pe,
         @RequestParam String ou,
-        @RequestParam Integer level,
+        @RequestParam String le,
         Model model,
         HttpServletResponse response ) throws Exception
     {
@@ -151,9 +166,19 @@ public class MapValueController
             return null;            
         }
         
-        Collection<AggregatedMapValue> mapValues = mappingService.getDataElementMapValues( dataElement.getId(), period.getId(), organisationUnit.getId(), level );
+        OrganisationUnitLevel level = organisationUnitService.getOrganisationUnitLevel( le );
+        
+        if ( level == null )
+        {
+            ContextUtils.conflictResponse( response, "Invalid organisation unit level identifier" );
+            return null;            
+        }
+        
+        Collection<AggregatedMapValue> mapValues = mappingService.getDataElementMapValues( dataElement.getId(), period.getId(), organisationUnit.getId(), level.getLevel() );
         
         model.addAttribute( "model", mapValues );
+
+        contextUtils.configureResponse( response, ContextUtils.CONTENT_TYPE_JSON, CacheStrategy.RESPECT_SYSTEM_SETTING );
         
         return "mapValues";
     }

@@ -8,6 +8,7 @@ function getDataElementsByDataset()
 	var dataSets = document.getElementById( 'dataSets' );
 	var dataSetId = dataSets.options[ dataSets.selectedIndex ].value;
 	setFieldValue('aggregationDataElementId','');
+	setFieldValue('aggregationDataElementInput','');
 	
 	if( dataSetId == "" ){
 		disable( 'dataElementsButton' );
@@ -180,6 +181,7 @@ function getParams()
 function getPatientDataElements()
 {
 	clearListById( 'dataElements' );
+	clearListById( 'deSumId' );
 	var programStageId = getFieldValue('programStageId');
 	
 	jQuery.getJSON( 'getPatientDataElements.action',
@@ -196,9 +198,14 @@ function getPatientDataElements()
 				disable('programStageProperty');
 			}
 			var dataElements = jQuery('#dataElements');
+			var deSumId = jQuery('#deSumId');
 			for ( i in json.dataElements )
 			{ 
 				dataElements.append( "<option value='" + json.dataElements[i].id + "' title='" + json.dataElements[i].name + "' suggested='" + json.dataElements[i].optionset + "'>" + json.dataElements[i].name + "</option>" );
+				if( json.dataElements[i].type=='int')
+				{
+					deSumId.append( "<option value='" + json.dataElements[i].id + "' title='" + json.dataElements[i].name + "' suggested='" + json.dataElements[i].optionset + "'>" + json.dataElements[i].name + "</option>" );
+				}
 			}
 			
 		});
@@ -264,7 +271,7 @@ function showCaseAggregationDetails( caseAggregationId )
 		setInnerHTML( 'aggregationDataElementField', json.caseAggregation.aggregationDataElement );
 		setInnerHTML( 'optionComboField', json.caseAggregation.optionCombo );	
 		setInnerHTML( 'aggregationExpressionField', json.caseAggregation.aggregationExpression );
-		
+		setInnerHTML( 'deSumField', json.caseAggregation.deSum );
 		showDetails();
 	});
 }
@@ -290,16 +297,24 @@ function getConditionDescription()
 
 function testCaseAggregationCondition()
 {
+	var operator = jQuery('[name=operator]:checked').val();
 	$.postUTF8( 'testCaseAggregationCondition.action', 
 		{ 
-			condition:getFieldValue('aggregationCondition') 
+			condition: getFieldValue('aggregationCondition'),
+			deSumId: getFieldValue('deSumId'),
+			operator: operator
 		},function (json)
 		{
 			var type = json.response;
 			
 			if ( type == "input" )
 			{
-				showWarningMessage( i18n_run_fail );
+				if( json.message == '' ){
+					showWarningMessage( i18n_run_fail );
+				}
+				else{
+					showWarningMessage( json.message );
+				}
 			}
 			else
 			{
@@ -378,4 +393,15 @@ function getCaseAggConditionByDataset()
 function showAddCaseAggregationForm()
 {
 	window.location.href='showAddCaseAggregationForm.action?dataSetId=' + getFieldValue( 'dataSetId' );
+}
+
+function operatorOnchange(operator)
+{
+	if( operator=='sum' || operator=='avg' 
+		|| operator=='min' || operator=='max' ){
+		enable('deSumId');
+	}
+	else{
+		disable('deSumId');
+	}
 }

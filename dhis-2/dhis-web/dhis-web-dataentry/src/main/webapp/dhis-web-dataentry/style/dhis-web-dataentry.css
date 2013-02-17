@@ -46,10 +46,22 @@ input[type=text],textarea
   padding-left: 2px;
 }
 
+.formSection th
+{
+  text-align: center;
+}
+
 .sectionFilter
 {
   padding: 5px;
   border: solid 1px #f0f0f0; 
   outline: 0;
   color: #333;
+}
+
+.historyHeader
+{
+  color: #606060;
+  font-size: 17px;
+  padding: 5px 0;
 }

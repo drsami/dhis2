@@ -63,7 +63,7 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
 
     @Autowired
     protected IdentifiableObjectManager manager;
-    
+
     //--------------------------------------------------------------------------
     // GET
     //--------------------------------------------------------------------------
@@ -81,6 +81,9 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
         {
             WebUtils.generateLinks( metaData );
         }
+
+        postProcessEntities( entityList );
+        postProcessEntities( entityList, parameters );
 
         model.addAttribute( "model", metaData );
         model.addAttribute( "viewClass", options.getViewClass( "basic" ) );
@@ -102,6 +105,9 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
             WebUtils.generateLinks( metaData );
         }
 
+        postProcessEntities( entityList );
+        postProcessEntities( entityList, parameters );
+
         model.addAttribute( "model", metaData );
         model.addAttribute( "viewClass", options.getViewClass( "basic" ) );
 
@@ -109,7 +115,7 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
     }
 
     @RequestMapping( value = "/{uid}", method = RequestMethod.GET )
-    public String getObject( @PathVariable( "uid" ) String uid, @RequestParam Map<String, String> parameters, 
+    public String getObject( @PathVariable( "uid" ) String uid, @RequestParam Map<String, String> parameters,
         Model model, HttpServletRequest request, HttpServletResponse response ) throws Exception
     {
         WebOptions options = new WebOptions( parameters );
@@ -120,7 +126,7 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
             ContextUtils.notFoundResponse( response, "Object not found for uid: " + uid );
             return null;
         }
-        
+
         if ( options.hasLinks() )
         {
             WebUtils.generateLinks( entity );
@@ -136,7 +142,7 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
     }
 
     @RequestMapping( value = "/search/{query}", method = RequestMethod.GET )
-    public String search( @PathVariable String query, @RequestParam Map<String, String> parameters, 
+    public String search( @PathVariable String query, @RequestParam Map<String, String> parameters,
         Model model, HttpServletRequest request, HttpServletResponse response ) throws Exception
     {
         WebOptions options = new WebOptions( parameters );
@@ -147,7 +153,7 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
             ContextUtils.notFoundResponse( response, "Object not found for query: " + query );
             return null;
         }
-        
+
         if ( options.hasLinks() )
         {
             WebUtils.generateLinks( entity );
@@ -216,15 +222,38 @@ public abstract class AbstractCrudController<T extends IdentifiableObject>
     // Hooks
     //--------------------------------------------------------------------------
 
+
     /**
-     * Override to process a single entity after it has been retrieved from 
+     * Override to process entities after it has been retrieved from
+     * storage and before it is returned to the view. Entities is null-safe.
+     */
+    protected void postProcessEntities( List<T> entityList, Map<String, String> parameters )
+    {
+
+    }
+
+    /**
+     * Override to process entities after it has been retrieved from
+     * storage and before it is returned to the view. Entities is null-safe.
+     */
+    protected void postProcessEntities( List<T> entityList )
+    {
+
+    }
+
+    /**
+     * Override to process a single entity after it has been retrieved from
      * storage and before it is returned to the view. Entity is null-safe.
      */
-    public void postProcessEntity( T entity ) throws Exception
+    protected void postProcessEntity( T entity ) throws Exception
     {
     }
 
-    public void postProcessEntity( T entity, Map<String, String> parameters ) throws Exception
+    /**
+     * Override to process a single entity after it has been retrieved from
+     * storage and before it is returned to the view. Entity is null-safe.
+     */
+    protected void postProcessEntity( T entity, Map<String, String> parameters ) throws Exception
     {
     }
 

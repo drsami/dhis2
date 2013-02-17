@@ -574,7 +574,7 @@ public class DefaultPatientService
         grid.setTitle( i18n.getString( "activity_plan" ) );
         if ( !startDate.isEmpty() && !endDate.isEmpty() )
         {
-            grid.setSubtitle( i18n.getString( "from" ) + " " + startDate + " " + i18n.getString( "to" ) + endDate );
+            grid.setSubtitle( i18n.getString( "from" ) + " " + startDate + " " + i18n.getString( "to" )  + " " + endDate );
         }
 
         grid.addHeader( new GridHeader( "patientid", true, true ) );
@@ -590,6 +590,12 @@ public class DefaultPatientService
 
         return patientStore.getPatientEventReport( grid, searchKeys, orgunit );
 
+    }
+
+    @Override
+    public Collection<Patient> getPatientByFullname( String fullName )
+    {
+        return patientStore.getByFullName( fullName );
     }
 
 }

@@ -34,7 +34,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.Validate;
 import org.hisp.dhis.common.comparator.IdentifiableObjectNameComparator;
@@ -51,6 +50,7 @@ import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.period.CalendarPeriodType;
 import org.hisp.dhis.period.Period;
+import org.hisp.dhis.period.YearlyPeriodType;
 import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.system.filter.OrganisationUnitWithDataSetsFilter;
 import org.hisp.dhis.system.filter.PastAndCurrentPeriodFilter;
@@ -149,17 +149,17 @@ public class FormUtils
     {
         Map<String, DeflatedDataValue> validationErrorMap = new HashMap<String, DeflatedDataValue>();
 
-        Double factor = (Double) systemSettingManager.getSystemSetting(
-            SystemSettingManager.KEY_FACTOR_OF_DEVIATION, 2.0 );
+        Double factor = (Double) systemSettingManager.getSystemSetting( SystemSettingManager.KEY_FACTOR_OF_DEVIATION,
+            2.0 );
 
-        Collection<DeflatedDataValue> stdDevs = stdDevOutlierAnalysisService.analyse( ListUtils.getCollection( organisationUnit ),
-            dataElements, ListUtils.getCollection( period ), factor );
+        Collection<DeflatedDataValue> stdDevs = stdDevOutlierAnalysisService.analyse(
+            ListUtils.getCollection( organisationUnit ), dataElements, ListUtils.getCollection( period ), factor );
 
-        Collection<DeflatedDataValue> minMaxs = minMaxOutlierAnalysisService.analyse( ListUtils.getCollection( organisationUnit ),
-            dataElements, ListUtils.getCollection( period ), null );
+        Collection<DeflatedDataValue> minMaxs = minMaxOutlierAnalysisService.analyse(
+            ListUtils.getCollection( organisationUnit ), dataElements, ListUtils.getCollection( period ), null );
 
         Collection<DeflatedDataValue> deflatedDataValues = CollectionUtils.union( stdDevs, minMaxs );
-        
+
         for ( DeflatedDataValue deflatedDataValue : deflatedDataValues )
         {
             String key = String.format( "DE%dOC%d", deflatedDataValue.getDataElementId(),
@@ -259,18 +259,39 @@ public class FormUtils
         Validate.notNull( dataSetId );
 
         DataSet dataSet = dataSetService.getDataSet( dataSetId );
+        
+        CalendarPeriodType periodType = null;
 
-        CalendarPeriodType periodType = (CalendarPeriodType) dataSet.getPeriodType();
-        List<Period> periods = periodType.generateLast5Years( new Date() );
-        FilterUtils.filter( periods, new PastAndCurrentPeriodFilter() );
-        Collections.reverse( periods );
-
-        if ( periods.size() > (first + max) )
+        if ( dataSet.getPeriodType().getName().equalsIgnoreCase( "Yearly" ) )
         {
-            periods = periods.subList( first, max );
+            periodType = (CalendarPeriodType) new YearlyPeriodType();
         }
-
-        return periods;
+        else
+        {
+            periodType = (CalendarPeriodType) dataSet.getPeriodType();
+        }
+        
+        if ( dataSet.isAllowFuturePeriods() )
+        {
+            List<Period> periods = new ArrayList<Period>();
+            periods = periodType.generatePeriods( new Date() );
+            Collections.reverse( periods );
+            return periods;
+        }
+        else
+        {
+            
+            List<Period> periods = periodType.generateLast5Years( new Date() );
+            FilterUtils.filter( periods, new PastAndCurrentPeriodFilter() );
+            Collections.reverse( periods );
+    
+            if ( periods.size() > (first + max) )
+            {
+                periods = periods.subList( first, max );
+            }
+    
+            return periods;
+        }
     }
 
     // -------------------------------------------------------------------------

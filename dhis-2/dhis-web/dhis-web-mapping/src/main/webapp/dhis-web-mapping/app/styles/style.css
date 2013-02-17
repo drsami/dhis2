@@ -1,18 +1,21 @@
 /* General
  * OpenLayers
- * 
+ *
  * Panel
  * Form
  * Button
  * Toolbar
  * Menu
  * Treepanel
- * Colorpicker 
+ * Colorpicker
  * Window
  * Grid
  * TextField
+ * TextArea
  * Checkbox
  * NumberField
+ * Label
+ * Tooltip
 */
 
 /* General */
@@ -70,9 +73,9 @@ html * {
     color: #fff;
     width: 24px;
     height: 24px;
-    opacity: 0.85;
-    filter: alpha(opacity=85);
-	-ms-filter: "alpha(opacity=85)";
+    opacity: 0.75;
+    filter: alpha(opacity=75);
+	-ms-filter: "alpha(opacity=75)";
     cursor: pointer;
     cursor: hand;
     text-align: center;
@@ -81,13 +84,17 @@ html * {
 }
 
 .olControlPanel.zoomIn {
-	right: 48px;
+	right: 72px;
 }
 .olControlPanel.zoomIn .olControlButtonItemActive {
 	border-bottom-left-radius: 2px;
 }
 
 .olControlPanel.zoomOut {
+	right: 48px;
+}
+
+.olControlPanel.zoomVisible {
 	right: 24px;
 }
 
@@ -132,8 +139,8 @@ html * {
 
 /* GIS */
 
-/* Panel */	
-	
+/* Panel */
+
 .x-panel-header	{ /* Panel header */
 	height: 30px;
 	padding: 7px 4px 4px 7px;
@@ -171,7 +178,7 @@ html * {
 }
 
 .gis-form-widget .x-btn-default-small { /* Button */
-	border-radius: 2px;
+	border-radius: 1px;
 }
 
 /* Button */
@@ -182,17 +189,7 @@ html * {
 
 .x-btn-default-toolbar-small-over {
 	border-color: #bbb;
-	border-radius: 2px;
-}
-
-.gis-toolbar-btn-menu-download .x-btn-icon,
-.gis-toolbar-btn-menu-download .x-btn-default-small-icon button {
-	width: 28px !important;
-	height: 28px !important;
-}
-	
-.gis-btn-icon-download {
-	background: url('../images/download_22.png') no-repeat;
+	border-radius: 1px;
 }
 
 /* Toolbar */
@@ -237,12 +234,12 @@ html * {
 		/* Toolbar btn menu */
 		.gis-toolbar-btn-menu { /* Align menu */
 			margin-top: 5px;
-		}		
+		}
 		.gis-toolbar-btn-menu .x-panel-body-default { /* Menu border */
-			border-radius: 3px;
+			border-radius: 2px;
 			border-color: #999;
-		}		
-		
+		}
+
 /* Menu */
 
 .x-menu-body { /* General menu */
@@ -260,7 +257,7 @@ html * {
 		padding-right: 8px;
 		padding-bottom: 6px;
 		padding-left: 30px;
-	}	
+	}
 	.x-menu-item-active .x-menu-item-link { /* Menu item hover */
 		background: #ddd;
 		border-color: #ddd;
@@ -274,38 +271,23 @@ html * {
 		border-bottom-left-radius: 2px;
 		border-bottom-right-radius: 2px;
 	}
-	
+
 	.gis-menu-item-icon-edit,
-	.gis-menu-item-icon-refresh,
 	.gis-menu-item-icon-clear,
 	.gis-menu-item-icon-labels,
 	.gis-menu-item-icon-filter,
 	.gis-menu-item-icon-search,
-	.gis-menu-item-icon-opacity,
-	.gis-menu-item-icon-history,
-	
+
 	.gis-menu-item-icon-drill,
 	.gis-menu-item-icon-float,
 	.gis-menu-item-icon-information,
 	.gis-menu-item-icon-relocate,
-	
-	.gis-menu-item-icon-opacity10,
-	.gis-menu-item-icon-opacity20,
-	.gis-menu-item-icon-opacity30,
-	.gis-menu-item-icon-opacity40,
-	.gis-menu-item-icon-opacity50,
-	.gis-menu-item-icon-opacity60,
-	.gis-menu-item-icon-opacity70,
-	.gis-menu-item-icon-opacity80,
-	.gis-menu-item-icon-opacity90,
-	.gis-menu-item-icon-opacity100 {
+
+	.gis-menu-item-icon-favorite {
 		left: 6px;
-	}	
+	}
 	.gis-menu-item-icon-edit {
 		background: url('../images/edit_16.png') no-repeat;
-	}
-	.gis-menu-item-icon-refresh {
-		background: url('../images/refresh_16.png') no-repeat;
 	}
 	.gis-menu-item-icon-clear {
 		background: url('../images/clear_16.png') no-repeat;
@@ -319,13 +301,7 @@ html * {
 	.gis-menu-item-icon-search {
 		background: url('../images/search_16.png') no-repeat;
 	}
-	.gis-menu-item-icon-opacity {
-		background: url('../images/opacity_16.png') no-repeat;
-	}
-	.gis-menu-item-icon-history {
-		background: url('../images/history_16.png') no-repeat;
-	}
-	
+
 	.gis-menu-item-icon-drill {
 		background: url('../images/drill_16.png') no-repeat;
 	}
@@ -338,27 +314,19 @@ html * {
 	.gis-menu-item-icon-relocate {
 		background: url('../images/relocate_16.png') no-repeat;
 	}
-	
+
+	.gis-menu-item-icon-favorite {
+		background: url('../images/favorite_16.png') no-repeat;
+	}
+
 	.x-menu-item-separator {
 		height: 1px;
 	}
 	.x-menu-item-text {
 		font-size: 10px !important;
 	}
-	
-.gis-toolbar-btn-menu-download .x-panel-body-default { /* Specific for download menu */
-	border: 0 none;
-}
-.gis-toolbar-btn-menu-download .x-menu-body {
-	background: transparent !important;
-}
-.gis-toolbar-btn-menu-download .x-panel-body-default {
-	background: transparent;
-}
-.gis-toolbar-btn-menu-download .x-form-text {
-	padding-left: 6px;
-}
-	
+
+
 /* Treepanel */
 
 .x-tree-panel .x-grid-row .x-grid-cell-inner { /* Tree font */
@@ -404,8 +372,6 @@ html * {
 	padding: 5px 8px 5px 8px;
 	border-bottom-left-radius: 2px;
 	border-bottom-right-radius: 2px;
-	-webkit-text-stroke-width: 0.2px;
-	-webkit-text-stroke-color: #fff;
 	color: #fff;
 	font-weight: bold;
 	letter-spacing: 1px;
@@ -451,11 +417,61 @@ html * {
 .gis-window-title-icon-legendset {
 	background: url('../images/legendset_14.png') no-repeat;
 }
+.gis-window-title-icon-download {
+	background: url('../images/download_14.png') no-repeat;
+}
+.gis-window-title-icon-interpretation {
+	background: url('../images/interpretation_14.png') no-repeat;
+}
+.gis-window-title-icon-measure {
+	background: url('../images/measure_14.png') no-repeat;
+}
 
 /* Grid */
 
-.gis-grid .x-grid-cell-inner {
+.gis-grid-row-icon-edit,
+.gis-grid-row-icon-overwrite,
+.gis-grid-row-icon-dashboard,
+.gis-grid-row-icon-delete {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+.gis-grid-row-icon-edit {
+	background: url('../images/grid-edit_16.png') no-repeat;
+}
+.gis-grid-row-icon-overwrite {
+	background: url('../images/grid-save_16.png') no-repeat;
+	margin-left: 4px;
+}
+.gis-grid-row-icon-dashboard {
+	background: url('../images/grid-dashboard_16.png') no-repeat;
+	margin-left: 4px;
+}
+.gis-grid-row-icon-delete {
+	background: url('../images/grid-delete_16.png') no-repeat;
+	margin-left: 4px;
+}
+.gis-grid-row-icon-disabled img.gis-grid-row-icon-edit,
+.gis-grid-row-icon-disabled img.gis-grid-row-icon-overwrite,
+.gis-grid-row-icon-disabled img.gis-grid-row-icon-delete {
+	opacity: 0;
+	filter:Alpha(opacity=0);
+}
+.gis-grid-row-icon-disabled * {
+	cursor: default !important;
+}
+.gis-grid-row-icon-disabled img.gis-grid-row-icon-dashboard {
+	cursor: pointer !important;
+}
+
+.gis-grid .x-grid-cell-inner,
+.gis-grid .x-grid-cell-inner * {
 	font-size: 10px !important;
+}
+.gis-grid .x-grid-cell-inner {
+	padding-top: 3px;
+	padding-bottom: 3px;
 }
 
 .gis-grid .x-column-header-text {
@@ -463,25 +479,36 @@ html * {
 }
 .gis-grid .x-grid-header-ct {
 	border-bottom-width: 1px !important;
-	border-bottom-color: #dbdbdb;	
+	border-bottom-color: #d0d0d0;
+}
+.gis-grid .x-grid-body {
+	border-top: 0 none !important;
 }
 
-.gis-grid .x-grid-dirty-cell { /* hide red cell icon */
+.gis-grid .x-grid-dirty-cell { /* hide red "dirty" icon */
 	background-image: none;
 }
 .gis-grid .x-grid-row { /* middle align text in row with image */
 	vertical-align: middle;
 }
 
-.gis-grid-icon-link {
+.gis-grid .link,
+.gis-grid .link * {
 	cursor: pointer;
 	cursor: hand;
+	color: blue;
+	text-decoration: underline;
 }
 
 /* TextField */
 
 .gis-textfield input.x-form-text {
-	border-radius: 2px;
+	border-radius: 1px;
+}
+
+/* Textarea */
+.gis-textarea .x-form-field {
+	font-size: 11px;
 }
 
 /* Checkbox */
@@ -491,12 +518,16 @@ html * {
     cursor: pointer;
     cursor: hand;
 }
+label.x-form-cb-label {
+    cursor: pointer;
+    cursor: hand;
+}
 
 /* NumberField */
 
 .gis-numberfield input.x-form-text {
-	border-top-left-radius: 2px;
-	border-bottom-left-radius: 2px;
+	border-top-left-radius: 1px;
+	border-bottom-left-radius: 1px;
 }
 
 /* Label */
@@ -508,3 +539,23 @@ html * {
 	height: 22px;
 	line-height: 21px;
 }
+
+/* Tooltip */
+
+/* Tooltip */
+.x-tip {
+    border-radius: 2px;
+    padding: 1px 4px;
+    border: 1px solid #111;
+    background-color: #111;
+}
+
+.x-tip .x-tip-body {
+	font-size: 10px;
+	color: #fff;
+}
+
+.x-tip-anchor {
+	border-top-color: #111;
+}
+

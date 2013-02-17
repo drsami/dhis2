@@ -32,9 +32,9 @@ import static org.hisp.dhis.system.util.ConversionUtils.getIdentifiers;
 import static org.hisp.dhis.system.util.MathUtils.isEqual;
 import static org.hisp.dhis.system.util.TextUtils.getCommaDelimitedString;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,6 +81,13 @@ public class JdbcDataAnalysisStore
 
     public Map<Integer, Double> getStandardDeviation( DataElement dataElement, DataElementCategoryOptionCombo categoryOptionCombo, Set<Integer> organisationUnits )
     {
+        Map<Integer, Double> map = new HashMap<Integer, Double>();
+        
+        if ( organisationUnits.isEmpty() )
+        {
+            return map;
+        }
+        
         final String sql = 
             "select ou.organisationunitid, " +
               "(select stddev_pop( cast( value as " + statementBuilder.getDoubleColumnType() + " ) ) " +
@@ -89,8 +96,6 @@ public class JdbcDataAnalysisStore
               "and sourceid = ou.organisationunitid) as deviation " +
             "from organisationunit ou " +
             "where ou.organisationunitid in (" + getCommaDelimitedString( organisationUnits ) + ")";
-        
-        Map<Integer, Double> map = new HashMap<Integer, Double>();
         
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet( sql );
         
@@ -109,6 +114,13 @@ public class JdbcDataAnalysisStore
     
     public Map<Integer, Double> getAverage( DataElement dataElement, DataElementCategoryOptionCombo categoryOptionCombo, Set<Integer> organisationUnits )
     {
+        Map<Integer, Double> map = new HashMap<Integer, Double>();
+        
+        if ( organisationUnits.isEmpty() )
+        {
+            return map;
+        }
+        
         final String sql = 
             "select ou.organisationunitid, " +
                 "(select avg( cast( value as " + statementBuilder.getDoubleColumnType() + " ) ) " +
@@ -117,8 +129,6 @@ public class JdbcDataAnalysisStore
                 "and sourceid = ou.organisationunitid) as average " +
             "from organisationunit ou " +
             "where ou.organisationunitid in (" + getCommaDelimitedString( organisationUnits ) + ")";
-        
-        Map<Integer, Double> map = new HashMap<Integer, Double>();
         
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet( sql );
         
@@ -138,12 +148,17 @@ public class JdbcDataAnalysisStore
     public Collection<DeflatedDataValue> getMinMaxViolations( Collection<DataElement> dataElements, Collection<DataElementCategoryOptionCombo> categoryOptionCombos,
         Collection<Period> periods, Collection<OrganisationUnit> organisationUnits, int limit )
     {
+        if ( dataElements.isEmpty() || categoryOptionCombos.isEmpty() || periods.isEmpty() || organisationUnits.isEmpty() )
+        {
+            return new ArrayList<DeflatedDataValue>();
+        }
+        
         String dataElementIds = getCommaDelimitedString( getIdentifiers( DataElement.class, dataElements ) );
         String organisationUnitIds = getCommaDelimitedString( getIdentifiers( OrganisationUnit.class, organisationUnits ) );
         String periodIds = getCommaDelimitedString( getIdentifiers( Period.class, periods ) );
         String categoryOptionComboIds = getCommaDelimitedString( getIdentifiers( DataElementCategoryOptionCombo.class, categoryOptionCombos ) );
         
-        Map<Integer, String> optionComboMap = getCategoryOptionComboMap( categoryOptionCombos );
+        Map<Integer, String> optionComboMap = DataElementCategoryOptionCombo.getCategoryOptionComboMap( categoryOptionCombos );
         
         //TODO persist name on category option combo and use join to improve performance
         
@@ -170,9 +185,9 @@ public class JdbcDataAnalysisStore
     public Collection<DeflatedDataValue> getDeflatedDataValues( DataElement dataElement, DataElementCategoryOptionCombo categoryOptionCombo,
         Collection<Period> periods, Map<Integer, Integer> lowerBoundMap, Map<Integer, Integer> upperBoundMap )
     {
-        if ( lowerBoundMap == null || lowerBoundMap.isEmpty() )
+        if ( lowerBoundMap == null || lowerBoundMap.isEmpty() || periods.isEmpty() )
         {
-            return new HashSet<DeflatedDataValue>();
+            return new ArrayList<DeflatedDataValue>();
         }
         
         String periodIds = TextUtils.getCommaDelimitedString( ConversionUtils.getIdentifiers( Period.class, periods ) );
@@ -218,17 +233,5 @@ public class JdbcDataAnalysisStore
             "where dv.followup = true";
         
         return jdbcTemplate.query( sql, new DeflatedDataValueNameMinMaxRowMapper() );        
-    }
-    
-    private Map<Integer, String> getCategoryOptionComboMap( Collection<DataElementCategoryOptionCombo> categoryOptionCombos )
-    {
-        Map<Integer, String> map = new HashMap<Integer, String>();
-        
-        for ( DataElementCategoryOptionCombo coc : categoryOptionCombos )
-        {
-            map.put( coc.getId(), coc.getName() );
-        }
-        
-        return map;
     }
 }

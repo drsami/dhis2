@@ -40,6 +40,7 @@ import org.amplecode.quick.StatementHolder;
 import org.amplecode.quick.StatementManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.system.startup.AbstractStartupRoutine;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -145,6 +146,26 @@ public class TableAlteror
         executeSql( "ALTER TABLE period modify periodid int AUTO_INCREMENT");
         executeSql( "CREATE SEQUENCE period_periodid_seq");
         executeSql( "ALTER TABLE period ALTER COLUMN periodid SET DEFAULT NEXTVAL('period_periodid_seq')");
+        
+        executeSql( "UPDATE program SET programstage_dataelements=false WHERE displayInReports is null" );
+        
+        executeSql( "ALTER TABLE programvalidation DROP COLUMN leftside" );
+        executeSql( "ALTER TABLE programvalidation DROP COLUMN rightside" );
+        executeSql( "ALTER TABLE programvalidation DROP COLUMN dateType" );
+        
+        executeSql( "UPDATE programstage SET validCompleteOnly=false WHERE validCompleteOnly is null" );
+        executeSql( "UPDATE program SET ignoreOverdueEvents=false WHERE ignoreOverdueEvents is null" );
+        
+        executeSql( "UPDATE programstage SET displayGenerateEventBox=true WHERE displayGenerateEventBox is null" );
+        executeSql( "ALTER TABLE patientidentifier DROP COLUMN preferred");
+
+        executeSql( "UPDATE patientidentifiertype SET personDisplayName=false WHERE personDisplayName is null");
+
+        executeSql( "ALTER TABLE programvalidation RENAME description TO name" );
+        
+        executeSql( "UPDATE program SET blockEntryForm=false WHERE blockEntryForm is null" );
+        
+        updateUid();
     }
 
     // -------------------------------------------------------------------------
@@ -172,6 +193,8 @@ public class TableAlteror
             executeSql( "ALTER TABLE patientdatavalue DROP COLUMN organisationUnitid" );
             executeSql( "ALTER TABLE patientdatavalue DROP COLUMN providedByAnotherFacility" );
             executeSql( "ALTER TABLE patientdatavalue ADD PRIMARY KEY ( programstageinstanceid, dataelementid )" );
+            
+            executeSql( "update caseaggregationcondition set \"operator\"='times' where \"operator\"='SUM'" );
         }
         catch ( Exception ex )
         {
@@ -382,6 +405,47 @@ public class TableAlteror
         }
     }
 
+    private void updateUid()
+    {
+        updateUidColumn( "patientattribute" );
+        updateUidColumn( "patientattributegroup" );
+        updateUidColumn( "patientidentifiertype" );
+        updateUidColumn( "program" );
+        updateUidColumn( "patientattribute" );
+        updateUidColumn( "programstage" );
+        updateUidColumn( "programstagesection" );
+        updateUidColumn( "programvalidation" );
+    }
+    
+    private void updateUidColumn( String tableName )
+    {
+        StatementHolder holder = statementManager.getHolder();
+
+        try
+        {
+            Statement statement = holder.getStatement();
+
+            ResultSet resultSet = statement
+                .executeQuery( "SELECT " + tableName + "id FROM " + tableName + " where uid is null" );
+
+            while ( resultSet.next() )
+            {
+                String uid = CodeGenerator.generateCode();
+                
+                executeSql( "UPDATE " + tableName + " SET uid='" + uid
+                    + "'  WHERE " + tableName + "id=" + resultSet.getInt( 1 ) );
+            }
+        }
+        catch ( Exception ex )
+        {
+            log.debug( ex );
+        }
+        finally
+        {
+            holder.close();
+        }
+    }
+    
     private int executeSql( String sql )
     {
         try

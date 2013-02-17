@@ -16,9 +16,9 @@ jQuery( document ).ready( function()
 
 <h3>$i18n.getString( "create_new_program_stage_section" )</h3>
 
-<h4>$programStage.name</h4>
+<h4>$programStage.displayName</h4>
 																		
-<form id="programStageSectionForm" name="programStageSectionForm" method="post">
+<form id="programStageSectionForm" name="programStageSectionForm" action="addProgramStageSection.action" method="post">
 
 <input type="hidden" id="programStageId" name="programStageId" value="$programStage.id"/>
 <table>

@@ -95,6 +95,13 @@ public class AddReportAction
     {
         this.name = name;
     }
+    
+    private String type;
+
+    public void setType( String type )
+    {
+        this.type = type;
+    }
 
     private Integer reportTableId;
     
@@ -196,9 +203,10 @@ public class AddReportAction
         
         ReportTable reportTable = reportTableService.getReportTable( reportTableId );
         
-        ReportParams reportParams = new ReportParams( paramReportingMonth, false, false, false, paramOrganisationUnit );
+        ReportParams reportParams = new ReportParams( paramReportingMonth, false, false, paramOrganisationUnit );
         
         report.setName( name );
+        report.setType( type );
         report.setReportTable( reportTable );
         report.setUsingOrgUnitGroupSets( usingOrgUnitGroupSets );
         report.setRelatives( getRelativePeriods() );

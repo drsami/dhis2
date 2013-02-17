@@ -29,6 +29,7 @@ package org.hisp.dhis.caseentry.action.patient;
 import java.util.Collection;
 import java.util.Date;
 
+import org.hisp.dhis.caseentry.state.SelectedStateManager;
 import org.hisp.dhis.i18n.I18nFormat;
 import org.hisp.dhis.patient.Patient;
 import org.hisp.dhis.patient.PatientService;
@@ -80,6 +81,13 @@ public class SaveProgramEnrollmentAction
     public void setProgramStageInstanceService( ProgramStageInstanceService programStageInstanceService )
     {
         this.programStageInstanceService = programStageInstanceService;
+    }
+
+    private SelectedStateManager selectedStateManager;
+
+    public void setSelectedStateManager( SelectedStateManager selectedStateManager )
+    {
+        this.selectedStateManager = selectedStateManager;
     }
 
     private I18nFormat format;
@@ -163,7 +171,7 @@ public class SaveProgramEnrollmentAction
         {
             programInstance = programInstances.iterator().next();
         }
-        
+
         if ( programInstance == null )
         {
             programInstance = new ProgramInstance();
@@ -183,35 +191,36 @@ public class SaveProgramEnrollmentAction
             {
                 dateCreatedEvent = format.parseDate( enrollmentDate );
             }
-            
-            if( program.isRegistration() && program.isSingleEvent())
-            {
-                
-            }
-            
+
             boolean isFirstStage = false;
+            Date currentDate = new Date();
             for ( ProgramStage programStage : program.getProgramStages() )
             {
                 if ( programStage.getAutoGenerateEvent() )
                 {
-                    ProgramStageInstance programStageInstance = new ProgramStageInstance();
-                    programStageInstance.setProgramInstance( programInstance );
-                    programStageInstance.setProgramStage( programStage );
                     Date dueDate = DateUtils
                         .getDateAfterAddition( dateCreatedEvent, programStage.getMinDaysFromStart() );
 
-                    programStageInstance.setDueDate( dueDate );
-
-                    if( program.isSingleEvent())
+                    if ( ! ( program.getIgnoreOverdueEvents() && dueDate.before( currentDate ) ))
                     {
-                        programStageInstance.setExecutionDate( dueDate );
-                    }
-                    programStageInstanceService.addProgramStageInstance( programStageInstance );
+                        ProgramStageInstance programStageInstance = new ProgramStageInstance();
+                        programStageInstance.setProgramInstance( programInstance );
+                        programStageInstance.setProgramStage( programStage );
+                        programStageInstance.setDueDate( dueDate );
 
-                    if ( !isFirstStage )
-                    {
-                        activeProgramStageInstance = programStageInstance;
-                        isFirstStage = true;
+                        if ( program.isSingleEvent() )
+                        {
+                            programStageInstance.setOrganisationUnit( selectedStateManager
+                                .getSelectedOrganisationUnit() );
+                            programStageInstance.setExecutionDate( dueDate );
+                        }
+                        programStageInstanceService.addProgramStageInstance( programStageInstance );
+
+                        if ( !isFirstStage )
+                        {
+                            activeProgramStageInstance = programStageInstance;
+                            isFirstStage = true;
+                        }
                     }
                 }
             }

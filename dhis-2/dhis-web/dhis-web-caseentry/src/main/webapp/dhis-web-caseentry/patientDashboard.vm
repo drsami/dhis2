@@ -1,5 +1,5 @@
 <h3>
- <a href="javascript:onClickBackBtn();" id='mainFormLink' name='mainFormLink'>$i18n.getString( 'patient_management' )</a>
+ <a name="mainPagelink" href="javascript:onClickBackBtn();">$i18n.getString( 'patient_management' )</a>
  &#8226; $i18n.getString( 'patient_dashboard' )
  &raquo; <a href="javascript:dashboardHistoryToggle();" >$i18n.getString( 'history' )</a>
 </h3>
@@ -18,11 +18,11 @@
 			<table>
 				<tr>
 					<td>$i18n.getString("full_name")</td>
-					<td>$!patient.getFullName()</td>
+					<td>$encoder.htmlEncode($!patient.getFullName())</td>
 				</tr>
 				<tr>
 					<td>$i18n.getString("location")</td>
-					<td>$!patient.organisationUnit.name</td>
+					<td>$encoder.htmlEncode($!patient.organisationUnit.name)</td>
 				</tr>
 				<tr>
 					<td>$i18n.getString("gender")</td>
@@ -30,7 +30,7 @@
 				</tr>
 				<tr>
 					<td>$i18n.getString("date_of_birth")</td>
-					<td>$format.formatDate( $!patient.birthDate) $!patient.getAge()</td>
+					<td>$format.formatDate( $!patient.birthDate) ($!patient.getAge())</td>
 				</tr>
 				<tr>
 					<td>$i18n.getString("phone_number")</td>
@@ -46,7 +46,7 @@
 					<td>$i18n.getString("health_worker")</td>
 					<td>
 						#if($!patient.healthWorker )
-							$!patient.healthWorker.name
+							$encoder.htmlEncode($!patient.healthWorker.name)
 						#else
 							[$i18n.getString('none')]
 						#end
@@ -55,16 +55,22 @@
 				#foreach( $identifier in $identifiers )
 				<tr>
 					#if($!identifier.identifierType)
-						<td>$identifier.identifierType.name</td>
+						<td>$identifier.identifierType.displayName</td>
 					#else
 						<td>$i18n.getString("system_identifier")</td>
 					#end
 					<td>$identifier.identifier</td>
 				</tr>
 				#end
+				#foreach( $attributeName in $calAttributeValueMap.keySet() )
+				<tr class="bold">
+					<td>$attributeName</td>
+					<td>$calAttributeValueMap.get($attributeName)</td>
+				</tr>
+				#end
 				#foreach( $attributeValue in $attributeValues )
 				<tr>
-					<td>$attributeValue.patientAttribute.name</td>
+					<td>$attributeValue.patientAttribute.displayName</td>
 					<td>
 						#if($attributeValue.patientAttribute.valueType=='YES/NO')
 							#if($attributeValue.value=='true')
@@ -72,10 +78,8 @@
 							#else
 								$i18n.getString("no")
 							#end
-						#elseif($attributeValue.patientAttribute.valueType=='DATE')
-							$format.formatDate( $attributeValue.value )
 						#else
-							$attributeValue.value
+							$encoder.htmlEncode($attributeValue.value)
 						#end	
 					</td>
 				</tr>
@@ -108,13 +112,13 @@
 								programStageInstanceId='$programStageInstanceId' style='cursor:pointer;'
 								onclick='javascript:loadActiveProgramStageRecords("$programInstance.id", "$programStageInstance.id")' >
 								<td id='td_$programInstance.id'>
-									<a><span id='infor_$programInstance.id'>$programInstance.program.name ($format.formatDate($programInstance.enrollmentDate))</span></a>
+									<a><span id='infor_$programInstance.id'>$programInstance.program.displayName ($format.formatDate($programInstance.enrollmentDate))</span></a>
 								</td>
 							</tr>
 							#if($programInstance.program.type==1)
 							<tr>
 								<td id='tr2_$programInstance.id' onclick='javascript:loadActiveProgramStageRecords("$programInstance.id", "$programStageInstance.id")' style='cursor:pointer;'>
-									<a>>> $programStageInstance.programStage.name ($format.formatDate($programStageInstance.dueDate))</a>
+									<a>&#8226; $programStageInstance.programStage.displayName ($format.formatDate($programStageInstance.dueDate))</a>
 								</td>
 							</tr>
 							#end
@@ -126,25 +130,10 @@
 						programStageInstanceId='$programStageInstanceId' style='cursor:pointer;'
 						onclick='javascript:loadActiveProgramStageRecords("$programInstance.id", false)' >
 						<td id='td_$programInstance.id'>
-							<a><span id='infor_$programInstance.id'>$programInstance.program.name ($format.formatDate($programInstance.enrollmentDate))</span></a>
+							<a><span id='infor_$programInstance.id'>$programInstance.program.displayName ($format.formatDate($programInstance.enrollmentDate))</span></a>
 						</td>
 					</tr>
 					#end
-				#end
-				#foreach($program in $singlePrograms)
-					<tr id='tr_$program.id' name='tr_$program.id' style='cursor:pointer;'
-						onclick='javascript:saveSingleEnrollment("$patient.id","$program.id")' >
-						<td>
-							<a><span id='infor_$program.id'></span></a>
-							<script>
-								var infor = "$program.name" + " (" + getCurrentDate() + ")";
-								setInnerHTML("infor_$program.id", infor);
-							</script>
-						</td>
-					</tr>
-					<tr style='cursor:pointer;'>
-						<td id='tr2_$programInstance.id'></td>
-					</tr>
 				#end
 			</table>
 		</div>
@@ -167,7 +156,7 @@
 					#end
 					<tr onclick='javascript:loadActiveProgramStageRecords($programInstance.id);' >
 						<td>
-							<a><span id='infor_$programInstance.id'>$programInstance.program.name ($format.formatDate($programInstance.enrollmentDate))</span></a>
+							<a><span id='infor_$programInstance.id'>$programInstance.program.displayName ($format.formatDate($programInstance.enrollmentDate))</span></a>
 						</td>
 					</tr>
 				#end
@@ -204,24 +193,38 @@
 <br>
 <div id='programEnrollmentDiv' class='hidden'></div>
 <div id='dataEntryFormDiv'></div>
-<div id='dashboardHistoryDiv' class="dashboard-history" style="display:none;">
-	<table width="100%">
+<div id='dashboardHistoryDiv' class="dashboard-history" style="display:none;height:250px;width:300px;">
+	<table width="300px;">
+		<colgroup>
+			<col width="150px">
+			<col>
+		</colgroup>
 		<tr>
-			<th>$i18n.getString("visitor")</th>
 			<th>$i18n.getString("date")</th>
+			<th>$i18n.getString("visitor")</th>
 		</tr>
-		#set( $mark = false )
-		#foreach( $patientAudit in $patientAudits )
-		<tr #alternate( $mark )>
-			<td>$patientAudit.visitor</td>
-			<td>$format.formatDate($patientAudit.date)</td>
-		</tr>
-		#set( $mark = !$mark )
-		#end
 	</table>
+	<div style="height:200px;width:300px;overflow:auto">
+		<table width='280px'>
+			<colgroup>
+				<col width="150px">
+				<col>
+			</colgroup>
+			#set( $mark = false )
+			#foreach( $patientAudit in $patientAudits )
+			<tr #alternate( $mark )>
+				<td>$format.formatDate($patientAudit.date)</td>
+				<td>$encoder.htmlEncode($patientAudit.visitor)</td>
+			</tr>
+			#set( $mark = !$mark )
+			#end
+		</table>
+	</div>
 </div>
 
 <script>
 	hideById('mainLinkLbl');
+	jQuery('[name=mainPagelink]').html(i18n_main_form_link);
 	var i18n_history = '$encoder.jsEscape( $i18n.getString( "history" ) , "'" )';
+	var i18n_this_field_is_required = '$encoder.jsEscape( $i18n.getString( "this_field_is_required" ) , "'" )';
 </script>

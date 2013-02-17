@@ -177,6 +177,27 @@ public class UpdateProgramStageAction
         this.autoGenerateEvent = autoGenerateEvent;
     }
 
+    private List<Boolean> displayInReports = new ArrayList<Boolean>();
+
+    public void setDisplayInReports( List<Boolean> displayInReports )
+    {
+        this.displayInReports = displayInReports;
+    }
+
+    private Boolean validCompleteOnly;
+
+    public void setValidCompleteOnly( Boolean validCompleteOnly )
+    {
+        this.validCompleteOnly = validCompleteOnly;
+    }
+
+    private Boolean displayGenerateEventBox;
+
+    public void setDisplayGenerateEventBox( Boolean displayGenerateEventBox )
+    {
+        this.displayGenerateEventBox = displayGenerateEventBox;
+    }
+
     // -------------------------------------------------------------------------
     // Action implementation
     // -------------------------------------------------------------------------
@@ -187,6 +208,8 @@ public class UpdateProgramStageAction
         minDaysFromStart = (minDaysFromStart == null) ? 0 : minDaysFromStart;
         irregular = (irregular == null) ? false : irregular;
         autoGenerateEvent = (autoGenerateEvent == null) ? false : autoGenerateEvent;
+        validCompleteOnly = (validCompleteOnly == null) ? false : validCompleteOnly;
+        displayGenerateEventBox = (displayGenerateEventBox == null) ? false : displayGenerateEventBox;
 
         ProgramStage programStage = programStageService.getProgramStage( id );
 
@@ -196,7 +219,11 @@ public class UpdateProgramStageAction
         programStage.setReportDateDescription( reportDateDescription );
         programStage.setMinDaysFromStart( minDaysFromStart );
         programStage.setIrregular( irregular );
+        programStage.setMinDaysFromStart( minDaysFromStart );
+        programStage.setDisplayGenerateEventBox( displayGenerateEventBox );
+
         programStage.setAutoGenerateEvent( autoGenerateEvent );
+        programStage.setValidCompleteOnly( validCompleteOnly );
 
         Set<PatientReminder> patientReminders = new HashSet<PatientReminder>();
         for ( int i = 0; i < this.daysAllowedSendMessages.size(); i++ )
@@ -216,6 +243,7 @@ public class UpdateProgramStageAction
         {
             DataElement dataElement = dataElementService.getDataElement( selectedDataElementsValidator.get( i ) );
             Boolean allowed = allowProvidedElsewhere.get( i ) == null ? false : allowProvidedElsewhere.get( i );
+            Boolean displayInReport = displayInReports.get( i ) == null ? false : displayInReports.get( i );
 
             ProgramStageDataElement programStageDataElement = programStageDataElementService.get( programStage,
                 dataElement );
@@ -225,16 +253,15 @@ public class UpdateProgramStageAction
                 programStageDataElement = new ProgramStageDataElement( programStage, dataElement,
                     this.compulsories.get( i ), new Integer( i ) );
                 programStageDataElement.setAllowProvidedElsewhere( allowed );
+                programStageDataElement.setDisplayInReports( displayInReport );
                 programStageDataElementService.addProgramStageDataElement( programStageDataElement );
             }
             else
             {
                 programStageDataElement.setCompulsory( this.compulsories.get( i ) );
-
                 programStageDataElement.setSortOrder( new Integer( i ) );
-
                 programStageDataElement.setAllowProvidedElsewhere( allowed );
-
+                programStageDataElement.setDisplayInReports( displayInReport );
                 programStageDataElementService.updateProgramStageDataElement( programStageDataElement );
 
                 programStageDataElements.remove( programStageDataElement );

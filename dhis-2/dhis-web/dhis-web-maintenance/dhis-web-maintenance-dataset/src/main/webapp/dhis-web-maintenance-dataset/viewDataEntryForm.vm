@@ -61,7 +61,7 @@
       </tr>
       <tr>
         <td><label>$i18n.getString( "dataset" ) <em title="$i18n.getString( 'required' )" class="required">*</em></label></td>
-        <td><input type="text" value="$dataSet.name" style="width:30em" disabled /></td>
+        <td><input type="text" value="$dataSet.displayName" style="width:30em" disabled /></td>
       </tr>
       <tr>
         <td><label>$i18n.getString( "style" )</label></td>
@@ -92,8 +92,10 @@
 	    <button type="button" id="saveButton" onclick="validateDataEntryForm( false )">$i18n.getString( 'save' )</button>
         <button type="button" id="saveCloseButton" onclick="validateDataEntryForm( true )">$i18n.getString( 'save_close' )</button>
         <button type="button" id="cancelButton" onclick="window.location.href='dataSet.action'">$i18n.getString( 'cancel' )</button>&nbsp;&nbsp;<span style="color:#606060">|</span>&nbsp;
-        <button type="button" id="insertDataElementsButton" >$i18n.getString( 'insert_data_elements' )</button>&nbsp;&nbsp;<span style="color:#606060">|</span>&nbsp;
+        <button type="button" id="insertDataElementsButton">$i18n.getString( 'insert_data_elements' )</button>&nbsp;&nbsp;
+        <button type="button" id="insertImagesButton">$i18n.getString( 'insert_images' )</button>&nbsp;&nbsp;<span style="color:#606060">|</span>&nbsp;
         <button type="button" id="delete" onclick="removeDataEntryForm( '$dataSet.id', '$dataEntryForm.id', '$dataEntryForm.name' )">$i18n.getString( 'delete' )</button>
+		<input type="checkbox" id="autoSave" name="autoSave" #if($autoSave && $autoSave=="true") checked #end onchange="setAutoSaveSetting(this.checked)" />$i18n.getString( 'auto_save_data_entry_forms' )
       </td>          
 	  <script>
 		if(stat == "EDIT")
@@ -134,7 +136,7 @@
 						<div style="color:#666; margin-top:5px; margin-bottom:5px;">$i18n.getString( "select_category_combo_for_which_to_insert" )</div>
 						<select id="categoryComboSelect" style="width: 100%; margin-bottom: 10px;">
 							#foreach( $categoryCombo in $categoryCombos )
-							<option value="$categoryCombo.id">$encoder.htmlEncode( $categoryCombo.name )</option>
+							<option value="$categoryCombo.uid">$encoder.htmlEncode( $categoryCombo.displayName )</option>
 							#end
 						</select><br>
 						<button type="button" id="startButton">$i18n.getString( "start" )</button>
@@ -161,5 +163,18 @@
 		</table>
 	</div>
 </div>
+</div>
 
+
+<div id="imageDialog" title="$i18n.getString( 'insert_images' )">
+<div style="margin:4px">
+    <div>
+    	<select id="imageSelector" multiple="multiple" style="height: 200px; width:100%;">
+    	#foreach( $flag in $flags )
+    	<option value="../dhis-web-commons/flags/${flag}.png">$i18n.getString( ${flag} )</option>
+	    #end
+    	</select>
+    </div>
+    <div style="margin-top:6px"><button type="button" id="insertImageButton">$i18n.getString( "insert" )</button></div>
+</div>
 </div>

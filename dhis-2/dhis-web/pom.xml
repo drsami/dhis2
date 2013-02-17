@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.hisp.dhis</groupId>
     <artifactId>dhis</artifactId>
-    <version>2.10-SNAPSHOT</version>
+    <version>2.11-SNAPSHOT</version>
   </parent>
   <artifactId>dhis-web</artifactId>
   <packaging>pom</packaging>
@@ -14,20 +14,23 @@
   <modules>
     <module>dhis-web-commons</module>
     <module>dhis-web-commons-resources</module>
-    <!--module>dhis-web-maintenance</module>
+    <module>dhis-web-maintenance</module>
     <module>dhis-web-dataentry</module>
     <module>dhis-web-importexport</module>
     <module>dhis-web-validationrule</module>
     <module>dhis-web-reporting</module>
     <module>dhis-web-mapping</module>
     <module>dhis-web-visualizer</module>
+    <module>dhis-web-pivot</module>
     <module>dhis-web-dashboard-integration</module>
-    <module>dhis-web-caseentry</module-->
+    <module>dhis-web-caseentry</module>
     <module>dhis-web-api</module>
+    <module>dhis-web-api-fred</module>
     <module>dhis-web-api-mobile</module>
-    <!--module>dhis-web-light</module>
-    <module>dhis-web-mobile</module-->
+    <module>dhis-web-light</module>
+    <module>dhis-web-mobile</module>
     <module>dhis-web-portal</module>
+    <module>dhis-web-sms</module>
   </modules>
   <build>
     <plugins>

@@ -1,6 +1,8 @@
 var MODE_REPORT = "report";
 var MODE_TABLE = "table";
 
+var TYPE_HTML = "html";
+
 // -----------------------------------------------------------------------------
 // Validation
 // -----------------------------------------------------------------------------
@@ -28,16 +30,24 @@ function viewReport( type )
     {
         return false;
     }
-    
-    var mode = $( "#mode" ).val();
+
     var uid = $( "#uid" ).val();
+    var mode = $( "#mode" ).val();
+    var type = $( "#type" ).val();
 
     setMessage( i18n_process_completed );
 
-    if ( mode == MODE_REPORT )
+    if ( MODE_REPORT == mode )
     {
-    	window.location.href = "../api/reports/" + uid + "/data." + type + "?" + getUrlParams();
-    } 
+    	if ( TYPE_HTML == type )
+    	{
+    		window.location.href= "generateHtmlReport.action?uid=" + uid + "&" + getUrlParams();
+    	}
+    	else // JASPER
+    	{
+    		window.location.href = "../api/reports/" + uid + "/data." + reportType + "?" + getUrlParams();
+    	}
+    }
     else // MODE_TABLE
     {
         window.location.href = "exportTable.action?uid=" + uid + "&type=html&" + getUrlParams();
@@ -85,7 +95,7 @@ function viewShareForm()
 	} );
 }
 
-function shareInterpretation( uid, ou )
+function shareInterpretation( uid, pe, ou )
 {
     var text = $( "#interpretationArea" ).val();
     
@@ -93,16 +103,16 @@ function shareInterpretation( uid, ou )
     {
     	text = $.trim( text );
     	
-	    var url = "../api/interpretations/reportTable/" + uid;
+	    var url = "../api/interpretations/reportTable/" + uid + "?";
 	    
-	    url += ( ou && ou.length ) ? "?ou=" + ou : "";
+	    url += ( pe && pe.length ) ? "pe=" + pe + "&": "";
+	    url += ( ou && ou.length ) ? "ou=" + ou : "";
 	    
 	    $.ajax( url, {
 	    	type: "POST",
 	    	contentType: "text/html",
 	    	data: text,
 	    	success: function() {
-	    		$( "#shareForm" ).dialog( "close" );
 	    		$( "#interpretationArea" ).val( "" );
 	    		setHeaderDelayMessage( i18n_interpretation_was_shared );
 	    	}    	

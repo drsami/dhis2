@@ -47,16 +47,7 @@ public interface DataMartManager
      */
     Set<DataElementOperand> getOperandsWithData( Set<DataElementOperand> operands );
 
-    /**
-     * Returns a map of organisation unit identifiers and data values.
-     * 
-     * @param operand the data element operand.
-     * @param periodId the period identifier.
-     * @return a map of organisation unit identifiers and data values.
-     */
-    Map<Integer, String> getDataValueMap( DataElementOperand operand, int periodId );
-    
-    Map<DataElementOperand, String> getAggregatedValueMap( int periodId, int organisationUnitId );
+    Map<DataElementOperand, String> getDataValueMap( int periodId, int sourceId );
     
     void createDataValueIndex();
     
@@ -79,8 +70,6 @@ public interface DataMartManager
      * @param periodIds a collection of Period identifiers.
      */
     void deleteAggregatedIndicatorValues( Collection<Integer> periodIds );
-
-    Map<DataElementOperand, String> getAggregatedOrgUnitValueMap( int periodId, int organisationUnitId, int organisationUnitGroupId );
     
     void createOrgUnitDataValueIndex();
     

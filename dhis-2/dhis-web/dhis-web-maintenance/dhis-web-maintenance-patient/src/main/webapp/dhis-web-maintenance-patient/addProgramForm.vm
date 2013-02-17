@@ -25,7 +25,7 @@
 		</tr>	
 		
 		<tr>
-			<td><label>$i18n.getString( "type" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
+			<td><label>$i18n.getString( "type" ) </label></td>
 			<td>
 				<select style="width: 336px;" id="type" name="type" onchange='programOnChange();' class="{validate:{required:true}}">
 					<option value='1'>$i18n.getString('multiple_events_with_registration')</option>
@@ -37,38 +37,50 @@
 		</tr>
 		
 		<tr>
-			<td><label>$i18n.getString( "events_generated_by_enrollment_date" )</label></td>
-			<td><input style="margin: 0;"type="checkbox" id="generatedByEnrollmentDate" name="generatedByEnrollmentDate" value='true'></td>
-			<td></td>
-		</tr>
-		
-		<tr>
 			<th colspan="2">$i18n.getString( "form_details" )</th>
 		</tr>
 	
 		<tr>
 			<td><label>$i18n.getString( "show_provided_provided_elsewhere" )</label></td>
-			<td><input style="margin: 0;"type="checkbox" id="displayProvidedOtherFacility" name="displayProvidedOtherFacility" value='true' checked></td>
+			<td><input type="checkbox" id="displayProvidedOtherFacility" name="displayProvidedOtherFacility" value='true' checked></td>
 			<td></td>
 		</tr>
 		
 		<tr>
+			<td><label>$i18n.getString( "block_entry_form_after_completed" )</label></td>
+			<td><input type="checkbox" id="blockEntryForm" name="blockEntryForm" value='true'></td>
+			<td></td>
+		</tr>
+		
+		<tr name='nonAnonymous'>
 			<th colspan="2">$i18n.getString( "enrollment_details" )</th>
 		</tr>
 		
-		<tr>
-			<td><label>$i18n.getString( "show_incident_date" )</label></td>
-			<td><input style="margin: 0;"type="checkbox" id="displayIncidentDate" name="displayIncidentDate" value='true' checked onchange='programOnChange();'></td>
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "generated_events_by_enrollment_date" )</label></td>
+			<td><input type="checkbox" id="generatedByEnrollmentDate" name="generatedByEnrollmentDate" value='true'></td>
 			<td></td>
 		</tr>
 		
-		<tr>
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "ignore_to_generate_overdue_events" )</label></td>
+			<td><input type="checkbox" id="ignoreOverdueEvents" name="ignoreOverdueEvents" value='true'></td>
+			<td></td>
+		</tr>
+		
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "show_incident_date" )</label></td>
+			<td><input type="checkbox" id="displayIncidentDate" name="displayIncidentDate" value='true' checked onchange='programOnChange();'></td>
+			<td></td>
+		</tr>
+		
+		<tr name='nonAnonymous'>
 			<td><label>$i18n.getString( "date_of_incident_description" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
 			<td><input style="width: 330px;" type="text" id="dateOfIncidentDescription" name="dateOfIncidentDescription" class="{validate:{required:true,minlength:2}}"></td>
 			<td></td>
 		</tr>
 		
-		<tr>
+		<tr name='nonAnonymous'>
 			<td><label>$i18n.getString( "date_of_enrollment_description" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
 			<td><input style="width: 330px;" type="text" id="dateOfEnrollmentDescription" name="dateOfEnrollmentDescription" class="{validate:{required:true,minlength:4}}"></td>
 			<td></td>
@@ -78,7 +90,7 @@
 	<tbody>
 </table>
 	
-<table>
+<table name='nonAnonymous'>
 	<colgroup>
         <col style="width:400px;"/>
 		<col/>
@@ -98,10 +110,10 @@
 		<td>
 			<select style="width:100%;" size="15" multiple id="availablePropertyIds" name="availablePropertyIds" ondblclick="selectProperties();">
 				#foreach( $identifier in $availableIdentifierTypes )
-					<option value="iden_$identifier.id">$identifier.name</option>
+					<option value="iden_$identifier.id">$identifier.displayName</option>
 				#end
 				#foreach( $attribute in $availableAttributes )
-					<option value="attr_$attribute.id">$attribute.name</option>
+					<option value="attr_$attribute.id">$attribute.displayName</option>
 				#end
 			</select>
 		</td>
@@ -132,6 +144,9 @@
 			<a href="javascript:moveDownPropertyList()"><img src="../images/move_down.png"/></a><br/><br/>
 		</td>  
 	</tr>
+</table>
+
+<table>
 	<tr>
 		<td colspan='3'>
 			<input type="submit" value="$i18n.getString( 'add' )" >
@@ -139,5 +154,4 @@
 		</td>
 	</tr>
 </table>
-
 </form>

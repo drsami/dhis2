@@ -221,9 +221,12 @@ public interface UserService
 
     Collection<UserCredentials> getUsersByOrganisationUnitBetween( OrganisationUnit orgUnit, int first, int max );
 
-    Collection<UserCredentials> getUsersByOrganisationUnitBetweenByName( OrganisationUnit orgUnit, String name,
-                                                                         int first, int max );
+    Collection<UserCredentials> getUsersByOrganisationUnitBetweenByName( OrganisationUnit orgUnit, String name, int first, int max );
 
+    Collection<UserCredentials> getSelfRegisteredUserCredentials( int first, int max );
+    
+    int getSelfRegisteredUserCredentialsCount();
+    
     Collection<UserCredentials> getInactiveUsers( int months );
 
     Collection<UserCredentials> getInactiveUsers( int months, int first, int max );
@@ -370,4 +373,9 @@ public interface UserService
      * @param user the user.
      */
     void removeUserSettings( User user );
+    
+    Collection<User> getUsersByName( String name );  
+    
+    Collection<String> getUsernames( String query, Integer max );
+    
 }

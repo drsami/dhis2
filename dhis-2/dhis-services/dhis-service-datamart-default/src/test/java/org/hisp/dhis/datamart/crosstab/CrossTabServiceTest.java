@@ -27,8 +27,7 @@ package org.hisp.dhis.datamart.crosstab;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -50,6 +49,7 @@ import org.hisp.dhis.dataelement.DataElementCategoryOptionCombo;
 import org.hisp.dhis.dataelement.DataElementCategoryService;
 import org.hisp.dhis.dataelement.DataElementOperand;
 import org.hisp.dhis.dataelement.DataElementService;
+import org.hisp.dhis.datamart.CrossTabDataValue;
 import org.hisp.dhis.datamart.crosstab.jdbc.CrossTabStore;
 import org.hisp.dhis.datavalue.DataValueService;
 import org.hisp.dhis.jdbc.batchhandler.GenericBatchHandler;
@@ -63,6 +63,7 @@ import org.junit.Test;
 
 /**
  * @author Lars Helge Overland
+ * @version $Id: CrossTabServiceTest.java 6217 2008-11-06 18:53:04Z larshelg $
  */
 public class CrossTabServiceTest
     extends DhisTest
@@ -75,7 +76,7 @@ public class CrossTabServiceTest
 
     private List<DataElementOperand> operands;
     private Collection<Integer> periodIds;
-    private List<Integer> organisationUnitIds;
+    private Collection<Integer> organisationUnitIds;
 
     // -------------------------------------------------------------------------
     // Fixture
@@ -143,7 +144,7 @@ public class CrossTabServiceTest
         Character[] characters = { 'A', 'B', 'C', 'D', 'E' };
         
         periodIds = new HashSet<Integer>();
-        organisationUnitIds = new ArrayList<Integer>();
+        organisationUnitIds = new HashSet<Integer>();
         
         Collection<DataElement> dataElements = new HashSet<DataElement>();
         Collection<Period> periods = new HashSet<Period>();
@@ -189,20 +190,27 @@ public class CrossTabServiceTest
     public void testPopulateCrossTabValue()
         throws Exception
     {
-        String key = crossTabService.createCrossTabTable( organisationUnitIds );
+        String key = crossTabService.createCrossTabTable( operands );
         crossTabService.populateCrossTabTable( operands, periodIds, organisationUnitIds, key ).get();
         
-        for ( DataElementOperand operand : operands )
+        Collection<CrossTabDataValue> values = crossTabService.getCrossTabDataValues( operands, periodIds, organisationUnitIds, key );
+        
+        assertNotNull( values );
+        
+        assertEquals( 25, values.size() );
+        
+        for ( CrossTabDataValue crossTabValue : values )
         {
-            Map<String, String> values = crossTabService.getCrossTabDataValues( operand, periodIds, organisationUnitIds, key );
-
-            assertNotNull( values );
-
-            assertEquals( 25, values.size() );
+            assertTrue( crossTabValue.getPeriodId() != 0 );
+            assertTrue( crossTabValue.getSourceId() != 0 );
             
-            for ( String valueKey : values.keySet() )
+            assertNotNull( crossTabValue.getValueMap() );
+            
+            assertEquals( 10, crossTabValue.getValueMap().size() );
+            
+            for ( String value : crossTabValue.getValueMap().values() )
             {
-                assertEquals( "10", values.get( valueKey ) );
+                assertEquals( "10", value );
             }
         }
     }
@@ -241,7 +249,7 @@ public class CrossTabServiceTest
         for ( DataElementOperand operand : valueMap.keySet() )
         {
             assertNotNull( valueMap.get( operand ) );
-            assertEquals( 10.0, valueMap.get( operand ) );
+            assertEquals( 10.0, valueMap.get( operand ), DELTA );
         }
     }
 }

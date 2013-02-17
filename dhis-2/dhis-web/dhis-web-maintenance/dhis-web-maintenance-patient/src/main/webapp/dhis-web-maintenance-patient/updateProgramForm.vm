@@ -4,7 +4,6 @@
 
 <form id="updateProgramForm" name="updateProgramForm" action="updateProgram.action" method="post" onsubmit="selectAllById('selectedPropertyIds');" >
   <input type="hidden" id="id" name="id" value="$program.id">
-  
   <table id="detailsList">
     <thead>
       <tr>
@@ -14,7 +13,7 @@
     <tbody>
 		<tr>
 			<td><label>$i18n.getString( "name" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
-			<td><input style="width: 330px;" type="text" id="name" name="name" value="$encoder.htmlEncode( $program.name )" class="{validate:{required:true,minlength:4}}"></td>
+			<td><input style="width: 330px;" type="text" id="name" name="name" value="$encoder.htmlEncode( $program.displayName )" class="{validate:{required:true,minlength:4}}"></td>
 			<td></td>
 		</tr>	
 		
@@ -25,7 +24,7 @@
 		</tr>
 
 		<tr>
-			<td><label>$i18n.getString( "type" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
+			<td><label>$i18n.getString( "type" ) </label></td>
 			<td>
 				<select style="width: 336px;" id="type" name="type" onchange='programOnChange();' class="{validate:{required:true}}">
 					<option value='1' #if( $program.type=='1' ) selected #end>$i18n.getString('multiple_events_with_registration')</option>
@@ -33,12 +32,6 @@
 					<option value='3' #if( $program.type=='3' ) selected #end>$i18n.getString('single_event_without_registration')</option>
 				</select>
 			</td>
-			<td></td>
-		</tr>
-		
-		<tr>
-			<td><label>$i18n.getString( "events_generated_by_enrollment_date" )</label></td>
-			<td><input type="checkbox" id="generatedByEnrollmentDate" name="generatedByEnrollmentDate" value='true' #if($program.generatedByEnrollmentDate=='true') checked #end #if( $program.type=='3' ) disabled #end ></td>
 			<td></td>
 		</tr>
 		
@@ -57,24 +50,43 @@
 			<td><input type="checkbox" id="displayProvidedOtherFacility" name="displayProvidedOtherFacility" value='true' #if( $program.displayProvidedOtherFacility=='true' ) checked #end ></td>
 			<td></td>
 		</tr>
-			
+		
 		<tr>
+			<td><label>$i18n.getString( "block_entry_form_after_completed" )</label></td>
+			<td><input type="checkbox" id="blockEntryForm" name="blockEntryForm" value='true' #if( $program.blockEntryForm=='true' ) checked #end ></td>
+			<td></td>
+		</tr>
+			
+		<tr name='nonAnonymous'>
 			<th colspan="2">$i18n.getString( "enrollment_details" )</th>
 		</tr>
 		
-		<tr>
-			<td><label>$i18n.getString( "show_incident_date" )</label></td>
-			<td><input style="margin: 0;"type="checkbox" id="displayIncidentDate" name="displayIncidentDate" value='true' onchange='programOnChange();' #if( $program.type=='3' ) disabled #elseif($program.displayIncidentDate=='true') checked #end></td>
+		
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "generated_events_by_enrollment_date" )</label></td>
+			<td><input type="checkbox" id="generatedByEnrollmentDate" name="generatedByEnrollmentDate" value='true' #if($program.generatedByEnrollmentDate=='true') checked #end #if( $program.type!='1' ) disabled #end ></td>
 			<td></td>
 		</tr>
 		
-		<tr>
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "ignore_to_generate_overdue_events" )</label></td>
+			<td><input type="checkbox" id="ignoreOverdueEvents" name="ignoreOverdueEvents" value='true' #if($program.ignoreOverdueEvents=='true') checked #end #if( $program.type!='1' ) disabled #end ></td>
+			<td></td>
+		</tr>
+		
+		<tr name='nonAnonymous'>
+			<td><label>$i18n.getString( "show_incident_date" )</label></td>
+			<td><input type="checkbox" id="displayIncidentDate" name="displayIncidentDate" value='true' onchange='programOnChange();' #if( $program.type=='3' ) disabled #elseif($program.displayIncidentDate=='true') checked #end></td>
+			<td></td>
+		</tr>
+		
+		<tr name='nonAnonymous'>
 			<td><label>$i18n.getString( "date_of_incident_description" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
 			<td><input style="width: 330px;" type="text" id="dateOfIncidentDescription" name="dateOfIncidentDescription" value="$!program.dateOfIncidentDescription" class="{validate:{required:true,minlength:4}}" #if( $program.type=='2' || $program.type=='3') disabled #end ></td>
 			<td></td>
-		</tr>
+		</tr name='nonAnonymous'>
 		
-		<tr>
+		<tr name='nonAnonymous'>
 			<td><label>$i18n.getString( "date_of_enrollment_description" ) <em title="$i18n.getString( "required" )" class="required">*</em></label></td>
 			<td><input style="width: 330px;" type="text" id="dateOfEnrollmentDescription" name="dateOfEnrollmentDescription"  value="$!program.dateOfEnrollmentDescription" class="{validate:{required:true,minlength:4}}" #if( $program.type=='3' ) disabled #end></td>
 			<td></td>
@@ -85,7 +97,7 @@
 	<tbody>
 	</table>
 
-	<table>
+	<table name='nonAnonymous'>
 		<colgroup>
 			<col style="width:400px;"/>
 			<col/>
@@ -106,10 +118,10 @@
 			<td>
 				<select size="15" style="width:100%;" multiple id="availablePropertyIds" name="availablePropertyIds" ondblclick="selectProperties();" #if( $program.type=='3' ) disabled #end>
 					#foreach( $identifier in $availableIdentifierTypes )
-						<option value="iden_$identifier.id">$identifier.name</option>
+						<option value="iden_$identifier.id">$identifier.displayName</option>
 					#end
 					#foreach( $attribute in $availableAttributes )
-						<option value="attr_$attribute.id">$attribute.name</option>
+						<option value="attr_$attribute.id">$attribute.displayName</option>
 					#end
 				</select>
 			</td>
@@ -153,13 +165,14 @@
 				<a href="javascript:moveDownPropertyList()"><img src="../images/move_down.png"/></a><br/><br/>
 			</td>  
 	  </tr>
-      <tr>
+    </tbody>
+  </table>  
+  <table>
+	 <tr>
       	<td colspan='3'>
 			<input type="submit" value="$i18n.getString( 'update' )">
 			<input type="button" value="$i18n.getString( 'cancel' )" onclick="window.location.href='program.action'">
 		</td>
       </tr>
-    </tbody>
-  </table>  
-
-</form> 	
+  </table>
+</form>	

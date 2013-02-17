@@ -2,6 +2,7 @@
 var currentDynamicElementCode = null;
 var currentCategoryComboId = null;
 var currentCategoryComboName = null;
+var timeOut;
 
 $( document ).ready( function() {
 	
@@ -27,6 +28,15 @@ $( document ).ready( function() {
 		dynamicElementSelector.height( dialog.height() - 120 );
 	});
 
+	$("#imageDialog").dialog({
+		minWidth: 350,
+		minheight: 263,
+		position: [20, 50],
+		zIndex: 10000,
+		resizable: false,
+		autoOpen: false
+	});
+
 	$(":button").button();
 	$(":submit").button();
 
@@ -42,6 +52,18 @@ $( document ).ready( function() {
 
 	$("#insertDataElementsButton").click(function() {
 		$("#selectionDialog").dialog("open");
+	});
+	
+	$("#imageDialog").bind("dialogopen", function(event, ui) {
+		$("#insertImagesButton").button("disable");
+	})
+	
+	$("#imageDialog").bind("dialogclose", function(event, ui) {
+		$("#insertImagesButton").button("enable");
+	})
+	
+	$("#insertImagesButton").click(function() {
+		$("#imageDialog").dialog("open");
 	});
 	
 	$("#startButton").button("option", "icons", { primary: "ui-icon-triangle-1-e" });
@@ -105,6 +127,8 @@ $( document ).ready( function() {
 			insertDynamicElement();
 		}
 	});
+	
+	$("#insertImageButton").click(insertImage);
 
 	$("#insertButton").button("option", "icons", { primary: "ui-icon-plusthick" });
 	$("#saveButton").button("option", "icons", { primary: "ui-icon-disk" });
@@ -112,6 +136,7 @@ $( document ).ready( function() {
 	$("#insertDataElementsButton").button("option", "icons", { primary: "ui-icon-newwin" });
 	$("#cancelButton").button("option", "icons", { primary: "ui-icon-cancel" });
 	$("#delete").button("option", "icons", { primary: "ui-icon-trash" });
+	$("#insertImageButton").button("option", "icons", { primary: "ui-icon-plusthick" });
 	
 	$("#dataElementsFilterButton").button({
 		icons: {
@@ -166,7 +191,7 @@ $( document ).ready( function() {
 		handler: function(item) {
 			var option = jQuery("<option />");
 			option.text( item.name );
-			option.data( "id", item.id );
+			option.data( "id", item.uid );
 			option.dblclick(insertTotal);
 
 			return option;
@@ -182,7 +207,7 @@ $( document ).ready( function() {
 		handler: function(item) {
 			var option = jQuery("<option />");
 			option.text( item.name );
-			option.data("id", item.id);
+			option.data("id", item.uid);
 			option.dblclick(insertIndicator);
 
 			return option;
@@ -191,12 +216,13 @@ $( document ).ready( function() {
 			dataSetId: dataSetId
 		}
 	});
-	
+		
 	$("#dynamicElementSelector").dblclick(insertDynamicElement);
+	$("#imageSelector").dblclick(insertImage);
 	
-	if( autoSave == 'true' )
+	if( autoSave )
 	{
-		window.setTimeout( "validateDataEntryFormTimeout( false );", 60000 );
+		timeOut = window.setTimeout( "validateDataEntryFormTimeout( false );", 60000 );
 	}
 });
 
@@ -422,11 +448,18 @@ function showDynamicElementInsert() {
 	
 	clearListById( "dynamicElementSelector" );
 	
-	var optionCombos = $.getJSON( "../dhis-web-commons-ajax-json/getCategoryOptionCombos.action?categoryComboId=" + categoryComboId, function( json ) {
+	var optionCombos = $.getJSON( "../dhis-web-commons-ajax-json/getCategoryOptionCombos.action?categoryComboUid=" + categoryComboId, function( json ) {
 		$.each( json.categoryOptionCombos, function( index, value ) {
-			addOptionById( "dynamicElementSelector", value.id, value.name );
+			addOptionById( "dynamicElementSelector", value.uid, value.name );
 		} );
 	} );	
+}
+
+function insertImage() {
+	var image = $("#imageDialog :selected").val();
+	var html = "<img src=\"" + image + "\" title=\"" + $("#imageDialog :selected").text() + "\">";
+	var oEditor = $("#designTextarea").ckeditorGet();
+	oEditor.insertHtml( html );
 }
 
 function checkExisted(id) {
@@ -439,4 +472,17 @@ function checkExisted(id) {
 	});
 
 	return result;
+}
+ 
+function setAutoSaveSetting(_autoSave)
+{
+	jQuery.postJSON("setAutoSaveSetting.action", {autoSave:_autoSave}, function(json) {
+		autoSave = _autoSave;
+		if (_autoSave) {
+			window.setTimeout( "validateDataEntryFormTimeout( false );", 60000 );
+		}
+		else{
+			window.clearTimeout(timeOut);
+		}
+	});
 }

@@ -46,7 +46,7 @@ import org.hisp.dhis.mapping.MappingService;
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupService;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.period.PeriodService;
-import org.hisp.dhis.user.UserService;
+import org.hisp.dhis.user.CurrentUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -77,9 +77,6 @@ public class MapController
     private OrganisationUnitGroupService organisationUnitGroupService;
     
     @Autowired
-    private UserService userService;
-    
-    @Autowired
     private IndicatorService indicatorService;
     
     @Autowired
@@ -87,6 +84,9 @@ public class MapController
     
     @Autowired
     private PeriodService periodService;
+    
+    @Autowired
+    private CurrentUserService currentUserService;
     
     //--------------------------------------------------------------------------
     // CRUD
@@ -100,7 +100,7 @@ public class MapController
 
         mergeMap( map );
         
-        for ( MapView view : map.getViews() )
+        for ( MapView view : map.getMapViews() )
         {
             mergeMapView( view );
             
@@ -125,7 +125,7 @@ public class MapController
             return;
         }
 
-        Iterator<MapView> views = map.getViews().iterator();
+        Iterator<MapView> views = map.getMapViews().iterator();
         
         while ( views.hasNext() )
         {
@@ -138,7 +138,7 @@ public class MapController
 
         mergeMap( newMap );
 
-        for ( MapView view : newMap.getViews() )
+        for ( MapView view : newMap.getMapViews() )
         {
             mergeMapView( view );
             
@@ -146,6 +146,11 @@ public class MapController
         }
 
         map.mergeWith( newMap );
+        
+        if ( newMap.getUser() == null )
+        {
+            map.setUser( null );
+        }
         
         mappingService.updateMap( map );
     }
@@ -163,7 +168,7 @@ public class MapController
             return;
         }
 
-        Iterator<MapView> views = map.getViews().iterator();
+        Iterator<MapView> views = map.getMapViews().iterator();
         
         while ( views.hasNext() )
         {
@@ -173,6 +178,20 @@ public class MapController
         }
         
         mappingService.deleteMap( map );
+    }
+    
+    @Override
+    public void postProcessEntity( Map map )
+    {
+        for ( MapView view : map.getMapViews() )
+        {
+            if ( view != null && view.getParentOrganisationUnit() != null )
+            {
+                String parentUid = view.getParentOrganisationUnit().getUid();
+                view.setParentGraph( view.getParentOrganisationUnit().getParentGraph() + "/" + parentUid );
+                view.setParentLevel( organisationUnitService.getLevelOfOrganisationUnit( view.getParentOrganisationUnit().getId() ) );
+            }
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -185,7 +204,7 @@ public class MapController
     {
         if ( map.getUser() != null )
         {
-            map.setUser( userService.getUser( map.getUser().getUid() ) );
+            map.setUser( currentUserService.getCurrentUser() );
         }        
     }
     

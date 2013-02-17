@@ -38,7 +38,6 @@ import org.hisp.dhis.sms.config.SMPPGatewayConfig;
 import org.hisp.dhis.sms.config.SmsConfiguration;
 import org.hisp.dhis.sms.config.SmsGatewayConfig;
 import org.hisp.dhis.sms.outbound.OutboundSmsTransportService;
-import org.smslib.AGateway;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.opensymphony.xwork2.Action;
@@ -89,7 +88,6 @@ public class RemoveGatewayConfigAction
     public String execute()
         throws Exception
     {
-
         SmsConfiguration smsConfig = smsConfigurationManager.getSmsConfiguration();
 
         Iterator<SmsGatewayConfig> it = smsConfig.getGateways().iterator();

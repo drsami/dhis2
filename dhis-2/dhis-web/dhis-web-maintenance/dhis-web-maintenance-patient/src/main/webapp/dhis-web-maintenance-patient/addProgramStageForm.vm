@@ -2,9 +2,9 @@
 
 <h3>$i18n.getString( "create_new_program_stage" )</h3>
 
-<h4>$program.name</h4>
+<h4>$program.displayName</h4>
 		
-<form id="addProgramStageForm" name="addProgramStageForm" action="addProgramStage.action" method="get">
+<form id="addProgramStageForm" name="addProgramStageForm" action="addProgramStage.action" method="post">
 	<input type="hidden" id="id" name="id" value="$program.id"/>
 	<select id='daysAllowedSendMessages' name="daysAllowedSendMessages" multiple="multiple" class="hidden"></select>
 	<select id='templateMessages' name="templateMessages" multiple="multiple" class="hidden"></select>
@@ -41,14 +41,24 @@
 	</tr>
 	
 	<tr>
+		<td><label>$i18n.getString( "display_generate_event_box_after_completed" )</label></td>
+		<td><input type="checkbox" id="displayGenerateEventBox" name="displayGenerateEventBox" value='true' checked disabled /></td>
+	</tr>
+	
+	<tr>
 		<td><label>$i18n.getString( "standard_interval_days" )</label></td>
-		<td><input type="text" id="standardInterval" name="standardInterval" class="{validate:{required:true,number:true}}" disabled /></td>
+		<td><input type="text" id="standardInterval" name="standardInterval" class="{validate:{number:true}}" disabled /></td>
 	</tr>
 	
 	<tr><th colspan="2">$i18n.getString( "form_details" )</th></tr>
 	
 	<tr>
-		<td><label>$i18n.getString( "report_date_description" )<em title="$i18n.getString( 'required' )" class="required">*</em></label></td>
+		<td><label>$i18n.getString( "complete_allowed_only_if_validation_passes" )</label></td>
+		<td><input type="checkbox" id="validCompleteOnly" name="validCompleteOnly" value="true" /></td>
+	</tr>
+	
+	<tr>
+		<td><label>$i18n.getString( "report_date_description" ) <em title="$i18n.getString( 'required' )" class="required">*</em></label></td>
 		<td><input type="text" id="reportDateDescription" name="reportDateDescription" class="{validate:{required:true}}" /></td>
 	</tr>
 	
@@ -70,6 +80,7 @@
 			<select id="selectedDataElementsValidator" name='selectedDataElementsValidator' multiple="multiple" class="hidden" ></select>
 			<select id="compulsories" name='compulsories' multiple="multiple" class="hidden"></select>     
 			<select id="allowProvidedElsewhere" name='allowProvidedElsewhere' multiple="multiple" class="hidden"></select>     
+			<select id="displayInReports" name='displayInReports' multiple="multiple" class="hidden"></select>     
 		</th>
       </tr>
     </thead>
@@ -95,12 +106,14 @@
 						<col/>
 						<col style="width:20px;"/>
 						<col style="width:20px;"/>
+						<col style="width:20px;"/>
 					</colgroup>
 					<thead>
 						<tr>
 							<th>$i18n.getString( "dataelement" )</th>
 							<th>$i18n.getString( "compulsory" )</th>
 							<th>$i18n.getString( "allow_provided_elsewhere" )</th>
+							<th>$i18n.getString( "display_in_reports" )</th>
 					</thead>
 					<tbody id="selectedList"></tbody>
 				</table>

@@ -27,12 +27,12 @@ package org.hisp.dhis.mapping;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import org.hisp.dhis.aggregation.AggregatedMapValue;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
-import org.hisp.dhis.user.User;
-
-import java.util.Collection;
-import java.util.Set;
 
 /**
  * @author Jan Henrik Overland
@@ -132,17 +132,13 @@ public interface MappingService
     
     Collection<Map> getSystemAndUserMaps();
     
+    List<Map> getAccessibleMapsBetweenLikeName( String name, int first, int max );
+    
     // -------------------------------------------------------------------------
     // MapView
     // -------------------------------------------------------------------------
 
     int addMapView( MapView mapView );
-
-    void addMapView( String name, boolean system, String mapValueType, Integer indicatorGroupId, Integer indicatorId,
-                     Integer dataElementGroupId, Integer dataElementId, String periodTypeName, Integer periodId,
-                     Integer parentOrganisationUnitId, Integer organisationUnitLevel, String mapLegendType, Integer method,
-                     Integer classes, String bounds, String colorLow, String colorHigh, Integer mapLegendSetId, Integer radiusLow,
-                     Integer radiusHigh, String longitude, String latitude, int zoom );
 
     void updateMapView( MapView mapView );
 
@@ -157,8 +153,6 @@ public interface MappingService
     MapView getIndicatorLastYearMapView( String indicatorUid, String organisationUnitUid, int level );
 
     Collection<MapView> getAllMapViews();
-        
-    Collection<MapView> getMapViewsByUser( User user );
     
     Collection<MapView> getMapViewsBetweenByName( String name, int first, int max );
 

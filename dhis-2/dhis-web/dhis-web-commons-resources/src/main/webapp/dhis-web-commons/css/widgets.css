@@ -476,6 +476,12 @@ div.inputCriteria
   border-radius: 3px;
 }
 
+.formInputField
+{
+  border: 1px solid #aaa;
+  padding: 4px 1px;
+}
+
 /*----------------------------------------------------------------------------*/
 /* Settings                                                                   */
 /*----------------------------------------------------------------------------*/
@@ -496,6 +502,12 @@ div.inputCriteria
 .setting input[type=text],input[type=password],select
 {
   width: 25em;
+}
+
+.setting textarea
+{
+  width: 25em;
+  height: 8em;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -605,7 +617,7 @@ ul.pageSizeSelection input
   margin-left: 16px; 
   border: 1px solid #D0D0D0; 
   border-radius: 2px; cursor: pointer;
-  width: 160px;
+  max-width: 160px;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -665,6 +677,40 @@ ul.pageSizeSelection input
 {
   text-decoration: none;
   background-color: #3674B3;
+}
+
+/*----------------------------------------------------------------------------*/
+/* Placeholders                                                               */
+/*----------------------------------------------------------------------------*/
+
+::-webkit-input-placeholder
+{
+  color: #777;
+}
+
+input:-moz-placeholder
+{
+  color: #777;
+}
+
+/*----------------------------------------------------------------------------*/
+/* Profile                                                                    */
+/*----------------------------------------------------------------------------*/
+
+#updateProfileHeader
+{
+  display: inline-block;
+  font-size: 14pt;
+  color: #606060;
+  padding: 0 0 19px 0;
+}
+
+#updateProfileLink
+{
+  position: relative; 
+  top: -2px; 
+  display: inline-block; 
+  margin-left: 200px;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -212,48 +212,61 @@ public class HibernateDataElementStore
     {
         String hql = "select distinct de from DataElement de join de.dataSets ds where ds.id in (:ids)";
 
-        return sessionFactory.getCurrentSession().createQuery( hql ).setParameterList( "ids",
-            ConversionUtils.getIdentifiers( DataSet.class, dataSets ) ).list();
+        return sessionFactory.getCurrentSession().createQuery( hql )
+            .setParameterList( "ids", ConversionUtils.getIdentifiers( DataSet.class, dataSets ) ).list();
     }
 
-    public Map<Integer, Set<Integer>> getDataElementCategoryOptionCombos()
+    @SuppressWarnings( "unchecked" )
+    public Collection<DataElement> getDataElementsByAggregationLevel( int aggregationLevel )
     {
-        final String sql = "select de.dataelementid, coc.categoryoptioncomboid from dataelement de " +
-            "join categorycombos_optioncombos coc on de.categorycomboid=coc.categorycomboid";
-        
-        final Map<Integer, Set<Integer>> sets = new HashMap<Integer, Set<Integer>>();
-        
+        String hql = "from DataElement de join de.aggregationLevels al where al = :aggregationLevel";
+
+        return getQuery( hql ).setInteger( "aggregationLevel", aggregationLevel ).list();
+    }
+
+    public Map<String, Set<String>> getDataElementCategoryOptionCombos()
+    {
+        final String sql = "select de.uid, coc.uid " + "from dataelement de "
+            + "join categorycombos_optioncombos cc on de.categorycomboid = cc.categorycomboid "
+            + "join categoryoptioncombo coc on cc.categoryoptioncomboid = coc.categoryoptioncomboid";
+
+        final Map<String, Set<String>> sets = new HashMap<String, Set<String>>();
+
         jdbcTemplate.query( sql, new RowCallbackHandler()
         {
             @Override
             public void processRow( ResultSet rs )
                 throws SQLException
             {
-                int dataElementId = rs.getInt( 1 );
-                int categoryOptionComboId = rs.getInt( 2 );
-                
-                Set<Integer> set = sets.get( dataElementId ) != null ? sets.get( dataElementId ) : new HashSet<Integer>();
-                
-                set.add( categoryOptionComboId );                
-                sets.put( dataElementId, set );
+                String dataElement = rs.getString( 1 );
+                String categoryOptionCombo = rs.getString( 2 );
+
+                Set<String> set = sets.get( dataElement ) != null ? sets.get( dataElement ) : new HashSet<String>();
+
+                set.add( categoryOptionCombo );
+                sets.put( dataElement, set );
             }
         } );
-        
+
         return sets;
     }
-    
+
     @SuppressWarnings( "unchecked" )
     public Collection<DataElement> get( DataSet dataSet, String key, Integer max )
     {
         String hql = "select dataElement from DataSet dataSet inner join dataSet.dataElements as dataElement where dataSet.id = :dataSetId ";
-        if( key != null )
+
+        if ( key != null )
         {
             hql += " and lower(dataElement.name) like lower('%" + key + "%') ";
         }
-        
+
         Query query = getQuery( hql );
         query.setInteger( "dataSetId", dataSet.getId() );
-        query.setMaxResults( max );
+        if ( max != null )
+        {
+            query.setMaxResults( max );
+        }
         
         return query.list();
     }

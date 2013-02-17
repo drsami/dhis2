@@ -30,22 +30,27 @@ package org.hisp.dhis.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import org.apache.commons.lang.Validate;
-import org.hisp.dhis.common.view.BasicView;
 import org.hisp.dhis.common.view.DetailedView;
 import org.hisp.dhis.common.view.ExportView;
+import org.hisp.dhis.user.User;
+import org.hisp.dhis.user.UserGroupAccess;
 
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Bob Jolliffe
  */
-@JacksonXmlRootElement( localName = "identifiableObject", namespace = Dxf2Namespace.NAMESPACE )
+@JacksonXmlRootElement(localName = "identifiableObject", namespace = DxfNamespaces.DXF_2_0)
 public class BaseIdentifiableObject
     extends BaseLinkableObject
     implements IdentifiableObject
@@ -76,9 +81,29 @@ public class BaseIdentifiableObject
     protected String name;
 
     /**
+     * The date this object was created.
+     */
+    protected Date created;
+
+    /**
      * The date this object was last updated.
      */
     protected Date lastUpdated;
+
+    /**
+     * Access string for public access.
+     */
+    protected String publicAccess;
+
+    /**
+     * Owner of this object.
+     */
+    protected User user;
+
+    /**
+     * Access for userGroups
+     */
+    protected Set<UserGroupAccess> userGroupAccesses = new HashSet<UserGroupAccess>();
 
     /**
      * The i18n variant of the name. Should not be persisted.
@@ -105,6 +130,7 @@ public class BaseIdentifiableObject
         this.id = identifiableObject.getId();
         this.uid = identifiableObject.getUid();
         this.name = identifiableObject.getName();
+        this.created = identifiableObject.getCreated();
         this.lastUpdated = identifiableObject.getLastUpdated();
     }
 
@@ -133,8 +159,8 @@ public class BaseIdentifiableObject
         this.id = id;
     }
 
-    @JsonProperty( value = "id" )
-    @JacksonXmlProperty( isAttribute = true )
+    @JsonProperty(value = "id")
+    @JacksonXmlProperty(localName = "id", isAttribute = true)
     public String getUid()
     {
         return uid;
@@ -146,8 +172,7 @@ public class BaseIdentifiableObject
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, BasicView.class, ExportView.class} )
-    @JacksonXmlProperty( isAttribute = true )
+    @JacksonXmlProperty(isAttribute = true)
     public String getCode()
     {
         return code;
@@ -159,8 +184,7 @@ public class BaseIdentifiableObject
     }
 
     @JsonProperty
-    @JsonView( {DetailedView.class, BasicView.class, ExportView.class} )
-    @JacksonXmlProperty( isAttribute = true )
+    @JacksonXmlProperty(isAttribute = true)
     public String getName()
     {
         return name;
@@ -171,9 +195,26 @@ public class BaseIdentifiableObject
         this.name = name;
     }
 
+    @Override
+    public boolean haveUniqueNames()
+    {
+        return true;
+    }
+
     @JsonProperty
-    @JsonView( {DetailedView.class, BasicView.class, ExportView.class} )
-    @JacksonXmlProperty( isAttribute = true )
+    @JacksonXmlProperty(isAttribute = true)
+    public Date getCreated()
+    {
+        return created;
+    }
+
+    public void setCreated( Date created )
+    {
+        this.created = created;
+    }
+
+    @JsonProperty
+    @JacksonXmlProperty(isAttribute = true)
     public Date getLastUpdated()
     {
         return lastUpdated;
@@ -182,6 +223,49 @@ public class BaseIdentifiableObject
     public void setLastUpdated( Date lastUpdated )
     {
         this.lastUpdated = lastUpdated;
+    }
+
+    @Override
+    @JsonProperty
+    @JsonView({ DetailedView.class, ExportView.class })
+    @JacksonXmlProperty(namespace = DxfNamespaces.DXF_2_0)
+    public String getPublicAccess()
+    {
+        return publicAccess;
+    }
+
+    public void setPublicAccess( String publicAccess )
+    {
+        this.publicAccess = publicAccess;
+    }
+
+    @Override
+    @JsonProperty
+    @JsonView({ DetailedView.class, ExportView.class })
+    @JsonSerialize(as = BaseIdentifiableObject.class)
+    @JacksonXmlProperty(namespace = DxfNamespaces.DXF_2_0)
+    public User getUser()
+    {
+        return user;
+    }
+
+    public void setUser( User user )
+    {
+        this.user = user;
+    }
+
+    @JsonProperty
+    @JsonView({ DetailedView.class, ExportView.class })
+    @JacksonXmlElementWrapper(localName = "userGroupAccesses", namespace = DxfNamespaces.DXF_2_0)
+    @JacksonXmlProperty(localName = "userGroupAccess", namespace = DxfNamespaces.DXF_2_0)
+    public Set<UserGroupAccess> getUserGroupAccesses()
+    {
+        return userGroupAccesses;
+    }
+
+    public void setUserGroupAccesses( Set<UserGroupAccess> userGroupAccesses )
+    {
+        this.userGroupAccesses = userGroupAccesses;
     }
 
     public String getDisplayName()
@@ -205,6 +289,7 @@ public class BaseIdentifiableObject
         result = 31 * result + (code != null ? code.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (lastUpdated != null ? lastUpdated.hashCode() : 0);
+        result = 31 * result + (created != null ? created.hashCode() : 0);
 
         return result;
     }
@@ -216,7 +301,7 @@ public class BaseIdentifiableObject
         {
             return true;
         }
-        
+
         if ( o == null || getClass() != o.getClass() ) return false;
 
         BaseIdentifiableObject that = (BaseIdentifiableObject) o;
@@ -230,12 +315,12 @@ public class BaseIdentifiableObject
         {
             return false;
         }
-        
+
         if ( name != null ? !name.equals( that.name ) : that.name != null )
         {
             return false;
         }
-        
+
         return true;
     }
 
@@ -253,7 +338,14 @@ public class BaseIdentifiableObject
             setUid( CodeGenerator.generateCode() );
         }
 
-        setLastUpdated( new Date() );
+        Date date = new Date();
+
+        if ( created == null )
+        {
+            created = date;
+        }
+
+        setLastUpdated( date );
     }
 
     /**
@@ -318,8 +410,14 @@ public class BaseIdentifiableObject
     @Override
     public String toString()
     {
-        return "{" + "id=" + getId() + ", uid='" + getUid() + '\'' + ", code='" +
-            getCode() + '\'' + ", name='" + getName() + '\'' + ", lastUpdated=" + getLastUpdated() + "}";
+        return "IdentifiableObject{" +
+            "id=" + id +
+            ", uid='" + uid + '\'' +
+            ", code='" + code + '\'' +
+            ", name='" + name + '\'' +
+            ", created=" + created +
+            ", lastUpdated=" + lastUpdated +
+            '}';
     }
 
     @Override

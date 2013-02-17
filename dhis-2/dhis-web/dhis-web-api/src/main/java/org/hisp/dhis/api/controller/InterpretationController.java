@@ -42,7 +42,7 @@ import org.hisp.dhis.dataset.DataSet;
 import org.hisp.dhis.dataset.DataSetService;
 import org.hisp.dhis.interpretation.Interpretation;
 import org.hisp.dhis.interpretation.InterpretationService;
-import org.hisp.dhis.mapping.MapView;
+import org.hisp.dhis.mapping.Map;
 import org.hisp.dhis.mapping.MappingService;
 import org.hisp.dhis.organisationunit.OrganisationUnit;
 import org.hisp.dhis.organisationunit.OrganisationUnitService;
@@ -50,6 +50,8 @@ import org.hisp.dhis.period.Period;
 import org.hisp.dhis.period.PeriodType;
 import org.hisp.dhis.reporttable.ReportTable;
 import org.hisp.dhis.reporttable.ReportTableService;
+import org.hisp.dhis.user.CurrentUserService;
+import org.hisp.dhis.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -85,6 +87,9 @@ public class InterpretationController
     
     @Autowired
     private MappingService mappingService;
+    
+    @Autowired
+    private CurrentUserService currentUserService;
     
     @Override
     protected List<Interpretation> getEntityList( WebMetaData metaData, WebOptions options )
@@ -127,7 +132,16 @@ public class InterpretationController
             return;
         }
         
-        Interpretation interpretation = new Interpretation( chart, text );
+        User user = currentUserService.getCurrentUser();
+
+        // ---------------------------------------------------------------------
+        // When chart has user org unit, store current user org unit with
+        // interpretation so chart will refer to the original org unit later
+        // ---------------------------------------------------------------------
+
+        OrganisationUnit unit = chart.hasUserOrgUnit() && user.hasOrganisationUnit() ? user.getOrganisationUnit() : null;
+        
+        Interpretation interpretation = new Interpretation( chart, unit, text );
         
         interpretationService.saveInterpretation( interpretation );
 
@@ -136,18 +150,18 @@ public class InterpretationController
 
     @RequestMapping( value = "/map/{uid}", method = RequestMethod.POST, consumes = { "text/html", "text/plain" } )
     public void shareMapInterpretation( 
-        @PathVariable( "uid" ) String mapViewUid, 
+        @PathVariable( "uid" ) String mapUid, 
         @RequestBody String text, HttpServletResponse response ) throws IOException
     {
-        MapView mapView = mappingService.getMapView( mapViewUid );
+        Map map = mappingService.getMap( mapUid );
         
-        if ( mapView == null )
+        if ( map == null )
         {
-            ContextUtils.conflictResponse( response, "Map view identifier not valid: " + mapViewUid );
+            ContextUtils.conflictResponse( response, "Map identifier not valid: " + mapUid );
             return;
         }
         
-        Interpretation interpretation = new Interpretation( mapView, text );
+        Interpretation interpretation = new Interpretation( map, text );
         
         interpretationService.saveInterpretation( interpretation );
 
@@ -157,6 +171,7 @@ public class InterpretationController
     @RequestMapping( value = "/reportTable/{uid}", method = RequestMethod.POST, consumes = { "text/html", "text/plain" } )
     public void shareReportTableInterpretation( 
         @PathVariable( "uid" ) String reportTableUid, 
+        @RequestParam( value = "pe", required = false ) String isoPeriod,
         @RequestParam( value = "ou", required = false ) String orgUnitUid, 
         @RequestBody String text, HttpServletResponse response ) throws IOException
     {
@@ -167,7 +182,9 @@ public class InterpretationController
             ContextUtils.conflictResponse( response, "Report table identifier not valid: " + reportTableUid );
             return;
         }
-        
+
+        Period period = PeriodType.getPeriodFromIsoString( isoPeriod );
+                
         OrganisationUnit orgUnit = null;
         
         if ( orgUnitUid != null )
@@ -181,7 +198,7 @@ public class InterpretationController
             }
         }
         
-        Interpretation interpretation = new Interpretation( reportTable, orgUnit, text );
+        Interpretation interpretation = new Interpretation( reportTable, period, orgUnit, text );
         
         interpretationService.saveInterpretation( interpretation );
 

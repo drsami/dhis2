@@ -48,10 +48,11 @@
 	});
 	hideById('registrationDateTR');
 	hideById('mainLinkLbl');
+	jQuery('[name=mainPagelink]').html(i18n_main_form_link);
 </script>
 
 <h3>
-	<a href="javascript:loadPatientList();">$i18n.getString( 'patient_management' )</a>
+	<a name="mainPagelink" href="javascript:onClickBackBtn();">$i18n.getString( 'patient_management' )</a>
 	&#8226; <a href="javascript:showPatientDashboardForm($!patient.id);">$i18n.getString( 'patient_dashboard' )</a>
 	&#8226; $i18n.getString( "update_patient" )
 </h3>
@@ -61,17 +62,19 @@
 <input type="hidden" id="relationshipTypeId" name='relationshipTypeId' value="$!relationship.relationshipType.id"/>
 <input type="hidden" id="id" name="id" value="$patient.id">
 
-<table>		
-	<tr>
-		<th colspan="2" class="heading-column">$i18n.getString( "system_identifier" )</th>
-	</tr>	
-	<tr>
-		<td></td>
-		<td>$!systemIdentifier</td>
-	</tr>
-	<tr>
-		<td>&nbsp;</td>
-	</tr>	
+<table>	
+	#if($!systemIdentifier)
+		<tr>
+			<th colspan="2" class="heading-column">$i18n.getString( "system_identifier" )</th>
+		</tr>	
+		<tr>
+			<td></td>
+			<td>$!systemIdentifier</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+		</tr>	
+	#end
 
 	#parse( "/dhis-web-caseentry/patientForm.vm" )
 	
@@ -89,28 +92,28 @@
 <div id="representativeInfo" class='hidden text-column'>
 	<table>
 		<tr>
-			<td class="bold text-column">$i18n.getString("full_name"):</td>
-			<td>$!representative.getFullName()</td>
+			<td class="bold text-column">$i18n.getString("full_name"): </td>
+			<td>$encoder.htmlEncode($!representative.getFullName())</td>
 		</tr>
 		<tr>
-			<td class="bold text-column">$i18n.getString("relationship"):</td>
-			<td>$!relationship.relationshipType.aIsToB</td>
+			<td class="bold text-column">$i18n.getString("relationship"): </td>
+			<td>$encoder.htmlEncode($!relationship.relationshipType.aIsToB)</td>
 		</tr>
 		<tr>
-			<td class="bold text-column">$i18n.getString("gender"):</td>
-			<td> $!representative.gender</td>
+			<td class="bold text-column">$i18n.getString("gender"): </td>
+			<td>$!representative.gender</td>
 		</tr>
 		<tr>
-			<td class="bold text-column">$i18n.getString("date_of_birth"):</td>
+			<td class="bold text-column">$i18n.getString("date_of_birth"): </td>
 			<td>$!format.formatDate( $!representative.birthDate )</td>
 		</tr>
 		<tr>
-			<td class="bold text-column">$i18n.getString("age"):</td>
+			<td class="bold text-column">$i18n.getString("age"): </td>
 			<td> $!representative.getAge() </td>
 		</tr>
 		#foreach( $patientIdentifier in $representative.identifiers )
 		  <tr>  
-			<td class="bold text-column">#if( $patientIdentifier.identifierType )$patientIdentifier.identifierType.name: #else $i18n.getString("system_identifier"): #end</td>      
+			<td class="bold text-column">#if( $patientIdentifier.identifierType )$patientIdentifier.identifierType.displayName: #else $i18n.getString("system_identifier"): #end</td>      
 			  <td> $!patientIdentifier.identifier </td>
 		   </tr>
 		#end
@@ -118,13 +121,12 @@
 			<td class="bold text-column">$i18n.getString("enrolled_in_program"):</td>
 			<td>  
 				 #foreach( $program in $representative.programs )
-					#if( $velocityCount == 1 )
-						 $program.name
-					#else , $program.name 
+					$encoder.htmlEncode($program.displayName)
+					#if( $velocityCount > 1 )
+						<br>
 					#end
 				 #end  
 			</td>
 		</tr>
-			   
 	</table>
 </div>

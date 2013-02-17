@@ -1,7 +1,6 @@
 package org.hisp.dhis.datamart.crosstab;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.RandomStringUtils;
@@ -14,8 +13,6 @@ public class CrossTabStoreTest
     extends DhisTest
 {
     private CrossTabStore crossTabStore;
-    
-    private List<Integer> organisationUnits;
     
     private List<DataElementOperand> operands;
     
@@ -30,13 +27,11 @@ public class CrossTabStoreTest
     {
         crossTabStore = (CrossTabStore) getBean( CrossTabStore.ID );
         
-        organisationUnits = Arrays.asList( 3, 4, 5, 6 );
-        
         operands = new ArrayList<DataElementOperand>();
-        operands.add( new DataElementOperand( 1, 1 ) );
-        operands.add( new DataElementOperand( 1, 2 ) );
-        operands.add( new DataElementOperand( 2, 1 ) );
-        operands.add( new DataElementOperand( 2, 2 ) );        
+        operands.add( new DataElementOperand( "a", "a" ) );
+        operands.add( new DataElementOperand( "a", "b" ) );
+        operands.add( new DataElementOperand( "b", "a" ) );
+        operands.add( new DataElementOperand( "b", "b" ) );        
     }
 
     @Override
@@ -52,7 +47,7 @@ public class CrossTabStoreTest
     @Test
     public void testDropCrossTabTable()
     {
-        crossTabStore.createCrossTabTable( organisationUnits, key );
+        crossTabStore.createCrossTabTable( operands, key );
         
         crossTabStore.dropCrossTabTable( key );
     }

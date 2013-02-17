@@ -1,25 +1,35 @@
 
 <script>
-    $(document).bind('pagebeforecreate',function(){
+    $(document).bind('pagechange',function(){
+        $.mobile.loading( 'show' );
+
         $.ajax({
-            url: '../api/currentUser/inbox',
-            dataType: 'json',
-            async: false
+            url: '$contextPath/api/currentUser/inbox',
+            dataType: 'json'
         }).success(function(data) {
             if( data['messageConversations'] !== undefined ) {
                 $.each(data.messageConversations, function(i, item) {
                     if(item.read) {
                         $('#messageList').append('<li><a href="messages/' + item.id + '">' + item.name + '</a></li>');
                     } else {
-                        $('#messageList').append('<li><a href="messages/' + item.id + '">' + item.name + '<span class="ui-li-count">Unread</span></a></li>');
+                        $('#messageList').append('<li class="ui-btn-active"><a href="messages/' + item.id + '">' + item.name + '</a></li>');
                     }
                 });
             } else {
-                $('#messageList').append('<li>No messages</li>');
+                $('#messageList').append('<li>$i18n.getString("no_messages")</li>');
             }
         }).error(function() {
-            $.mobile.showPageLoadingMsg($.mobile.pageLoadErrorMessageTheme, "Unable to get inbox, please try again later", true);
-            setTimeout($.mobile.hidePageLoadingMsg, 1500);
+            $.mobile.loading( 'show', {
+                html: '<h1>$i18n.getString("unable_to_get_inbox")</h1>',
+                textVisible: true
+            });
+
+            setTimeout( function() {
+                $.mobile.loading( 'hide' );
+            }, 1500);
+        }).complete(function() {
+            $('section[data-role="content"] ul').listview('refresh');
+            $.mobile.loading( 'hide' );
         });
     });
 </script>
@@ -27,14 +37,14 @@
 <section data-role="page" id="messages-page" data-theme="c">
 
 	<header data-role="header" data-theme="b">
-        <h1 align="center"><img src="$baseUrl/../dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
-        <a href="index" data-icon="back">Back</a>
-        <a href="messages/new-message" data-icon="plus">New</a>
+        <h1 align="center"><img src="$contextPath/dhis-web-commons/css/light_blue/logo_banner.png" /></h1>
+        <a href="index" data-icon="back">$i18n.getString("back")</a>
+        <a href="messages/new-message" data-icon="plus">$i18n.getString("new")</a>
     </header>
 
 	<section data-role="content">
         <ul id="messageList" data-role="listview" data-inset="true" data-count-theme="b">
-            <li data-role="list-divider">Messages</li>
+            <li data-role="list-divider">$i18n.getString("messages")</li>
         </ul>
 	</section>
 

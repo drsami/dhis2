@@ -7,10 +7,12 @@
 	"displayProvidedOtherFacility": "$!program.displayProvidedOtherFacility",
 	"displayIncidentDate": "$!program.displayIncidentDate",
 	"generatedByEnrollmentDate": "$!program.generatedByEnrollmentDate",
+	"ignoreOverdueEvents": "$!program.ignoreOverdueEvents",
 	"dateOfEnrollmentDescription": "$!encoder.jsEncode( ${program.dateOfEnrollmentDescription} )",
 	"dateOfIncidentDescription": "$!encoder.jsEncode( ${program.dateOfIncidentDescription} )",
 	"programStageCount": "${program.programStages.size()}",
 	"noAttributes": "$!program.patientAttributes.size()",
-	"noIdentifierTypes": "$!program.patientIdentifierTypes.size()"
+	"noIdentifierTypes": "$!program.patientIdentifierTypes.size()",
+	"blockEntryForm": "$!program.blockEntryForm"
   }
 }

@@ -1,4 +1,3 @@
-
 function organisationUnitSelected( orgUnits, orgUnitNames )
 {	
 	showById('selectDiv');
@@ -37,6 +36,7 @@ function listAllPatient()
 			listAll:true
 		},
 		function(){
+			setTableStyles();
 			statusSearching = 0;
 			showById('listPatientDiv');
 			jQuery('#loaderDiv').hide();
@@ -51,6 +51,7 @@ function advancedSearch( params )
 		type:"POST",
 		data: params,
 		success: function( html ){
+				setTableStyles();
 				statusSearching = 1;
 				setInnerHTML( 'listPatientDiv', html );
 				showById('listPatientDiv');
@@ -81,7 +82,7 @@ function showAddPatientForm()
 	hideById('migrationPatientDiv');
 	
 	jQuery('#loaderDiv').show();
-	jQuery('#editPatientDiv').load('showAddPatientForm.action'
+	jQuery('#editPatientDiv').load('showAddPatientForm.action?programId=' + getFieldValue('programIdAddPatient')
 		, function()
 		{
 			showById('editPatientDiv');
@@ -90,18 +91,21 @@ function showAddPatientForm()
 	
 }
 
-function validateAddPatient()
+function validateAddPatient( isContinue )
 {	
 	$("#patientForm :input").attr("disabled", true);
+	$("#patientForm").find("select").attr("disabled", true);
 	$.ajax({
 		type: "POST",
 		url: 'validatePatient.action',
 		data: getParamsForDiv('patientForm'),
-		success:addValidationCompleted
+		success: function(data){
+			addValidationCompleted(data,isContinue);
+		}
     });	
 }
 
-function addValidationCompleted( data )
+function addValidationCompleted( data, isContinue )
 {
     var type = jQuery(data).find('message').attr('type');
 	var message = jQuery(data).find('message').text();
@@ -109,7 +113,7 @@ function addValidationCompleted( data )
 	if ( type == 'success' )
 	{
 		removeDisabledIdentifier( );
-		addPatient();
+		addPatient( isContinue );
 	}
 	else
 	{
@@ -127,19 +131,54 @@ function addValidationCompleted( data )
 		}
 			
 		$("#patientForm :input").attr("disabled", false);
+		$("#patientForm").find("select").attr("disabled", false);
 	}
 }
 
-function addPatient()
-{
+function addPatient( isContinue )
+{		
+	var params = 'programId=' + getFieldValue('programIdAddPatient') + '&' + getParamsForDiv('patientForm');
 	$.ajax({
       type: "POST",
       url: 'addPatient.action',
-      data: getParamsForDiv('patientForm'),
+      data: params,
       success: function(json) {
-		var patientId = json.message.split('_')[0];
-		jQuery('#resultSearchDiv').dialog('close');
-		showPatientDashboardForm( patientId );
+		if(json.response=='success')
+		{
+			var patientId = json.message.split('_')[0];
+			var programId = getFieldValue('programIdAddPatient');
+			var	dateOfIncident = jQuery('#patientForm [id=dateOfIncident]').val();
+			var enrollmentDate = jQuery('#patientForm [id=enrollmentDate]').val();
+					
+			if( getFieldValue('programIdAddPatient')!='' && enrollmentDate != '')
+			{
+				jQuery.postJSON( "saveProgramEnrollment.action",
+				{
+					patientId: patientId,
+					programId: programId,
+					dateOfIncident: dateOfIncident,
+					enrollmentDate: enrollmentDate
+				}, 
+				function( json ) 
+				{    
+					if(isContinue){
+						jQuery("#patientForm :input").each( function(){
+							if( $(this).attr('id') != "registrationDate" 
+								&& $(this).attr('type') != 'button'
+								&& $(this).attr('type') != 'submit' )
+							{
+								$(this).val("");
+							}
+						});
+						$("#patientForm :input").attr("disabled", false);
+						$("#patientForm").find("select").attr("disabled", false);
+					}
+					else{
+						showPatientDashboardForm( patientId );
+					}
+				});
+			}
+		}
       }
      });
     return false;
@@ -162,6 +201,7 @@ function onClickBackBtn()
 	hideById('addRelationshipDiv');
 	hideById('migrationPatientDiv');
 	setInnerHTML('patientDashboard','');
+	loadPatientList();
 }
 
 function loadPatientList()
@@ -220,6 +260,7 @@ function loadDataEntry( programStageInstanceId )
 			programStageInstanceId: programStageInstanceId
 		},function( )
 		{
+			showById('postCommentTbl');
 			var executionDate = jQuery('#executionDate').val();
 			var completed = jQuery('#entryFormContainer input[id=completed]').val();
 			var irregular = jQuery('#entryFormContainer input[id=irregular]').val();

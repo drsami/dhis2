@@ -97,12 +97,9 @@ function updateProvidingFacility( dataElementId, checkField )
 {
 	var programStageId = byId( 'programStageId' ).value;
 	var checked= checkField.checked;
-	var spanField = byId( 'span_' + checkField.id );
-	spanField.style.backgroundColor = SAVING_COLOR;
-    
+
     var facilitySaver = new FacilitySaver( dataElementId, checked, SUCCESS_COLOR );
-    facilitySaver.save();
-    
+    facilitySaver.save();    
 }
 
 function saveExecutionDate( programId, programStageInstanceId, field )
@@ -209,7 +206,7 @@ function getNextEntryField( field )
 function ValueSaver( dataElementId_, value_, dataElementType_, resultColor_  )
 {
     var dataElementId = dataElementId_;
-	var providedElsewhereId = getFieldValue('programStageId') + "_" + dataElementId_ + "_facility";
+	var providedElsewhereId = getFieldValue('programStageId') + "-" + dataElementId_ + "-facility";
 	var value = value_;
 	var type = dataElementType_;
     var resultColor = resultColor_;
@@ -305,35 +302,16 @@ function FacilitySaver( dataElementId_, providedElsewhere_, resultColor_ )
     {
         var codeElement = rootElement.getElementsByTagName( 'code' )[0];
         var code = parseInt( codeElement.firstChild.nodeValue );
-        if ( code == 0 )
+		
+        if ( code != 0 )
         {
-            markValue( SUCCESS );
-        }
-        else
-        {
-            markValue( ERROR );
             window.alert( i18n_saving_value_failed_status_code + '\n\n' + code );
         }
     }
 
     function handleHttpError( errorCode )
     {
-        markValue( ERROR );
         window.alert( i18n_saving_value_failed_error_code + '\n\n' + errorCode );
-    }
-
-    function markValue( result )
-    {
-		var programStageId = byId( 'programStageId' ).value;
-		var element = byId('span_' + programStageId + '_' + dataElementId + '_facility');
-        if( result == SUCCESS )
-        {
-            element.style.backgroundColor = SUCCESS_COLOR;
-        }
-        else if( result == ERROR )
-        {
-            element.style.backgroundColor = ERROR_COLOR;
-        }
     }
 }
 
@@ -360,6 +338,7 @@ function ExecutionDateSaver( programId_, programStageInstanceId_, executionDate_
 					var box = jQuery(".stage-object-selected");
 					var boxName = box.attr('psname') + "\n" + executionDate;
 					box.val( boxName );
+					box.attr( 'reportDate', executionDate );
 					box.css('border-color', COLOR_LIGHTRED);
 					box.css('background-color', COLOR_LIGHT_LIGHTRED);
 					disableCompletedButton(false);
@@ -443,7 +422,45 @@ function toggleContentForReportDate(show)
     }
 }
 
-function doComplete( isCreateEvent )
+function doComplete(isCreateEvent){
+	
+	if(getFieldValue('validCompleteOnly')=="true")
+	{
+		$('#loading-bar').show();
+		$('#loading-bar').dialog({
+			modal:true,
+			width: 330
+		});
+		$("#loading-bar").siblings(".ui-dialog-titlebar").hide(); 
+		
+		jQuery.get( 'validateProgram.action'
+			, function(html){ 
+				$( "#loading-bar" ).dialog( "close" );
+				$('#validateProgramDiv').html(html);
+				if(getFieldValue('violateValidation')=='true'){
+					$('#validateProgramDiv' ).dialog({
+						title: i18n_violate_validation,
+						maximize: true, 
+						closable: true,
+						modal:true,
+						overlay:{background:'#000000', opacity:0.1},
+						width: 800,
+						height: 450
+					});
+				}
+				else{
+					hideById('validateProgramDiv');
+					runCompleteEvent( isCreateEvent );
+				}
+		});
+	}
+	else
+	{
+		runCompleteEvent( isCreateEvent );
+	}
+}
+
+function runCompleteEvent( isCreateEvent )
 {
     var flag = false;
     jQuery("#dataEntryFormDiv input[name='entryfield'],select[name='entryselect']").each(function(){
@@ -483,8 +500,9 @@ function doComplete( isCreateEvent )
 
 					disableCompletedButton(true);
 					var irregular = jQuery('#entryFormContainer [name=irregular]').val();
+					var displayGenerateEventBox = jQuery('#entryFormContainer [name=displayGenerateEventBox]').val();
 					var programInstanceId = jQuery('#entryFormContainer [id=programInstanceId]').val();
-					if( irregular == 'true' )
+					if( irregular == 'true' && displayGenerateEventBox=="true" )
 					{
 						var programStageId = jQuery(".stage-object-selected").attr('psid');
 						showCreateNewEvent( programInstanceId, programStageId );
@@ -497,8 +515,17 @@ function doComplete( isCreateEvent )
 						jQuery('#completedList' ).append('<option value="' +  programInstanceId + '">' + getInnerHTML('infor_' + programInstanceId ) + '</option>');
 					}
 					
+					var eventBox = jQuery('#ps_' + getFieldValue('programStageInstanceId'));
+					eventBox.attr('status',1);
+					resetActiveEvent( eventBox.attr("pi") );
+			
+			
+					var blocked = jQuery('#entryFormContainer [id=blockEntryForm]').val();
+					if( blocked=='true' ){
+						blockEntryForm();
+					}
+					
 					hideLoader();
-					hideById('contentDiv');
 					
 					if( isCreateEvent ){
 						showAddEventForm();
@@ -521,9 +548,40 @@ function doUnComplete( isCreateEvent )
 				jQuery(".stage-object-selected").css('border-color', COLOR_LIGHTRED);
 				jQuery(".stage-object-selected").css('background-color', COLOR_LIGHT_LIGHTRED);
 				disableCompletedButton(false);
+				var eventBox = jQuery('#ps_' + getFieldValue('programStageInstanceId'));
+				eventBox.attr('status',2);
+				resetActiveEvent( eventBox.attr("pi") );
+				
+				unblockEntryForm();
 			});
 	}
     
+}
+
+
+function blockEntryForm()
+{
+	jQuery("#entryFormContainer :input").each(function()
+	{
+		disable($(this).attr('id'));
+	});
+	jQuery("#entryFormContainer").find(".ui-combobox").each(function()
+	{
+		jQuery(this).addClass('hidden');
+	});
+	
+}
+
+function unblockEntryForm()
+{
+	jQuery("#entryFormContainer :input").each(function()
+	{
+		enable($(this).attr('id'));
+	});
+	jQuery("#entryFormContainer").find(".ui-combobox").each(function()
+	{
+		jQuery(this).removeClass('hidden');
+	});
 }
 
 TOGGLE = {
@@ -573,6 +631,10 @@ function entryFormContainerOnReady()
 			{
 				autocompletedField(jQuery(this).attr('id'));
 			}
+			else if( jQuery(this).attr( 'username' )!= null && jQuery(this).attr( 'username' )== 'true' )
+			{
+				autocompletedUsernameField(jQuery(this).attr('id'));
+			}
 		});
     }
 }
@@ -583,21 +645,33 @@ function entryFormContainerOnReady()
 
 function runValidation()
 {
-	$('#validateProgramDiv' ).load( 'validateProgram.action' ).dialog({
-			title: i18n_violate_validation,
-			maximize: true, 
-			closable: true,
-			modal:true,
-			overlay:{background:'#000000', opacity:0.1},
-			width: 800,
-			height: 450
+	$('#loading-bar').show();
+	$('#loading-bar').dialog({
+		modal:true,
+		width: 330
+	});
+	$("#loading-bar").siblings(".ui-dialog-titlebar").hide(); 
+	
+	$('#validateProgramDiv' ).load( 'validateProgram.action',
+		function(){
+			$( "#loading-bar" ).dialog( "close" );
+			
+			$('#validateProgramDiv' ).dialog({
+				title: i18n_violate_validation,
+				maximize: true, 
+				closable: true,
+				modal:true,
+				overlay:{background:'#000000', opacity:0.1},
+				width: 800,
+				height: 450
+			});
 		});
 }
-
 
 function autocompletedField( idField )
 {
 	var input = jQuery( "#" +  idField );
+	input.parent().width( input.width() + 200 );
 	var dataElementId = input.attr('id').split('-')[1];
 	
 	input.autocomplete({
@@ -607,6 +681,7 @@ function autocompletedField( idField )
 			$.ajax({
 				url: "getOptions.action?id=" + dataElementId + "&query=" + input.val(),
 				dataType: "json",
+				cache: true,
 				success: function(data) {
 					response($.map(data.options, function(item) {
 						return {
@@ -619,9 +694,17 @@ function autocompletedField( idField )
 		},
 		minLength: 0,
 		select: function( event, ui ) {
-			input.val(ui.item.value);
-			if(!unSave)
+			var fieldValue = ui.item.value;
+			
+			if ( !dhis2.trigger.invoke( "caseentry-value-selected", [dataElementId, fieldValue] ) ) {
+				input.val( "" );
+				return false;
+			}
+			
+			input.val( fieldValue );			
+			if ( !unSave ) {
 				saveVal( dataElementId );
+			}
 			input.autocomplete( "close" );
 		},
 		change: function( event, ui ) {
@@ -672,3 +755,92 @@ function autocompletedField( idField )
 			input.focus();
 		});
 }
+
+function autocompletedUsernameField( idField )
+{
+	var input = jQuery( "#" +  idField );
+	input.parent().width( input.width() + 200 );
+	var dataElementId = input.attr('id').split('-')[1];
+	
+	input.autocomplete({
+		delay: 0,
+		minLength: 0,
+		source: function( request, response ){
+			$.ajax({
+				url: "getUsernameList.action?query=" + input.val(),
+				dataType: "json",
+				cache: true,
+				success: function(data) {
+					response($.map(data.usernames, function(item) {
+						return {
+							label: item.u,
+							id: item.u
+						};
+					}));
+				}
+			});
+		},
+		minLength: 0,
+		select: function( event, ui ) {
+			var fieldValue = ui.item.value;
+			
+			if ( !dhis2.trigger.invoke( "caseentry-value-selected", [dataElementId, fieldValue] ) ) {
+				input.val( "" );
+				return false;
+			}
+			
+			input.val( fieldValue );			
+			if ( !unSave ) {
+				saveVal( dataElementId );
+			}
+			input.autocomplete( "close" );
+		},
+		change: function( event, ui ) {
+			if ( !ui.item ) {
+				var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( $(this).val() ) + "$", "i" ),
+					valid = false;
+				if ( !valid ) {
+					$( this ).val( "" );
+					if(!unSave)
+						saveVal( dataElementId );
+					input.data( "autocomplete" ).term = "";
+					return false;
+				}
+			}
+		}
+	})
+	.addClass( "ui-widget" );
+	
+	input.data( "autocomplete" )._renderItem = function( ul, item ) {
+		return $( "<li></li>" )
+			.data( "item.autocomplete", item )
+			.append( "<a>" + item.label + "</a>" )
+			.appendTo( ul );
+	};
+		
+	var wrapper = this.wrapper = $( "<span style='width:200px'>" )
+			.addClass( "ui-combobox" )
+			.insertAfter( input );
+						
+	var button = $( "<a style='width:20px; margin-bottom:-5px;height:20px;'>" )
+		.attr( "tabIndex", -1 )
+		.attr( "title", i18n_show_all_items )
+		.appendTo( wrapper )
+		.button({
+			icons: {
+				primary: "ui-icon-triangle-1-s"
+			},
+			text: false
+		})
+		.addClass('small-button')
+		.click(function() {
+			if ( input.autocomplete( "widget" ).is( ":visible" ) ) {
+				input.autocomplete( "close" );
+				return;
+			}
+			$( this ).blur();
+			input.autocomplete( "search", "" );
+			input.focus();
+		});
+}
+

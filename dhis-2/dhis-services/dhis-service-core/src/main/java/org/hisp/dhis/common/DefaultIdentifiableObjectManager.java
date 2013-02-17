@@ -201,7 +201,7 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getAllSorted();
+        return (Collection<T>) store.getAllOrderedName();
     }
 
     @Override
@@ -215,7 +215,7 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getLikeName( name );
+        return (Collection<T>) store.getAllLikeName( name );
     }
 
     @Override
@@ -229,7 +229,7 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getBetween( first, max );
+        return (Collection<T>) store.getAllOrderedName( first, max );
     }
 
     @Override
@@ -243,7 +243,7 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getBetweenByName( name, first, max );
+        return (Collection<T>) store.getAllLikeNameOrderedName( name, first, max );
     }
 
     @Override
@@ -257,7 +257,7 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getByLastUpdated( lastUpdated );
+        return (Collection<T>) store.getAllGeLastUpdated( lastUpdated );
     }
 
     @Override
@@ -271,7 +271,27 @@ public class DefaultIdentifiableObjectManager
             return new ArrayList<T>();
         }
 
-        return (Collection<T>) store.getByLastUpdatedSorted( lastUpdated );
+        return (Collection<T>) store.getAllGeLastUpdatedOrderedName( lastUpdated );
+    }
+
+    @Override
+    public <T extends IdentifiableObject> Set<Integer> convertToId( Class<T> clazz, Collection<String> uids )
+    {
+        GenericIdentifiableObjectStore<IdentifiableObject> store = getIdentifiableObjectStore( clazz );
+        
+        Set<Integer> ids = new HashSet<Integer>();
+        
+        for ( String uid : uids )
+        {
+            IdentifiableObject object = store.getByUid( uid );
+            
+            if ( object != null )
+            {
+                ids.add( object.getId() );
+            }
+        }
+        
+        return ids;
     }
     
     @Override

@@ -27,13 +27,10 @@
 
 package org.hisp.dhis.patient.action.schedule;
 
-import static org.hisp.dhis.setting.SystemSettingManager.KEY_AGGREGATE_QUERY_BUILDER_ORGUNITGROUPSET_AGG_LEVEL;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.hisp.dhis.patient.scheduling.CaseAggregateConditionSchedulingManager;
-import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.system.scheduling.Scheduler;
 
 import com.opensymphony.xwork2.Action;
@@ -46,20 +43,9 @@ import com.opensymphony.xwork2.Action;
 public class ScheduleCaseAggregateConditionAction
     implements Action
 {
-    private static final String STRATEGY_LAST_12_DAILY = "last12Daily";
-
-    private static final String STRATEGY_LAST_6_DAILY_6_TO_12_WEEKLY = "last6Daily6To12Weekly";
-
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
-
-    private SystemSettingManager systemSettingManager;
-
-    public void setSystemSettingManager( SystemSettingManager systemSettingManager )
-    {
-        this.systemSettingManager = systemSettingManager;
-    }
 
     private CaseAggregateConditionSchedulingManager schedulingManager;
 
@@ -77,20 +63,6 @@ public class ScheduleCaseAggregateConditionAction
     public void setExecute( boolean execute )
     {
         this.execute = execute;
-    }
-
-    private Integer orgUnitGroupSetAggLevel;
-
-    public void setOrgUnitGroupSetAggLevel( Integer orgUnitGroupSetAggLevel )
-    {
-        this.orgUnitGroupSetAggLevel = orgUnitGroupSetAggLevel;
-    }
-
-    private String aggQueryBuilderStrategy;
-
-    public void setAggQueryBuilderStrategy( String aggQueryBuilderStrategy )
-    {
-        this.aggQueryBuilderStrategy = aggQueryBuilderStrategy;
     }
 
     // -------------------------------------------------------------------------
@@ -125,9 +97,6 @@ public class ScheduleCaseAggregateConditionAction
         }
         else
         {
-            systemSettingManager.saveSystemSetting( KEY_AGGREGATE_QUERY_BUILDER_ORGUNITGROUPSET_AGG_LEVEL,
-                orgUnitGroupSetAggLevel );
-
             if ( Scheduler.STATUS_RUNNING.equals( schedulingManager.getTaskStatus() ) )
             {
                 schedulingManager.stopTasks();
@@ -136,20 +105,8 @@ public class ScheduleCaseAggregateConditionAction
             {
                 Map<String, String> keyCronMap = new HashMap<String, String>();
 
-                if ( STRATEGY_LAST_12_DAILY.equals( aggQueryBuilderStrategy ) )
-                {
-                    keyCronMap.put(
-                        CaseAggregateConditionSchedulingManager.TASK_AGGREGATE_QUERY_BUILDER_LAST_12_MONTHS,
-                        Scheduler.CRON_DAILY_0AM );
-                }
-                else if ( STRATEGY_LAST_6_DAILY_6_TO_12_WEEKLY.equals( aggQueryBuilderStrategy ) )
-                {
-                    keyCronMap.put( CaseAggregateConditionSchedulingManager.TASK_AGGREGATE_QUERY_BUILDER_LAST_6_MONTS,
-                        Scheduler.CRON_DAILY_0AM_EXCEPT_SUNDAY );
-                    keyCronMap.put(
-                        CaseAggregateConditionSchedulingManager.TASK_AGGREGATE_QUERY_BUILDER_FROM_6_TO_12_MONTS,
-                        Scheduler.CRON_WEEKLY_SUNDAY_0AM );
-                }
+                keyCronMap.put( CaseAggregateConditionSchedulingManager.TASK_AGGREGATE_QUERY_BUILDER,
+                    Scheduler.CRON_DAILY_0AM );
 
                 schedulingManager.scheduleTasks( keyCronMap );
             }

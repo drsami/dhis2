@@ -169,6 +169,20 @@ public class AddProgramAction
         this.generateBydEnrollmentDate = generateBydEnrollmentDate;
     }
 
+    private Boolean ignoreOverdueEvents;
+
+    public void setIgnoreOverdueEvents( Boolean ignoreOverdueEvents )
+    {
+        this.ignoreOverdueEvents = ignoreOverdueEvents;
+    }
+
+    private Boolean blockEntryForm;
+
+    public void setBlockEntryForm( Boolean blockEntryForm )
+    {
+        this.blockEntryForm = blockEntryForm;
+    }
+
     // -------------------------------------------------------------------------
     // Action implementation
     // -------------------------------------------------------------------------
@@ -178,8 +192,10 @@ public class AddProgramAction
     {
         displayProvidedOtherFacility = (displayProvidedOtherFacility == null) ? false : displayProvidedOtherFacility;
         displayIncidentDate = (displayIncidentDate == null) ? false : displayIncidentDate;
-        generateBydEnrollmentDate= (generateBydEnrollmentDate == null) ? false : generateBydEnrollmentDate;
-        
+        generateBydEnrollmentDate = (generateBydEnrollmentDate == null) ? false : generateBydEnrollmentDate;
+        ignoreOverdueEvents = (ignoreOverdueEvents == null) ? false : ignoreOverdueEvents;
+        blockEntryForm = (blockEntryForm == null) ? false : blockEntryForm;
+
         Program program = new Program();
 
         program.setName( name );
@@ -190,7 +206,17 @@ public class AddProgramAction
         program.setType( type );
         program.setDisplayProvidedOtherFacility( displayProvidedOtherFacility );
         program.setDisplayIncidentDate( displayIncidentDate );
-        program.setGeneratedByEnrollmentDate( generateBydEnrollmentDate );
+        program.setBlockEntryForm( blockEntryForm );
+        if ( type == Program.MULTIPLE_EVENTS_WITH_REGISTRATION )
+        {
+            program.setGeneratedByEnrollmentDate( generateBydEnrollmentDate );
+            program.setIgnoreOverdueEvents( ignoreOverdueEvents );
+        }
+        else
+        {
+            program.setGeneratedByEnrollmentDate( true );
+            program.setIgnoreOverdueEvents( false );
+        }
 
         List<PatientIdentifierType> identifierTypes = new ArrayList<PatientIdentifierType>();
         List<PatientAttribute> patientAttributes = new ArrayList<PatientAttribute>();

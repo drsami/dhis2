@@ -28,6 +28,7 @@ function exportPDF( type )
 
 function changeValueType( value )
 {
+	enable('aggregationOperatorSelect');
     if ( value == 'int' )
     {
 		showById( 'numberTypeTR' );
@@ -38,8 +39,12 @@ function changeValueType( value )
         disable( 'zeroIsSignificant' );
 		hideById( 'numberTypeTR' );
 		hideById( 'textTypeTR' );
-		if( value=='string'){
+		disable('aggregationOperatorSelect');
+		if( value=='string' ){
 			showById( 'textTypeTR' );
+		}
+		else if(value=='bool'){
+			enable('aggregationOperatorSelect');
 		}
     }
 
@@ -92,7 +97,8 @@ function showDataElementDetails( dataElementId )
 			'bool' : i18n_yes_no,
 			'trueOnly' : i18n_yes_only,
 			'string' : i18n_text,
-			'date' : i18n_date
+			'date' : i18n_date,
+			'username' : i18n_user_name
 		};
 		var type = json.dataElement.valueType;
 		setInnerHTML( 'typeField', typeMap[type] );
@@ -139,3 +145,13 @@ function removeDataElement( dataElementId, dataElementName )
     removeItem( dataElementId, dataElementName, i18n_confirm_delete, 'removeDataElement.action' );
 }
 
+function domainTypeChange( domainType )
+{
+	if( domainType=='aggregate'){
+		enable('selectedCategoryComboId');
+	}
+	else{
+		setFieldValue('selectedCategoryComboId', getFieldValue('defaultCategoryCombo'));
+		disable('selectedCategoryComboId');
+	}
+}

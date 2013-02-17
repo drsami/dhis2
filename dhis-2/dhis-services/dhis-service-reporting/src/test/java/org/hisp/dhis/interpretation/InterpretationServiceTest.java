@@ -27,10 +27,10 @@ package org.hisp.dhis.interpretation;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -80,11 +80,11 @@ public class InterpretationServiceTest
         setDependency( interpretationService, "currentUserService", new MockCurrentUserService( userA ), CurrentUserService.class );
         
         chartA = new Chart( "ChartA" );
-        chartService.saveChart( chartA );
+        chartService.addChart( chartA );
         
-        interpretationA = new Interpretation( chartA, "Interpration of chart A" );
-        interpretationB = new Interpretation( chartA, "Interpration of chart B" );
-        interpretationC = new Interpretation( chartA, "Interpration of chart C" );
+        interpretationA = new Interpretation( chartA, null, "Interpration of chart A" );
+        interpretationB = new Interpretation( chartA, null, "Interpration of chart B" );
+        interpretationC = new Interpretation( chartA, null, "Interpration of chart C" );
     }
     
     @Test
