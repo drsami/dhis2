@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
 import org.hisp.dhis.analytics.DataQueryParams;
@@ -68,6 +69,8 @@ public class JdbcAnalyticsTableManager
     // Implementation
     // -------------------------------------------------------------------------
     
+    //TODO use statement builder for double column type
+    
     public String getTableName()
     {
         return "analytics";
@@ -94,17 +97,29 @@ public class JdbcAnalyticsTableManager
     }
     
     @Async
-    public Future<?> populateTableAsync( String tableName, Period period )
+    public Future<?> populateTableAsync( ConcurrentLinkedQueue<String> tables )
     {
-        Date startDate = period.getStartDate();
-        Date endDate = period.getEndDate();
-        
-        populateTable( tableName, startDate, endDate, "cast(dv.value as double precision)", "int", "dv.value != ''" );
-        
-        populateTable( tableName, startDate, endDate, "1" , "bool", "dv.value = 'true'" );
-
-        populateTable( tableName, startDate, endDate, "0" , "bool", "dv.value = 'false'" );
-        
+        taskLoop : while ( true )
+        {
+            String table = tables.poll();
+                
+            if ( table == null )
+            {
+                break taskLoop;
+            }
+            
+            Period period = PartitionUtils.getPeriod( table );
+            
+            Date startDate = period.getStartDate();
+            Date endDate = period.getEndDate();
+            
+            populateTable( table, startDate, endDate, "cast(dv.value as double precision)", "int", "dv.value != ''" );
+            
+            populateTable( table, startDate, endDate, "1" , "bool", "dv.value = 'true'" );
+    
+            populateTable( table, startDate, endDate, "0" , "bool", "dv.value = 'false'" );
+        }
+    
         return null;
     }
     
@@ -113,23 +128,21 @@ public class JdbcAnalyticsTableManager
         final String start = DateUtils.getMediumDateString( startDate );
         final String end = DateUtils.getMediumDateString( endDate );
         
-        String insert = "insert into " + tableName + " (";
+        String sql = "insert into " + tableName + " (";
         
         for ( String[] col : getDimensionColumns() )
         {
-            insert += col[0] + ",";
+            sql += col[0] + ",";
         }
         
-        insert += "daysxvalue, daysno, value) ";
-        
-        String select = "select ";
+        sql += "daysxvalue, daysno, value) select ";
         
         for ( String[] col : getDimensionColumns() )
         {
-            select += col[2] + ",";
+            sql += col[2] + ",";
         }
         
-        select += 
+        sql += 
             valueExpression + " * ps.daysno as daysxvalue, " +
             "ps.daysno as daysno, " +
             valueExpression + " as value " +
@@ -147,8 +160,6 @@ public class JdbcAnalyticsTableManager
             "and dv.value is not null " + 
             "and " + clause;
 
-        final String sql = insert + select;
-        
         log.info( "Populate SQL: "+ sql );
         
         jdbcTemplate.execute( sql );
@@ -194,10 +205,10 @@ public class JdbcAnalyticsTableManager
         }
         
         String[] de = { "de", "character(11) not null", "de.uid" };
-        String[] co = { "coc", "character(11) not null", "coc.uid" };
+        String[] coc = { "coc", "character(11) not null", "coc.uid" };
         String[] level = { "level", "integer", "ous.level" };
         
-        columns.addAll( Arrays.asList( de, co, level ) );
+        columns.addAll( Arrays.asList( de, coc, level ) );
         
         return columns;
     }
@@ -218,26 +229,39 @@ public class JdbcAnalyticsTableManager
         return jdbcTemplate.queryForObject( sql, Date.class );
     }
     
-    public void applyAggregationLevels( String tableName, Collection<String> dataElements, int aggregationLevel )
+    @Async
+    public Future<?> applyAggregationLevels( ConcurrentLinkedQueue<String> tables, Collection<String> dataElements, int aggregationLevel )
     {
-        StringBuilder sql = new StringBuilder( "update " + tableName + " set " );
-        
-        for ( int i = 0; i < aggregationLevel; i++ )
+        taskLoop : while ( true )
         {
-            int level = i + 1;
+            String table = tables.poll();
+                
+            if ( table == null )
+            {
+                break taskLoop;
+            }
             
-            String column = DataQueryParams.LEVEL_PREFIX + level;
+            StringBuilder sql = new StringBuilder( "update " + table + " set " );
             
-            sql.append( column + " = null," );
+            for ( int i = 0; i < aggregationLevel; i++ )
+            {
+                int level = i + 1;
+                
+                String column = DataQueryParams.LEVEL_PREFIX + level;
+                
+                sql.append( column + " = null," );
+            }
+            
+            sql.deleteCharAt( sql.length() - ",".length() );
+            
+            sql.append( " where level > " + aggregationLevel );
+            sql.append( " and de in (" + getQuotedCommaDelimitedString( dataElements ) + ")" );
+            
+            log.info( "Aggregation level SQL: " + sql.toString() );
+            
+            jdbcTemplate.execute( sql.toString() );
         }
-        
-        sql.deleteCharAt( sql.length() - ",".length() );
-        
-        sql.append( " where level > " + aggregationLevel );
-        sql.append( " and de in (" + getQuotedCommaDelimitedString( dataElements ) + ")" );
-        
-        log.info( "Aggregation level SQL: " + sql.toString() );
-        
-        jdbcTemplate.execute( sql.toString() );
+
+        return null;
     }
 }

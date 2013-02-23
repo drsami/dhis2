@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html#if( $offline && $offline == "true" ) manifest="../dhis-web-commons/cacheManifest.action"#end>
+<html#if( $manifest ) manifest="$manifest"#end>
   <head>
     <title>$encoder.htmlEncode( $applicationTitle )</title>
 	<link type="text/css" rel="stylesheet" media="screen" href="../dhis-web-commons/javascripts/jQuery/ui/css/redmond/jquery-ui-1.9.1.custom.css" />
@@ -47,6 +47,7 @@
     <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.availability.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.trigger.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.storage.js"></script>
+    <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.storage.dom-ss.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.storage.dom.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/javascripts/dhis2/dhis2.storage.idb.js"></script>
     <script type="text/javascript" src="../dhis-web-commons/i18nJavaScript.action"></script>

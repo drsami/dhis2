@@ -232,7 +232,7 @@
 			class="org.hisp.dhis.patient.action.program.AddProgramAction">
 			<result name="success" type="redirect">program.action
 			</result>
-			<param name="requiredAuthorities">F_PROGRAM_ADD</param>
+			<param name="anyAuthorities">F_PROGRAM_PUBLIC_ADD,F_PROGRAM_PRIVATE_ADD</param>
 		</action>
 
 
@@ -242,7 +242,7 @@
 			<param name="page">/dhis-web-maintenance-patient/addProgramForm.vm</param>
 			<param name="javascripts">javascript/program.js</param>
 			<param name="stylesheets">style/basic.css</param>
-			<param name="requiredAuthorities">F_PROGRAM_ADD</param>
+			<param name="anyAuthorities">F_PROGRAM_PUBLIC_ADD,F_PROGRAM_PRIVATE_ADD</param>
 		</action>
 
 		<action name="showUpdateProgramForm"
@@ -273,6 +273,20 @@
 				/dhis-web-commons/ajax/jsonResponseInput.vm
 			</result>
 			<param name="onExceptionReturn">plainTextError</param>
+		</action>
+
+		<action name="showProgramUserroleForm"
+			class="org.hisp.dhis.patient.action.program.ShowProgramUserroleFormAction">
+			<result name="success" type="velocity">/main.vm</result>
+			<param name="page">/dhis-web-maintenance-patient/programUserrole.vm</param>
+			<param name="javascripts">javascript/program.js</param>
+			<param name="stylesheets">style/basic.css</param>
+			<param name="anyAuthorities">F_PROGRAM_PUBLIC_ADD,F_PROGRAM_PRIVATE_ADD</param>
+		</action>
+
+		<action name="defineProgramUserrole"
+			class="org.hisp.dhis.patient.action.program.DefineProgramUserroleAction">
+			<result name="success" type="redirect">program.action</result>
 		</action>
 
 		<!-- Program_OrganisationUnit Association -->

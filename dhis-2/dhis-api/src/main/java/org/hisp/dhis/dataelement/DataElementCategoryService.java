@@ -169,6 +169,14 @@ public interface DataElementCategoryService
     DataElementCategoryOption getDataElementCategoryOptionByName( String name );
 
     /**
+     * Retrieves the DataElementCategoryOption with the given code.
+     *
+     * @param code the code.
+     * @return the DataElementCategoryOption with the given code.
+     */
+    DataElementCategoryOption getDataElementCategoryOptionByCode( String code );
+
+    /**
      * Returns all DataElementCategoryOptions.
      *
      * @return a collection of all DataElementCategoryOptions, or an empty collection if there
@@ -302,6 +310,8 @@ public interface DataElementCategoryService
      * @return a Collection of DataElementCategoryOptionCombos.
      */
     Collection<DataElementCategoryOptionCombo> getDataElementCategoryOptionCombos( Collection<Integer> identifiers );
+    
+    Collection<DataElementCategoryOptionCombo> getDataElementCategoryOptionCombosByUid( Collection<String> uids );
 
     /**
      * Retrieves the DataElementCategoryOptionCombo with the given Collection

@@ -28,6 +28,7 @@ package org.hisp.dhis.analytics;
  */
 
 import static org.hisp.dhis.analytics.AggregationType.AVERAGE_INT_DISAGGREGATION;
+import static org.hisp.dhis.analytics.DimensionType.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +69,8 @@ public class DataQueryParams
     public static final List<String> DATA_DIMS = Arrays.asList( INDICATOR_DIM_ID, DATAELEMENT_DIM_ID, DATASET_DIM_ID );
     public static final List<String> FIXED_DIMS = Arrays.asList( DATA_X_DIM_ID, INDICATOR_DIM_ID, DATAELEMENT_DIM_ID, DATASET_DIM_ID, PERIOD_DIM_ID, ORGUNIT_DIM_ID );
     
+    private static final List<DimensionType> COMPLETENESS_DIMENSION_TYTPES = Arrays.asList( DATASET, ORGANISATIONUNIT, ORGANISATIONUNIT_GROUPSET );
+    
     private static final DimensionOption[] DIM_OPT_ARR = new DimensionOption[0];
     private static final DimensionOption[][] DIM_OPT_2D_ARR = new DimensionOption[0][];
     
@@ -91,6 +94,8 @@ public class DataQueryParams
     
     private transient PeriodType dataPeriodType;
     
+    private transient boolean skipPartitioning;
+    
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -110,6 +115,7 @@ public class DataQueryParams
         this.periodType = params.getPeriodType();
         this.organisationUnitLevel = params.getOrganisationUnitLevel();
         this.dataPeriodType = params.getDataPeriodType();
+        this.skipPartitioning = params.isSkipPartitioning();
     }
 
     // -------------------------------------------------------------------------
@@ -129,23 +135,6 @@ public class DataQueryParams
         {
             removeDimension( CATEGORYOPTIONCOMBO_DIM_ID );
         }
-    }
-
-    /**
-     * Returns the index of the category option combo dimension as it will appear
-     * in the data element query. Returns null if this query does not contain 
-     * the category option combo dimension. Currently unused.
-     */
-    public Integer getDeQueryCocIndex()
-    {
-        List<Dimension> list = new ArrayList<Dimension>( dimensions );
-                
-        list.remove( new Dimension( INDICATOR_DIM_ID ) );
-        list.remove( new Dimension( DATASET_DIM_ID ) );
-        
-        int index = list.indexOf( new Dimension( CATEGORYOPTIONCOMBO_DIM_ID ) );
-        
-        return index == -1 ? null : index;
     }
     
     /**
@@ -175,7 +164,7 @@ public class DataQueryParams
         
         return list;
     }
-        
+    
     /**
      * Creates a list of dimensions used to query. 
      */
@@ -186,6 +175,42 @@ public class DataQueryParams
         list.remove( new Dimension( INDICATOR_DIM_ID ) );
         
         return list;
+    }
+    
+    /**
+     * Creates a list of dimension indexes which are relevant to completeness queries.
+     */
+    public List<Integer> getCompletenessDimensionIndexes()
+    {
+        List<Integer> indexes = new ArrayList<Integer>();
+        
+        for ( int i = 0; i < dimensions.size(); i++ )
+        {
+            if ( COMPLETENESS_DIMENSION_TYTPES.contains( dimensions.get( i ).getType() ) )
+            {
+                indexes.add( i );
+            }
+        }
+        
+        return indexes;
+    }
+
+    /**
+     * Creates a list of filter indexes which are relevant to completeness queries.
+     */
+    public List<Integer> getCompletenessFilterIndexes()
+    {
+        List<Integer> indexes = new ArrayList<Integer>();
+        
+        for ( int i = 0; i < filters.size(); i++ )
+        {
+            if ( COMPLETENESS_DIMENSION_TYTPES.contains( filters.get( i ).getType() ) )
+            {
+                indexes.add( i );
+            }
+        }
+        
+        return indexes;
     }
 
     /**
@@ -210,6 +235,14 @@ public class DataQueryParams
     public int getDataElementDimensionIndex()
     {
         return getInputDimensionNamesAsList().indexOf( DATAELEMENT_DIM_ID );
+    }
+    
+    /**
+     * Returns the index of the data set dimension in the dimension map.
+     */
+    public int getDataSetDimensionIndex()
+    {
+        return getInputDimensionNamesAsList().indexOf( DATASET_DIM_ID );
     }
 
     /**
@@ -280,6 +313,17 @@ public class DataQueryParams
         List<IdentifiableObject> filterOpts = getFilterOptions( PERIOD_DIM_ID );
         
         return ( dimOpts != null && !dimOpts.isEmpty() ) || ( filterOpts != null && !filterOpts.isEmpty() );
+    }
+    
+    /**
+     * Returns the index of the category option combo dimension. Returns null
+     * if this dimension is not present.
+     */
+    public Integer getCocIndex()
+    {
+        int index = dimensions.indexOf( new Dimension( CATEGORYOPTIONCOMBO_DIM_ID ) );
+        
+        return index == -1 ? null : index;
     }
     
     /**
@@ -695,7 +739,17 @@ public class DataQueryParams
     {
         this.dataPeriodType = dataPeriodType;
     }
-    
+
+    public boolean isSkipPartitioning()
+    {
+        return skipPartitioning;
+    }
+
+    public void setSkipPartitioning( boolean skipPartitioning )
+    {
+        this.skipPartitioning = skipPartitioning;
+    }
+
     // -------------------------------------------------------------------------
     // Get and set helpers for dimensions or filter
     // -------------------------------------------------------------------------

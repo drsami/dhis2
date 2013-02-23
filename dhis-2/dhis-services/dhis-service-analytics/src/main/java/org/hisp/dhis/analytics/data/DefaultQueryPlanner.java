@@ -85,7 +85,7 @@ public class DefaultQueryPlanner
             throw new IllegalQueryException( "Dimensions cannot be specified as dimension and filter simultaneously: " + params.dimensionsAsFilters() );
         }
         
-        if ( !params.hasPeriods() )
+        if ( !params.hasPeriods() && !params.isSkipPartitioning() )
         {
             throw new IllegalQueryException( "At least one period must be specified as dimension or filter" );
         }
@@ -112,7 +112,7 @@ public class DefaultQueryPlanner
         // ---------------------------------------------------------------------
         
         params = new DataQueryParams( params );
-
+        
         List<DataQueryParams> queries = new ArrayList<DataQueryParams>();
         
         List<DataQueryParams> groupedByPartition = groupByPartition( params, tableName );
@@ -164,10 +164,10 @@ public class DefaultQueryPlanner
         }
 
         // ---------------------------------------------------------------------
-        // Group by organisation unit
+        // Group by data element
         // ---------------------------------------------------------------------
         
-        queries = splitByDimensionOrFilter( queries, DataQueryParams.ORGUNIT_DIM_ID, optimalQueries );
+        queries = splitByDimensionOrFilter( queries, DataQueryParams.DATAELEMENT_DIM_ID, optimalQueries );
 
         if ( queries.size() >= optimalQueries )
         {
@@ -175,10 +175,12 @@ public class DefaultQueryPlanner
         }
 
         // ---------------------------------------------------------------------
-        // Group by data element
+        // Group by organisation unit
         // ---------------------------------------------------------------------
         
-        return splitByDimensionOrFilter( queries, DataQueryParams.DATAELEMENT_DIM_ID, optimalQueries );
+        queries = splitByDimensionOrFilter( queries, DataQueryParams.ORGUNIT_DIM_ID, optimalQueries );
+        
+        return queries;
     }
         
     public boolean canQueryFromDataMart( DataQueryParams params )
@@ -195,7 +197,7 @@ public class DefaultQueryPlanner
      */
     private List<DataQueryParams> splitByDimensionOrFilter( List<DataQueryParams> queries, String dimension, int optimalQueries )
     {
-        int optimalForSubQuery = MathUtils.divideToCeil( optimalQueries, queries.size() );
+        int optimalForSubQuery = MathUtils.divideToFloor( optimalQueries, queries.size() );
         
         List<DataQueryParams> subQueries = new ArrayList<DataQueryParams>();
         
@@ -231,7 +233,12 @@ public class DefaultQueryPlanner
     {
         List<DataQueryParams> queries = new ArrayList<DataQueryParams>();
 
-        if ( params.getPeriods() != null && !params.getPeriods().isEmpty() )
+        if ( params.isSkipPartitioning() )
+        {
+            params.setTableName( tableName );
+            queries.add( params );
+        }
+        else if ( params.getPeriods() != null && !params.getPeriods().isEmpty() )
         {
             ListMap<String, IdentifiableObject> tablePeriodMap = PartitionUtils.getTablePeriodMap( params.getPeriods(), tableName );
             
@@ -271,7 +278,11 @@ public class DefaultQueryPlanner
     {
         List<DataQueryParams> queries = new ArrayList<DataQueryParams>();
 
-        if ( params.getPeriods() != null && !params.getPeriods().isEmpty() )
+        if ( params.isSkipPartitioning() )
+        {
+            queries.add( params );
+        }
+        else if ( params.getPeriods() != null && !params.getPeriods().isEmpty() )
         {
             ListMap<String, IdentifiableObject> periodTypePeriodMap = getPeriodTypePeriodMap( params.getPeriods() );
     

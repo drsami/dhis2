@@ -31,11 +31,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
 import org.hisp.dhis.organisationunit.OrganisationUnitGroupSet;
 import org.hisp.dhis.organisationunit.OrganisationUnitLevel;
-import org.hisp.dhis.period.Period;
 import org.springframework.scheduling.annotation.Async;
 
 public class JdbcCompletenessTargetTableManager
@@ -59,7 +59,7 @@ public class JdbcCompletenessTargetTableManager
             sqlCreate += col[0] + " " + col[1] + ",";
         }
         
-        sqlCreate = sqlCreate.substring( 0, sqlCreate.length() - 1 ) + ")";
+        sqlCreate += "value double precision)";
         
         log.info( "Create SQL: " + sqlCreate );
         
@@ -67,35 +67,42 @@ public class JdbcCompletenessTargetTableManager
     }
 
     @Async
-    public Future<?> populateTableAsync( String tableName, Period period )
+    public Future<?> populateTableAsync( ConcurrentLinkedQueue<String> tables )
     {
-        String sql = "insert into " + tableName + " (";
-
-        for ( String[] col : getDimensionColumns() )
+        taskLoop : while ( true )
         {
-            sql += col[0] + ",";
+            String table = tables.poll();
+                
+            if ( table == null )
+            {
+                break taskLoop;
+            }
+            
+            String sql = "insert into " + table + " (";
+    
+            for ( String[] col : getDimensionColumns() )
+            {
+                sql += col[0] + ",";
+            }
+    
+            sql += "value) select ";
+    
+            for ( String[] col : getDimensionColumns() )
+            {
+                sql += col[2] + ",";
+            }
+                        
+            sql +=
+                "1 as value " +
+                "from datasetsource dss " +
+                "left join dataset ds on dss.datasetid=ds.datasetid " +
+                "left join _orgunitstructure ous on dss.sourceid=ous.organisationunitid " +
+                "left join _organisationunitgroupsetstructure ougs on dss.sourceid=ougs.organisationunitid";            
+    
+            log.info( "Populate SQL: "+ sql );
+            
+            jdbcTemplate.execute( sql );
         }
-
-        sql = sql.substring( 0, sql.length() - 1 );
-        
-        sql += ") select ";
-
-        for ( String[] col : getDimensionColumns() )
-        {
-            sql += col[2] + ",";
-        }
-        
-        sql = sql.substring( 0, sql.length() - 1 ) + " ";
-        
-        sql +=
-            "from datasetsource dss " +
-            "left join dataset ds on dss.datasetid=ds.datasetid " +
-            "left join _orgunitstructure ous on dss.sourceid=ous.organisationunitid " +
-            "left join _organisationunitgroupsetstructure ougs on dss.sourceid=ougs.organisationunitid";            
-
-        log.info( "Populate SQL: "+ sql );
-        
-        jdbcTemplate.execute( sql );
         
         return null;
     }
@@ -140,8 +147,9 @@ public class JdbcCompletenessTargetTableManager
         return null; // Not relevant
     }
 
-    public void applyAggregationLevels( String tableName, Collection<String> dataElements, int aggregationLevel )
+    @Async
+    public Future<?> applyAggregationLevels( ConcurrentLinkedQueue<String> tables, Collection<String> dataElements, int aggregationLevel )
     {
-        // Not relevant
+        return null; // Not relevant
     }
 }

@@ -30,15 +30,15 @@ package org.hisp.dhis.analytics;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
-
-import org.hisp.dhis.period.Period;
 
 public interface AnalyticsTableManager
 {
     public static final String TABLE_TEMP_SUFFIX = "_temp";
     public static final String ANALYTICS_TABLE_NAME = "analytics";
     public static final String COMPLETENESS_TABLE_NAME = "completeness";
+    public static final String COMPLETENESS_TARGET_TABLE_NAME = "completenesstarget";
     
     /**
      * Returns the base table name.
@@ -61,10 +61,9 @@ public interface AnalyticsTableManager
      * Creates single indexes on the given columns of the analytics table with
      * the given name.
      * 
-     * @param tableName the name of the table to create indexes on.
-     * @param columns the columns to create single indexes for.
+     * @param indexes
      */
-    Future<?> createIndexesAsync( String tableName, List<String> columns );
+    Future<?> createIndexesAsync( ConcurrentLinkedQueue<AnalyticsIndex> indexes );
     
     /**
      * Attempts to drop analytics table, then rename temporary table to analytics
@@ -78,10 +77,9 @@ public interface AnalyticsTableManager
      * Copies and denormalizes rows from data value table into analytics table.
      * The data range is based on the start date of the data value row.
      * 
-     * @param tableName the name of the analytics table.
-     * @param period the data period for which to populate the table.
+     * @param tables
      */
-    Future<?> populateTableAsync( String tableName, Period period );    
+    Future<?> populateTableAsync( ConcurrentLinkedQueue<String> tables );    
 
     /**
      * Returns a list of string arrays in where the first index holds the database
@@ -129,17 +127,17 @@ public interface AnalyticsTableManager
      * organisation unit level column values to null for the levels above the
      * given aggregation level.
      * 
-     * @param tableName the name of the analytics table.
+     * @param tables
      * @param dataElements the data element uids to apply aggregation levels for.
      * @param aggregationLevel the aggregation level.
      */
-    void applyAggregationLevels( String tableName, Collection<String> dataElements, int aggregationLevel );
+    Future<?> applyAggregationLevels( ConcurrentLinkedQueue<String> tables, Collection<String> dataElements, int aggregationLevel );
     
     /**
      * Performs vacuum or optimization of the given table. The type of operation
      * performed is dependent on the underlying DBMS.
      * 
-     * @param tableName the name of the analytics table.
+     * @param tables
      */
-    Future<?> vacuumTableAsync( String tableName );
+    Future<?> vacuumTablesAsync( ConcurrentLinkedQueue<String> tables );
 }

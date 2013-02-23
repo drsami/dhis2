@@ -1,10 +1,10 @@
 <script type="text/javascript">
-   jQuery(document).ready(	function(){
-		datePickerInRange( 'startDate' , 'endDate', false, false );		
-		disableCriteriaDiv();
-	});
+    jQuery( document ).ready( function () {
+        datePickerInRange( 'startDate', 'endDate', false, false );
+        disableCriteriaDiv();
+    } );
 </script>
-				
+
 <h3>$i18n.getString( "anonymous_events_management" ) #openHelp('single_event_without_registration')</h3>
 <h4 id='programName' name='programName'></h4>
 
@@ -20,7 +20,7 @@
 		<table>		
 			<tr>
 				<td><label>$i18n.getString( "registering_unit" )</label></td>
-				<td><input type="text" id='orgunitName' name='orgunitName' #if( $orgunit ) value="$encoder.htmlEncode( $orgunit.name )" #else value="[$i18n.getString( 'please_select_village' )]" #end readonly /></td>
+				<td><input type="text" id='orgunitName' name='orgunitName' #if( $orgunit ) value="$encoder.htmlEncode( $orgunit.name )" #else value="[$i18n.getString( 'please_select_village' )]" #end disabled /></td>
 			</tr>
 			<tr>	       
 				<td>
